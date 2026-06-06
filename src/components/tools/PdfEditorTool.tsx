@@ -38,6 +38,7 @@ export default function PdfEditorTool() {
 
   // Stamp picker
   const [showStampPicker, setShowStampPicker] = useState(false);
+  const [showAnnotationPicker, setShowAnnotationPicker] = useState(false);
   const [pendingStamp, setPendingStamp] = useState("");
 
   // Sign modal
@@ -392,6 +393,63 @@ export default function PdfEditorTool() {
     setActiveTool("select");
   }
 
+  // Annotation symbols — placed at canvas centre, user can drag after
+  async function addAnnotation(type: "crossmark" | "checkmark" | "dot" | "circle" | "crossout") {
+    if (!fabricRef.current) return;
+    const { fabric } = await import("fabric");
+    const fc = fabricRef.current;
+    pushUndo();
+    const cx = fc.width / 2, cy = fc.height / 2;
+    const col = color;
+    let obj: any;
+
+    switch (type) {
+      case "crossmark": {
+        const s = 20;
+        const l1 = new fabric.Line([0, 0, s * 2, s * 2], { stroke: col, strokeWidth: 3, strokeLineCap: "round" });
+        const l2 = new fabric.Line([s * 2, 0, 0, s * 2], { stroke: col, strokeWidth: 3, strokeLineCap: "round" });
+        obj = new fabric.Group([l1, l2], { left: cx - s, top: cy - s });
+        break;
+      }
+      case "checkmark": {
+        const pts = [
+          { x: 0, y: 12 }, { x: 8, y: 22 }, { x: 26, y: 0 },
+        ];
+        const poly = new fabric.Polyline(pts, {
+          stroke: col, strokeWidth: 3, fill: "transparent",
+          strokeLineCap: "round", strokeLineJoin: "round",
+        });
+        obj = new fabric.Group([poly], { left: cx - 13, top: cy - 11 });
+        break;
+      }
+      case "dot": {
+        obj = new fabric.Circle({ radius: 8, fill: col, left: cx - 8, top: cy - 8 });
+        break;
+      }
+      case "circle": {
+        obj = new fabric.Ellipse({
+          rx: 40, ry: 18,
+          fill: "transparent", stroke: col, strokeWidth: 2,
+          left: cx - 40, top: cy - 18,
+        });
+        break;
+      }
+      case "crossout": {
+        obj = new fabric.Line([cx - 60, cy, cx + 60, cy], {
+          stroke: col, strokeWidth: 2, strokeLineCap: "round",
+        });
+        break;
+      }
+    }
+
+    if (obj) {
+      fc.add(obj);
+      fc.setActiveObject(obj);
+      fc.renderAll();
+      setActiveTool("move");
+    }
+  }
+
   async function addImage(f: File) {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
@@ -628,6 +686,36 @@ export default function PdfEditorTool() {
           className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 min-w-[48px]">
           <Minus className="w-5 h-5" /><span className="text-[10px] font-medium">Line</span>
         </button>
+
+        {/* Annotation symbols dropdown */}
+        <div className="relative">
+          <button onClick={() => setShowAnnotationPicker(s => !s)} title="Annotation symbols"
+            className={cn("flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg min-w-[48px]",
+              showAnnotationPicker ? "bg-red-50 text-red-600" : "text-gray-600 hover:bg-gray-100")}>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            <span className="text-[10px] font-medium">Symbols</span>
+          </button>
+          {showAnnotationPicker && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 w-48 py-1 overflow-hidden">
+              {[
+                { type: "crossmark" as const, icon: "✕", label: "Crossmark" },
+                { type: "checkmark" as const, icon: "✓", label: "Checkmark" },
+                { type: "dot" as const, icon: "●", label: "Dot" },
+                { type: "circle" as const, icon: "○", label: "Circle around" },
+                { type: "crossout" as const, icon: "—", label: "Cross out" },
+              ].map(({ type, icon, label }) => (
+                <button key={type}
+                  onClick={() => { addAnnotation(type); setShowAnnotationPicker(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <span className="w-6 text-center text-base font-bold text-gray-500">{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="w-px h-8 bg-gray-200 mx-1" />
 
