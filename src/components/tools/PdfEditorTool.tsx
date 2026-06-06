@@ -5,28 +5,33 @@ import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument } from "pdf-lib";
 import {
   Type, Pen, Highlighter, ImageIcon, Eraser, Download,
-  ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Undo,
-  MousePointer, Minus, Square, Upload,
+  ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Undo, Redo,
+  MousePointer, Minus, Square, Upload, PanelLeft,
 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-type ToolType = "select" | "text" | "draw" | "highlight" | "line" | "rect" | "eraser";
+type ToolType = "select" | "text" | "draw" | "highlight" | "line" | "rect" | "eraser" | "image";
+
+interface HistoryEntry { page: number; json: string; }
 
 export default function PdfEditorTool() {
   const [file, setFile] = useState<File | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.4);
+  const [scale, setScale] = useState(1.3);
   const [activeTool, setActiveTool] = useState<ToolType>("select");
   const [color, setColor] = useState("#000000");
-  const [fontSize, setFontSize] = useState(16);
-  const [loading, setLoading] = useState(false);
+  const [fontSize, setFontSize] = useState(18);
+  const [fontFamily, setFontFamily] = useState("Arial");
   const [saving, setSaving] = useState(false);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
   const fabricContainerRef = useRef<HTMLDivElement>(null);
@@ -34,23 +39,25 @@ export default function PdfEditorTool() {
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const pageStates = useRef<Record<number, string>>({});
 
-  // Refs for use inside fabric event handlers (avoid stale closures)
   const activeToolRef = useRef<ToolType>("select");
   const colorRef = useRef("#000000");
-  const fontSizeRef = useRef(16);
+  const fontSizeRef = useRef(18);
+  const fontFamilyRef = useRef("Arial");
   activeToolRef.current = activeTool;
   colorRef.current = color;
   fontSizeRef.current = fontSize;
+  fontFamilyRef.current = fontFamily;
 
   const loadFile = useCallback(async (f: File | null) => {
     if (!f || f.type !== "application/pdf") return;
     setError("");
-    setLoading(true);
+    setLoadingPdf(true);
     setFile(f);
     setPdfDoc(null);
     setThumbnails([]);
     setCurrentPage(1);
     setTotalPages(0);
+    setHistory([]);
     pageStates.current = {};
 
     try {
@@ -58,40 +65,33 @@ export default function PdfEditorTool() {
       fileBytes.current = bytes.slice(0);
       const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
 
-      // Generate thumbnails
       const thumbs: string[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const vp = page.getViewport({ scale: 0.15 });
+        const vp = page.getViewport({ scale: 0.18 });
         const c = document.createElement("canvas");
-        c.width = vp.width;
-        c.height = vp.height;
+        c.width = vp.width; c.height = vp.height;
         await page.render({ canvasContext: c.getContext("2d")! as any, viewport: vp, canvas: c }).promise;
         thumbs.push(c.toDataURL());
       }
 
       setThumbnails(thumbs);
       setTotalPages(pdf.numPages);
-      // IMPORTANT: set loading=false first so canvases are mounted,
-      // then set pdfDoc to trigger the render useEffect
-      setLoading(false);
+      setLoadingPdf(false);
       setPdfDoc(pdf);
     } catch (e) {
       console.error("PDF load error:", e);
       setError("Gagal memuatkan PDF. Sila cuba fail lain.");
       setFile(null);
-      setLoading(false);
+      setLoadingPdf(false);
     }
   }, []);
 
-  // Render PDF page onto canvas + re-init Fabric overlay
   useEffect(() => {
     if (!pdfDoc) return;
-
     let cancelled = false;
 
     async function init() {
-      // Wait one tick so React has painted the canvases into the DOM
       await new Promise(r => setTimeout(r, 0));
       if (cancelled) return;
 
@@ -104,7 +104,6 @@ export default function PdfEditorTool() {
         const viewport = page.getViewport({ scale });
         if (cancelled) return;
 
-        // Render PDF to background canvas
         pdfCanvas.width = viewport.width;
         pdfCanvas.height = viewport.height;
         await page.render({
@@ -114,7 +113,6 @@ export default function PdfEditorTool() {
         }).promise;
         if (cancelled) return;
 
-        // Save old fabric state, then dispose
         if (fabricRef.current) {
           try {
             pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
@@ -123,7 +121,6 @@ export default function PdfEditorTool() {
           fabricRef.current = null;
         }
 
-        // Create a fresh canvas element inside the container div
         fabricContainer.innerHTML = "";
         const newCanvas = document.createElement("canvas");
         fabricContainer.appendChild(newCanvas);
@@ -131,43 +128,42 @@ export default function PdfEditorTool() {
         const { fabric } = await import("fabric");
         if (cancelled) return;
 
-        const fabricCanvas = new fabric.Canvas(newCanvas, {
+        const fc = new fabric.Canvas(newCanvas, {
           width: viewport.width,
           height: viewport.height,
           isDrawingMode: false,
           selection: true,
           backgroundColor: "transparent",
         });
-        fabricRef.current = fabricCanvas;
+        fabricRef.current = fc;
 
-        // Restore saved annotations for this page
         if (pageStates.current[currentPage]) {
           await new Promise<void>((res) => {
-            fabricCanvas.loadFromJSON(JSON.parse(pageStates.current[currentPage]), () => {
-              fabricCanvas.renderAll();
-              res();
-            });
+            fc.loadFromJSON(JSON.parse(pageStates.current[currentPage]), () => { fc.renderAll(); res(); });
           });
         }
 
-        applyTool(fabricCanvas, activeToolRef.current, colorRef.current, fontSizeRef.current);
+        applyTool(fc, activeToolRef.current, colorRef.current, fontSizeRef.current);
 
-        fabricCanvas.on("mouse:down", async (opt: any) => {
+        fc.on("mouse:down", async (opt: any) => {
           if (activeToolRef.current !== "text") return;
-          const pointer = fabricCanvas.getPointer(opt.e);
+          const pointer = fc.getPointer(opt.e);
           const { fabric: f2 } = await import("fabric");
-          const t = new f2.IText("Teks di sini", {
-            left: pointer.x,
-            top: pointer.y,
+          const t = new f2.IText("Teks", {
+            left: pointer.x, top: pointer.y,
             fontSize: fontSizeRef.current,
             fill: colorRef.current,
-            fontFamily: "Arial",
+            fontFamily: fontFamilyRef.current,
           });
-          fabricCanvas.add(t);
-          fabricCanvas.setActiveObject(t);
+          fc.add(t);
+          fc.setActiveObject(t);
           t.enterEditing();
           t.selectAll();
-          fabricCanvas.renderAll();
+          fc.renderAll();
+        });
+
+        fc.on("object:added", () => {
+          setHistory(h => [...h, { page: currentPage, json: JSON.stringify(fc.toJSON()) }]);
         });
       } catch (e) {
         console.error("Canvas init error:", e);
@@ -179,29 +175,25 @@ export default function PdfEditorTool() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, currentPage, scale]);
 
-  // Sync active tool/color/size to existing fabric canvas
   useEffect(() => {
-    if (fabricRef.current) {
-      applyTool(fabricRef.current, activeTool, color, fontSize);
-    }
+    if (fabricRef.current) applyTool(fabricRef.current, activeTool, color, fontSize);
   }, [activeTool, color, fontSize]);
 
   function applyTool(fc: any, tool: ToolType, col: string, fsize: number) {
     fc.isDrawingMode = false;
     fc.selection = tool === "select";
-
     if (tool === "draw") {
       fc.isDrawingMode = true;
       fc.freeDrawingBrush.color = col;
-      fc.freeDrawingBrush.width = 3;
+      fc.freeDrawingBrush.width = 2;
     } else if (tool === "highlight") {
       fc.isDrawingMode = true;
-      fc.freeDrawingBrush.color = "#FFFF0080";
-      fc.freeDrawingBrush.width = 20;
+      fc.freeDrawingBrush.color = "#FFFF0066";
+      fc.freeDrawingBrush.width = 22;
     } else if (tool === "eraser") {
       fc.isDrawingMode = true;
       fc.freeDrawingBrush.color = "#ffffff";
-      fc.freeDrawingBrush.width = 24;
+      fc.freeDrawingBrush.width = 20;
     }
     fc.renderAll();
   }
@@ -210,8 +202,7 @@ export default function PdfEditorTool() {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
     const fc = fabricRef.current;
-    const cx = fc.width / 2;
-    const cy = fc.height / 2;
+    const cx = fc.width / 2, cy = fc.height / 2;
     if (type === "rect") {
       fc.add(new fabric.Rect({ left: cx - 70, top: cy - 40, width: 140, height: 80, fill: "transparent", stroke: color, strokeWidth: 2 }));
     } else {
@@ -224,9 +215,8 @@ export default function PdfEditorTool() {
   async function addImage(f: File) {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
-    const url = URL.createObjectURL(f);
-    fabric.Image.fromURL(url, (img: any) => {
-      img.scaleToWidth(Math.min(180, fabricRef.current.width * 0.4));
+    fabric.Image.fromURL(URL.createObjectURL(f), (img: any) => {
+      img.scaleToWidth(Math.min(200, fabricRef.current.width * 0.4));
       fabricRef.current.add(img);
       fabricRef.current.setActiveObject(img);
       fabricRef.current.renderAll();
@@ -235,27 +225,28 @@ export default function PdfEditorTool() {
   }
 
   function undo() {
-    const fc = fabricRef.current;
-    if (!fc) return;
-    const objs = fc.getObjects();
-    if (objs.length > 0) { fc.remove(objs[objs.length - 1]); fc.renderAll(); }
+    if (history.length === 0 || !fabricRef.current) return;
+    const newHistory = history.slice(0, -1);
+    setHistory(newHistory);
+    const prev = newHistory[newHistory.length - 1];
+    if (prev && prev.page === currentPage) {
+      fabricRef.current.loadFromJSON(JSON.parse(prev.json), () => fabricRef.current.renderAll());
+    } else {
+      const objs = fabricRef.current.getObjects();
+      if (objs.length > 0) { fabricRef.current.remove(objs[objs.length - 1]); fabricRef.current.renderAll(); }
+    }
   }
 
   function changePage(newPage: number) {
-    const clamped = Math.max(1, Math.min(totalPages, newPage));
-    if (clamped === currentPage) return;
-    if (fabricRef.current) {
-      pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
-    }
-    setCurrentPage(clamped);
+    const p = Math.max(1, Math.min(totalPages, newPage));
+    if (p === currentPage) return;
+    if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+    setCurrentPage(p);
   }
 
   async function savePdf() {
     if (!fileBytes.current || !pdfDoc) return;
-    if (fabricRef.current) {
-      pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
-    }
-
+    if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
     setSaving(true);
     try {
       const pdfLibDoc = await PDFDocument.load(fileBytes.current);
@@ -268,18 +259,12 @@ export default function PdfEditorTool() {
 
         const pdfPage = await pdfDoc.getPage(pageNum);
         const viewport = pdfPage.getViewport({ scale });
-
         const tempEl = document.createElement("canvas");
-        tempEl.width = viewport.width;
-        tempEl.height = viewport.height;
+        tempEl.width = viewport.width; tempEl.height = viewport.height;
         const tempFc = new fabric.StaticCanvas(tempEl, { width: viewport.width, height: viewport.height });
+        await new Promise<void>((res) => { tempFc.loadFromJSON(state, () => { tempFc.renderAll(); res(); }); });
 
-        await new Promise<void>((res) => {
-          tempFc.loadFromJSON(state, () => { tempFc.renderAll(); res(); });
-        });
-
-        const imgData = tempEl.toDataURL("image/png");
-        const imgBytes = await fetch(imgData).then(r => r.arrayBuffer());
+        const imgBytes = await fetch(tempEl.toDataURL("image/png")).then(r => r.arrayBuffer());
         const embImg = await pdfLibDoc.embedPng(imgBytes);
         const libPage = pdfLibDoc.getPage(pageNum - 1);
         const { width, height } = libPage.getSize();
@@ -287,25 +272,15 @@ export default function PdfEditorTool() {
         tempFc.dispose();
       }
 
-      const saved = await pdfLibDoc.save();
-      const blob = new Blob([saved], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `edited-${file!.name}`;
+      const blob = new Blob([await pdfLibDoc.save()], { type: "application/pdf" });
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `edited-${file!.name}` });
       a.click();
     } finally {
       setSaving(false);
     }
   }
 
-  const TOOLS: { id: ToolType; icon: React.ReactNode; label: string }[] = [
-    { id: "select", icon: <MousePointer className="w-4 h-4" />, label: "Pilih" },
-    { id: "text", icon: <Type className="w-4 h-4" />, label: "Teks" },
-    { id: "draw", icon: <Pen className="w-4 h-4" />, label: "Lukis" },
-    { id: "highlight", icon: <Highlighter className="w-4 h-4" />, label: "Highlight" },
-    { id: "eraser", icon: <Eraser className="w-4 h-4" />, label: "Pemadam" },
-  ];
+  const FONTS = ["Arial", "Times New Roman", "Courier New", "Georgia", "Verdana"];
 
   // ── DROPZONE ──
   if (!file) {
@@ -326,128 +301,176 @@ export default function PdfEditorTool() {
     );
   }
 
+  const toolBtn = (id: ToolType, icon: React.ReactNode, label: string) => (
+    <button
+      key={id} onClick={() => setActiveTool(id)} title={label}
+      className={cn(
+        "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium",
+        activeTool === id
+          ? "bg-red-50 text-red-600 border border-red-200"
+          : "text-gray-600 hover:bg-gray-100 border border-transparent"
+      )}
+    >
+      {icon}
+      <span className="text-[10px] leading-none mt-0.5">{label}</span>
+    </button>
+  );
+
   // ── EDITOR ──
   return (
-    <div className="flex flex-col gap-3">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-xl flex-wrap">
-        <div className="flex items-center gap-1 border-r border-gray-200 pr-2">
-          {TOOLS.map((t) => (
-            <button key={t.id} onClick={() => setActiveTool(t.id)} title={t.label}
-              className={cn("flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors text-xs",
-                activeTool === t.id ? "bg-red-600 text-white" : "text-gray-600 hover:bg-gray-100")}>
-              {t.icon}
-              <span className="text-[10px] leading-none">{t.label}</span>
-            </button>
-          ))}
-          <button onClick={() => addShape("line")} title="Garisan" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-            <Minus className="w-4 h-4" /><span className="text-[10px]">Garisan</span>
-          </button>
-          <button onClick={() => addShape("rect")} title="Kotak" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-            <Square className="w-4 h-4" /><span className="text-[10px]">Kotak</span>
-          </button>
-          <label title="Imej" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer">
-            <ImageIcon className="w-4 h-4" /><span className="text-[10px]">Imej</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addImage(e.target.files[0])} />
-          </label>
-        </div>
+    <div className="flex flex-col h-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
 
-        <div className="flex items-center gap-3 border-r border-gray-200 pr-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Warna</span>
-            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border border-gray-200" />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Saiz</span>
-            <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="text-xs border border-gray-200 rounded px-1.5 py-1">
-              {[10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48].map(s => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 border-r border-gray-200 pr-2">
-          <button onClick={undo} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100" title="Undo"><Undo className="w-4 h-4" /></button>
-          <button onClick={() => setScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><ZoomOut className="w-4 h-4" /></button>
-          <span className="text-xs text-gray-500 w-10 text-center">{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(3, +(s + 0.25).toFixed(2)))} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><ZoomIn className="w-4 h-4" /></button>
-        </div>
-
-        <span className="text-xs text-gray-400 hidden md:block">{file.name} · {formatBytes(file.size)}</span>
-        <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500 ml-1">Tukar fail</button>
-        <button onClick={savePdf} disabled={saving || !pdfDoc}
-          className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">
-          <Download className="w-4 h-4" />
-          {saving ? "Menyimpan..." : "Simpan PDF"}
+      {/* ── Top toolbar row 1: main tools ── */}
+      <div className="flex items-center gap-1 px-3 py-1.5 bg-white border-b border-gray-200 flex-wrap">
+        {/* Sidebar toggle */}
+        <button onClick={() => setSidebarOpen(o => !o)} title="Panel halaman"
+          className={cn("p-2 rounded-lg border transition-all", sidebarOpen ? "bg-red-50 border-red-200 text-red-600" : "border-transparent text-gray-500 hover:bg-gray-100")}>
+          <PanelLeft className="w-4 h-4" />
         </button>
+
+        <div className="w-px h-6 bg-gray-200 mx-1" />
+
+        {/* Undo / Redo */}
+        <button onClick={undo} disabled={history.length === 0} title="Undo" className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30"><Undo className="w-4 h-4" /></button>
+
+        <div className="w-px h-6 bg-gray-200 mx-1" />
+
+        {toolBtn("select", <MousePointer className="w-4 h-4" />, "Pilih")}
+        {toolBtn("text", <Type className="w-4 h-4" />, "Teks")}
+        {toolBtn("draw", <Pen className="w-4 h-4" />, "Lukis")}
+        {toolBtn("highlight", <Highlighter className="w-4 h-4" />, "Highlight")}
+        {toolBtn("eraser", <Eraser className="w-4 h-4" />, "Pemadam")}
+
+        <div className="w-px h-6 bg-gray-200 mx-1" />
+
+        <button onClick={() => addShape("line")} title="Garisan"
+          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 border border-transparent text-xs font-medium">
+          <Minus className="w-4 h-4" /><span className="text-[10px]">Garisan</span>
+        </button>
+        <button onClick={() => addShape("rect")} title="Kotak"
+          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 border border-transparent text-xs font-medium">
+          <Square className="w-4 h-4" /><span className="text-[10px]">Kotak</span>
+        </button>
+        <label title="Imej"
+          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 border border-transparent text-xs font-medium cursor-pointer">
+          <ImageIcon className="w-4 h-4" /><span className="text-[10px]">Imej</span>
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addImage(e.target.files[0])} />
+        </label>
+
+        {/* Right side: file info + save */}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-gray-400 hidden lg:block truncate max-w-48">{file.name}</span>
+          <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500">Tukar</button>
+          <button onClick={savePdf} disabled={saving || !pdfDoc}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
+            <Download className="w-4 h-4" />
+            {saving ? "Menyimpan..." : "Simpan PDF"}
+          </button>
+        </div>
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Memuatkan PDF...</p>
+      {/* ── Toolbar row 2: formatting ── */}
+      <div className="flex items-center gap-3 px-3 py-1.5 bg-white border-b border-gray-200">
+        {/* Color */}
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-sm border border-gray-300" style={{ backgroundColor: color }} />
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
+            className="w-0 h-0 opacity-0 absolute" id="color-input" />
+          <label htmlFor="color-input" className="text-xs text-gray-600 cursor-pointer hover:text-red-600">Warna</label>
         </div>
-      )}
 
-      {/* Editor body */}
-      {!loading && (
-        <div className="flex gap-3">
-          {/* Thumbnail sidebar */}
-          {thumbnails.length > 1 && (
-            <div className="w-24 flex-shrink-0 overflow-y-auto max-h-[75vh] space-y-2 bg-gray-50 rounded-xl p-2 border border-gray-200">
-              {thumbnails.map((thumb, i) => (
+        <div className="w-px h-5 bg-gray-200" />
+
+        {/* Font family */}
+        <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}
+          className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-red-400 min-w-[120px]">
+          {FONTS.map(f => <option key={f}>{f}</option>)}
+        </select>
+
+        {/* Font size */}
+        <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))}
+          className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-red-400 w-16">
+          {[8, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60].map(s => <option key={s}>{s}</option>)}
+        </select>
+
+        <div className="w-px h-5 bg-gray-200" />
+
+        {/* Zoom */}
+        <div className="flex items-center gap-1">
+          <button onClick={() => setScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))}
+            className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500"><ZoomOut className="w-3.5 h-3.5" /></button>
+          <span className="text-xs text-gray-600 w-12 text-center font-medium">{Math.round(scale * 100)}%</span>
+          <button onClick={() => setScale(s => Math.min(3, +(s + 0.25).toFixed(2)))}
+            className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500"><ZoomIn className="w-3.5 h-3.5" /></button>
+        </div>
+
+        {/* Page nav (inline) */}
+        {totalPages > 0 && (
+          <>
+            <div className="w-px h-5 bg-gray-200" />
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => changePage(currentPage - 1)} disabled={currentPage <= 1}
+                className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft className="w-3.5 h-3.5" /></button>
+              <span className="text-xs text-gray-600 font-medium">
+                <span className="font-semibold">{currentPage}</span> / {totalPages}
+              </span>
+              <button onClick={() => changePage(currentPage + 1)} disabled={currentPage >= totalPages}
+                className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight className="w-3.5 h-3.5" /></button>
+            </div>
+          </>
+        )}
+
+        {/* Hint */}
+        <span className="ml-auto text-[11px] text-gray-400 hidden md:block">
+          {activeTool === "text" && "Klik pada PDF untuk tambah teks"}
+          {activeTool === "draw" && "Tahan & seret untuk melukis"}
+          {activeTool === "highlight" && "Tahan & seret untuk highlight"}
+          {activeTool === "eraser" && "Tahan & seret untuk padam"}
+          {activeTool === "select" && "Klik objek untuk pilih & alih"}
+        </span>
+      </div>
+
+      {/* ── Body: sidebar + canvas ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Thumbnail sidebar */}
+        {sidebarOpen && (
+          <div className="w-28 flex-shrink-0 bg-gray-200 border-r border-gray-300 overflow-y-auto py-3 px-2 space-y-2">
+            {loadingPdf
+              ? <p className="text-xs text-center text-gray-500 pt-8">Memuatkan...</p>
+              : thumbnails.map((thumb, i) => (
                 <button key={i} onClick={() => changePage(i + 1)}
-                  className={cn("w-full rounded-lg overflow-hidden border-2 transition-all",
-                    currentPage === i + 1 ? "border-red-500" : "border-transparent hover:border-gray-300")}>
-                  <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full" />
-                  <p className="text-center text-[10px] py-0.5 text-gray-500">{i + 1}</p>
+                  className={cn("w-full rounded-lg overflow-hidden border-2 transition-all bg-white shadow-sm",
+                    currentPage === i + 1 ? "border-red-500 shadow-md" : "border-transparent hover:border-gray-400")}>
+                  <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full block" />
+                  <p className={cn("text-center text-[10px] py-1 font-medium", currentPage === i + 1 ? "text-red-600" : "text-gray-500")}>{i + 1}</p>
                 </button>
-              ))}
+              ))
+            }
+          </div>
+        )}
+
+        {/* Canvas */}
+        <div className="flex-1 overflow-auto bg-gray-300 flex justify-center items-start p-6">
+          {loadingPdf ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-500">Memuatkan PDF...</p>
+            </div>
+          ) : (
+            <div className="relative shadow-2xl inline-block"
+              style={{
+                cursor:
+                  activeTool === "text" ? "text"
+                  : activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser" ? "crosshair"
+                  : "default",
+              }}>
+              <canvas ref={pdfCanvasRef} className="block" />
+              <div ref={fabricContainerRef} className="absolute top-0 left-0" />
             </div>
           )}
-
-          {/* Canvas area */}
-          <div className="flex-1 flex flex-col gap-2">
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-3">
-                <button onClick={() => changePage(currentPage - 1)} disabled={currentPage <= 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-sm text-gray-600 font-medium">Halaman {currentPage} / {totalPages}</span>
-                <button onClick={() => changePage(currentPage + 1)} disabled={currentPage >= totalPages} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            <div className="overflow-auto bg-gray-300 rounded-xl p-4 flex justify-center min-h-[60vh]">
-              {/* Canvas stack: PDF background + Fabric overlay */}
-              <div className="relative shadow-xl inline-block">
-                <canvas ref={pdfCanvasRef} className="block" />
-                {/* Fabric mounts a fresh canvas inside this div each page */}
-                <div
-                  ref={fabricContainerRef}
-                  className="absolute top-0 left-0"
-                  style={{
-                    cursor:
-                      activeTool === "text" ? "text"
-                      : activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser" ? "crosshair"
-                      : "default",
-                  }}
-                />
-              </div>
-            </div>
-
-            <p className="text-xs text-center text-gray-400">
-              {activeTool === "text" && "Klik pada PDF untuk tambah teks"}
-              {activeTool === "draw" && "Tahan dan lukis pada PDF"}
-              {activeTool === "highlight" && "Tahan dan seret untuk highlight"}
-              {activeTool === "eraser" && "Tahan dan seret untuk padam annotation"}
-              {activeTool === "select" && "Klik objek untuk pilih, drag untuk alih"}
-            </p>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

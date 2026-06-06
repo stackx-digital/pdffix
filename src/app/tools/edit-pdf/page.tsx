@@ -14,20 +14,17 @@ export default async function EditPdfPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       <Navbar user={user} />
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full flex flex-col">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Edit PDF</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Tambah teks, lukis, highlight, sisip imej dan banyak lagi — terus dalam browser.
-          </p>
+      <main className="flex-1 flex flex-col overflow-hidden px-4 py-4 max-w-[1600px] mx-auto w-full">
+        <div className="mb-3">
+          <h1 className="text-xl font-bold text-gray-900">Edit PDF</h1>
+          <p className="text-gray-500 text-xs mt-0.5">Tambah teks, lukis, highlight, sisip imej — terus dalam browser.</p>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 overflow-hidden">
           <PdfEditorTool />
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
