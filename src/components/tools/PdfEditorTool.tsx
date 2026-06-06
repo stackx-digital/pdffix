@@ -4,17 +4,21 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument } from "pdf-lib";
 import {
-  Type, Pen, Highlighter, ImageIcon, Eraser, Download,
+  Pen, Highlighter, ImageIcon, Eraser, Download,
   ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Undo, Redo,
-  MousePointer, Minus, Square, Upload, PanelLeft,
+  MousePointer, Minus, Upload, PanelLeft, Type, PenLine,
+  Stamp, Link, StickyNote, X, Check,
 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-type ToolType = "select" | "text" | "draw" | "highlight" | "line" | "rect" | "eraser" | "image";
+type ToolType =
+  | "select" | "addtext" | "edittext" | "sign"
+  | "line" | "draw" | "eraser" | "highlight" | "texthighlight"
+  | "image" | "stamp" | "link" | "note";
 
-interface HistoryEntry { page: number; json: string; }
+const STAMPS = ["APPROVED", "REJECTED", "DRAFT", "CONFIDENTIAL", "REVIEWED", "VOID"];
 
 export default function PdfEditorTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,8 +34,34 @@ export default function PdfEditorTool() {
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loadingPdf, setLoadingPdf] = useState(false);
+
+  // Stamp picker
+  const [showStampPicker, setShowStampPicker] = useState(false);
+  const [pendingStamp, setPendingStamp] = useState("");
+
+  // Sign modal
+  const [showSignModal, setShowSignModal] = useState(false);
+  const signCanvasRef = useRef<HTMLCanvasElement>(null);
+  const signDrawing = useRef(false);
+  const signLastPos = useRef({ x: 0, y: 0 });
+
+  // Note modal
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [pendingNotePos, setPendingNotePos] = useState<{ x: number; y: number } | null>(null);
+
+  // Link modal
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("https://");
+  const [linkText, setLinkText] = useState("Klik di sini");
+  const [pendingLinkPos, setPendingLinkPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Undo/Redo stacks
+  const undoStack = useRef<string[]>([]);
+  const redoStack = useRef<string[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
   const fabricContainerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +78,14 @@ export default function PdfEditorTool() {
   fontSizeRef.current = fontSize;
   fontFamilyRef.current = fontFamily;
 
+  const pushUndo = useCallback(() => {
+    if (!fabricRef.current) return;
+    undoStack.current.push(JSON.stringify(fabricRef.current.toJSON()));
+    redoStack.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
+  }, []);
+
   const loadFile = useCallback(async (f: File | null) => {
     if (!f || f.type !== "application/pdf") return;
     setError("");
@@ -57,8 +95,11 @@ export default function PdfEditorTool() {
     setThumbnails([]);
     setCurrentPage(1);
     setTotalPages(0);
-    setHistory([]);
     pageStates.current = {};
+    undoStack.current = [];
+    redoStack.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
 
     try {
       const bytes = await f.arrayBuffer();
@@ -87,6 +128,7 @@ export default function PdfEditorTool() {
     }
   }, []);
 
+  // Init canvas when page/scale/pdfDoc changes
   useEffect(() => {
     if (!pdfDoc) return;
     let cancelled = false;
@@ -146,25 +188,49 @@ export default function PdfEditorTool() {
         applyTool(fc, activeToolRef.current, colorRef.current, fontSizeRef.current);
 
         fc.on("mouse:down", async (opt: any) => {
-          if (activeToolRef.current !== "text") return;
+          const tool = activeToolRef.current;
           const pointer = fc.getPointer(opt.e);
-          const { fabric: f2 } = await import("fabric");
-          const t = new f2.IText("Teks", {
-            left: pointer.x, top: pointer.y,
-            fontSize: fontSizeRef.current,
-            fill: colorRef.current,
-            fontFamily: fontFamilyRef.current,
-          });
-          fc.add(t);
-          fc.setActiveObject(t);
-          t.enterEditing();
-          t.selectAll();
-          fc.renderAll();
+
+          if (tool === "addtext") {
+            const { fabric: f2 } = await import("fabric");
+            pushUndo();
+            const t = new f2.IText("Teks", {
+              left: pointer.x, top: pointer.y,
+              fontSize: fontSizeRef.current,
+              fill: colorRef.current,
+              fontFamily: fontFamilyRef.current,
+            });
+            fc.add(t);
+            fc.setActiveObject(t);
+            t.enterEditing();
+            t.selectAll();
+            fc.renderAll();
+          } else if (tool === "stamp" && pendingStamp) {
+            const { fabric: f2 } = await import("fabric");
+            pushUndo();
+            const colors: Record<string, string> = {
+              APPROVED: "#16a34a", REJECTED: "#dc2626", DRAFT: "#d97706",
+              CONFIDENTIAL: "#7c3aed", REVIEWED: "#0284c7", VOID: "#64748b",
+            };
+            const col = colors[pendingStamp] || "#dc2626";
+            const rect = new f2.Rect({ left: pointer.x - 60, top: pointer.y - 18, width: 120, height: 36, fill: "transparent", stroke: col, strokeWidth: 2, rx: 4 });
+            const label = new f2.Text(pendingStamp, { left: pointer.x, top: pointer.y, fontSize: 16, fill: col, fontFamily: "Arial", fontWeight: "bold", originX: "center", originY: "center" });
+            const group = new f2.Group([rect, label], { left: pointer.x - 60, top: pointer.y - 18 });
+            fc.add(group);
+            fc.renderAll();
+            setActiveTool("select");
+            setPendingStamp("");
+          } else if (tool === "note") {
+            setPendingNotePos({ x: pointer.x, y: pointer.y });
+            setNoteText("");
+            setShowNoteModal(true);
+          } else if (tool === "link") {
+            setPendingLinkPos({ x: pointer.x, y: pointer.y });
+            setShowLinkModal(true);
+          }
         });
 
-        fc.on("object:added", () => {
-          setHistory(h => [...h, { page: currentPage, json: JSON.stringify(fc.toJSON()) }]);
-        });
+        fc.on("object:modified", () => pushUndo());
       } catch (e) {
         console.error("Canvas init error:", e);
       }
@@ -179,17 +245,17 @@ export default function PdfEditorTool() {
     if (fabricRef.current) applyTool(fabricRef.current, activeTool, color, fontSize);
   }, [activeTool, color, fontSize]);
 
-  function applyTool(fc: any, tool: ToolType, col: string, fsize: number) {
+  function applyTool(fc: any, tool: ToolType, col: string, _fsize: number) {
     fc.isDrawingMode = false;
-    fc.selection = tool === "select";
+    fc.selection = tool === "select" || tool === "edittext";
     if (tool === "draw") {
       fc.isDrawingMode = true;
       fc.freeDrawingBrush.color = col;
       fc.freeDrawingBrush.width = 2;
-    } else if (tool === "highlight") {
+    } else if (tool === "highlight" || tool === "texthighlight") {
       fc.isDrawingMode = true;
       fc.freeDrawingBrush.color = "#FFFF0066";
-      fc.freeDrawingBrush.width = 22;
+      fc.freeDrawingBrush.width = tool === "texthighlight" ? 14 : 22;
     } else if (tool === "eraser") {
       fc.isDrawingMode = true;
       fc.freeDrawingBrush.color = "#ffffff";
@@ -198,16 +264,33 @@ export default function PdfEditorTool() {
     fc.renderAll();
   }
 
-  async function addShape(type: "line" | "rect") {
+  function undo() {
+    if (!fabricRef.current || undoStack.current.length === 0) return;
+    const current = JSON.stringify(fabricRef.current.toJSON());
+    redoStack.current.push(current);
+    const prev = undoStack.current.pop()!;
+    fabricRef.current.loadFromJSON(JSON.parse(prev), () => fabricRef.current.renderAll());
+    setCanUndo(undoStack.current.length > 0);
+    setCanRedo(true);
+  }
+
+  function redo() {
+    if (!fabricRef.current || redoStack.current.length === 0) return;
+    const current = JSON.stringify(fabricRef.current.toJSON());
+    undoStack.current.push(current);
+    const next = redoStack.current.pop()!;
+    fabricRef.current.loadFromJSON(JSON.parse(next), () => fabricRef.current.renderAll());
+    setCanUndo(true);
+    setCanRedo(redoStack.current.length > 0);
+  }
+
+  async function addShape(type: "line") {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
     const fc = fabricRef.current;
+    pushUndo();
     const cx = fc.width / 2, cy = fc.height / 2;
-    if (type === "rect") {
-      fc.add(new fabric.Rect({ left: cx - 70, top: cy - 40, width: 140, height: 80, fill: "transparent", stroke: color, strokeWidth: 2 }));
-    } else {
-      fc.add(new fabric.Line([cx - 80, cy, cx + 80, cy], { stroke: color, strokeWidth: 2 }));
-    }
+    fc.add(new fabric.Line([cx - 80, cy, cx + 80, cy], { stroke: color, strokeWidth: 2 }));
     fc.renderAll();
     setActiveTool("select");
   }
@@ -215,6 +298,7 @@ export default function PdfEditorTool() {
   async function addImage(f: File) {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
+    pushUndo();
     fabric.Image.fromURL(URL.createObjectURL(f), (img: any) => {
       img.scaleToWidth(Math.min(200, fabricRef.current.width * 0.4));
       fabricRef.current.add(img);
@@ -224,17 +308,90 @@ export default function PdfEditorTool() {
     });
   }
 
-  function undo() {
-    if (history.length === 0 || !fabricRef.current) return;
-    const newHistory = history.slice(0, -1);
-    setHistory(newHistory);
-    const prev = newHistory[newHistory.length - 1];
-    if (prev && prev.page === currentPage) {
-      fabricRef.current.loadFromJSON(JSON.parse(prev.json), () => fabricRef.current.renderAll());
-    } else {
-      const objs = fabricRef.current.getObjects();
-      if (objs.length > 0) { fabricRef.current.remove(objs[objs.length - 1]); fabricRef.current.renderAll(); }
-    }
+  // Sign: draw on sign canvas
+  function signStart(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
+    signDrawing.current = true;
+    const canvas = signCanvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    signLastPos.current = { x: clientX - rect.left, y: clientY - rect.top };
+  }
+  function signMove(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
+    if (!signDrawing.current) return;
+    e.preventDefault();
+    const canvas = signCanvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    const x = clientX - rect.left, y = clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(signLastPos.current.x, signLastPos.current.y);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    signLastPos.current = { x, y };
+  }
+  function signEnd() { signDrawing.current = false; }
+  function signClear() {
+    const canvas = signCanvasRef.current!;
+    canvas.getContext("2d")!.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  async function signPlace() {
+    const canvas = signCanvasRef.current!;
+    const dataUrl = canvas.toDataURL("image/png");
+    if (!fabricRef.current) return;
+    const { fabric } = await import("fabric");
+    pushUndo();
+    fabric.Image.fromURL(dataUrl, (img: any) => {
+      img.scaleToWidth(160);
+      img.set({ left: 100, top: 100 });
+      fabricRef.current.add(img);
+      fabricRef.current.setActiveObject(img);
+      fabricRef.current.renderAll();
+    });
+    setShowSignModal(false);
+    setActiveTool("select");
+  }
+
+  // Note: place sticky note
+  async function placeNote() {
+    if (!fabricRef.current || !pendingNotePos || !noteText.trim()) return;
+    const { fabric } = await import("fabric");
+    pushUndo();
+    const fc = fabricRef.current;
+    const bg = new fabric.Rect({ width: 160, height: 80, fill: "#fef08a", stroke: "#ca8a04", strokeWidth: 1, rx: 4, shadow: "2px 2px 4px rgba(0,0,0,0.2)" });
+    const txt = new fabric.Textbox(noteText, { width: 148, fontSize: 12, fill: "#1e293b", fontFamily: "Arial", left: 6, top: 6 });
+    const group = new fabric.Group([bg, txt], { left: pendingNotePos.x, top: pendingNotePos.y });
+    fc.add(group);
+    fc.renderAll();
+    setShowNoteModal(false);
+    setNoteText("");
+    setActiveTool("select");
+  }
+
+  // Link: place clickable text
+  async function placeLink() {
+    if (!fabricRef.current || !pendingLinkPos || !linkUrl.trim()) return;
+    const { fabric } = await import("fabric");
+    pushUndo();
+    const t = new (fabric as any).IText(linkText || linkUrl, {
+      left: pendingLinkPos.x, top: pendingLinkPos.y,
+      fontSize: fontSizeRef.current,
+      fill: "#2563eb",
+      fontFamily: fontFamilyRef.current,
+      underline: true,
+    });
+    (t as any).url = linkUrl;
+    fabricRef.current.add(t);
+    fabricRef.current.renderAll();
+    setShowLinkModal(false);
+    setLinkUrl("https://");
+    setLinkText("Klik di sini");
+    setActiveTool("select");
   }
 
   function changePage(newPage: number) {
@@ -282,6 +439,13 @@ export default function PdfEditorTool() {
 
   const FONTS = ["Arial", "Times New Roman", "Courier New", "Georgia", "Verdana"];
 
+  const toolCursor = (tool: ToolType) => {
+    if (tool === "addtext" || tool === "edittext") return "text";
+    if (tool === "draw" || tool === "highlight" || tool === "texthighlight" || tool === "eraser") return "crosshair";
+    if (tool === "stamp" || tool === "note" || tool === "link") return "cell";
+    return "default";
+  };
+
   // ── DROPZONE ──
   if (!file) {
     return (
@@ -301,18 +465,19 @@ export default function PdfEditorTool() {
     );
   }
 
-  const toolBtn = (id: ToolType, icon: React.ReactNode, label: string) => (
+  const TB = ({ id, icon, label, onClick }: { id?: ToolType; icon: React.ReactNode; label: string; onClick?: () => void }) => (
     <button
-      key={id} onClick={() => setActiveTool(id)} title={label}
+      onClick={onClick ?? (() => id && setActiveTool(id))}
+      title={label}
       className={cn(
-        "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium",
-        activeTool === id
-          ? "bg-red-50 text-red-600 border border-red-200"
-          : "text-gray-600 hover:bg-gray-100 border border-transparent"
+        "flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg transition-all min-w-[48px]",
+        id && activeTool === id
+          ? "bg-red-50 text-red-600"
+          : "text-gray-600 hover:bg-gray-100"
       )}
     >
-      {icon}
-      <span className="text-[10px] leading-none mt-0.5">{label}</span>
+      <span className="w-5 h-5 flex items-center justify-center">{icon}</span>
+      <span className="text-[10px] leading-none whitespace-nowrap font-medium">{label}</span>
     </button>
   );
 
@@ -320,74 +485,108 @@ export default function PdfEditorTool() {
   return (
     <div className="flex flex-col h-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
 
-      {/* ── Top toolbar row 1: main tools ── */}
-      <div className="flex items-center gap-1 px-3 py-1.5 bg-white border-b border-gray-200 flex-wrap">
+      {/* ── Toolbar row 1 ── */}
+      <div className="flex items-center gap-0.5 px-2 py-1 bg-white border-b border-gray-200 flex-wrap">
         {/* Sidebar toggle */}
-        <button onClick={() => setSidebarOpen(o => !o)} title="Panel halaman"
-          className={cn("p-2 rounded-lg border transition-all", sidebarOpen ? "bg-red-50 border-red-200 text-red-600" : "border-transparent text-gray-500 hover:bg-gray-100")}>
-          <PanelLeft className="w-4 h-4" />
+        <button onClick={() => setSidebarOpen(o => !o)} title="Thumbnails"
+          className={cn("flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg min-w-[48px]",
+            sidebarOpen ? "bg-red-50 text-red-600" : "text-gray-600 hover:bg-gray-100")}>
+          <PanelLeft className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Thumbnails</span>
         </button>
 
-        <div className="w-px h-6 bg-gray-200 mx-1" />
+        <div className="w-px h-8 bg-gray-200 mx-1" />
 
         {/* Undo / Redo */}
-        <button onClick={undo} disabled={history.length === 0} title="Undo" className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30"><Undo className="w-4 h-4" /></button>
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        {toolBtn("select", <MousePointer className="w-4 h-4" />, "Pilih")}
-        {toolBtn("text", <Type className="w-4 h-4" />, "Teks")}
-        {toolBtn("draw", <Pen className="w-4 h-4" />, "Lukis")}
-        {toolBtn("highlight", <Highlighter className="w-4 h-4" />, "Highlight")}
-        {toolBtn("eraser", <Eraser className="w-4 h-4" />, "Pemadam")}
-
-        <div className="w-px h-6 bg-gray-200 mx-1" />
-
-        <button onClick={() => addShape("line")} title="Garisan"
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 border border-transparent text-xs font-medium">
-          <Minus className="w-4 h-4" /><span className="text-[10px]">Garisan</span>
+        <button onClick={undo} disabled={!canUndo} title="Undo"
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 min-w-[48px]">
+          <Undo className="w-5 h-5" /><span className="text-[10px] font-medium">Undo</span>
         </button>
-        <button onClick={() => addShape("rect")} title="Kotak"
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 border border-transparent text-xs font-medium">
-          <Square className="w-4 h-4" /><span className="text-[10px]">Kotak</span>
+        <button onClick={redo} disabled={!canRedo} title="Redo"
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 min-w-[48px]">
+          <Redo className="w-5 h-5" /><span className="text-[10px] font-medium">Redo</span>
         </button>
-        <label title="Imej"
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 border border-transparent text-xs font-medium cursor-pointer">
-          <ImageIcon className="w-4 h-4" /><span className="text-[10px]">Imej</span>
+
+        <div className="w-px h-8 bg-gray-200 mx-1" />
+
+        <TB id="addtext" icon={<Type className="w-5 h-5" />} label="Add text" />
+        <TB id="edittext" icon={<PenLine className="w-5 h-5" />} label="Edit text" />
+
+        {/* Sign */}
+        <TB id="sign" icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 17c3-4 5-7 7-7s2 4 4 4 3-3 5-5"/><path d="M19 17h2"/></svg>} label="Sign" onClick={() => { setShowSignModal(true); setActiveTool("sign"); }} />
+
+        <div className="w-px h-8 bg-gray-200 mx-1" />
+
+        {/* Line */}
+        <button onClick={() => addShape("line")} title="Line"
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 min-w-[48px]">
+          <Minus className="w-5 h-5" /><span className="text-[10px] font-medium">Line</span>
+        </button>
+
+        <div className="w-px h-8 bg-gray-200 mx-1" />
+
+        <TB id="draw" icon={<Pen className="w-5 h-5" />} label="Draw" />
+        <TB id="eraser" icon={<Eraser className="w-5 h-5" />} label="Eraser" />
+        <TB id="highlight" icon={<Highlighter className="w-5 h-5" />} label="Highlight" />
+        <TB id="texthighlight" icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="14" width="18" height="4" rx="1" fill="#fde047" stroke="#ca8a04"/><path d="M7 14V7l5-3 5 3v7"/><path d="M10 14v-4h4v4"/></svg>} label="Text highlight" />
+
+        <div className="w-px h-8 bg-gray-200 mx-1" />
+
+        {/* Image */}
+        <label title="Image" className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer min-w-[48px]">
+          <ImageIcon className="w-5 h-5" /><span className="text-[10px] font-medium">Image</span>
           <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addImage(e.target.files[0])} />
         </label>
 
-        {/* Right side: file info + save */}
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-gray-400 hidden lg:block truncate max-w-48">{file.name}</span>
-          <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500">Tukar</button>
+        {/* Stamp */}
+        <div className="relative">
+          <button onClick={() => setShowStampPicker(s => !s)} title="Stamp"
+            className={cn("flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg min-w-[48px]",
+              activeTool === "stamp" ? "bg-red-50 text-red-600" : "text-gray-600 hover:bg-gray-100")}>
+            <Stamp className="w-5 h-5" /><span className="text-[10px] font-medium">Stamp</span>
+          </button>
+          {showStampPicker && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-2 z-50 w-44">
+              {STAMPS.map(s => (
+                <button key={s} onClick={() => { setPendingStamp(s); setActiveTool("stamp"); setShowStampPicker(false); }}
+                  className="w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-gray-50 rounded-lg">{s}</button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <TB id="link" icon={<Link className="w-5 h-5" />} label="Link" />
+        <TB id="note" icon={<StickyNote className="w-5 h-5" />} label="Note" />
+
+        {/* Right */}
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-gray-400 hidden lg:block truncate max-w-40">{formatBytes(file.size)}</span>
+          <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500 px-2">Tukar</button>
           <button onClick={savePdf} disabled={saving || !pdfDoc}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
-            <Download className="w-4 h-4" />
-            {saving ? "Menyimpan..." : "Simpan PDF"}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">
+            <Download className="w-4 h-4" />{saving ? "Menyimpan..." : "Simpan PDF"}
           </button>
         </div>
       </div>
 
       {/* ── Toolbar row 2: formatting ── */}
       <div className="flex items-center gap-3 px-3 py-1.5 bg-white border-b border-gray-200">
-        {/* Color */}
+        {/* Color swatch */}
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-sm border border-gray-300" style={{ backgroundColor: color }} />
-          <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
-            className="w-0 h-0 opacity-0 absolute" id="color-input" />
-          <label htmlFor="color-input" className="text-xs text-gray-600 cursor-pointer hover:text-red-600">Warna</label>
+          <label className="flex items-center gap-1.5 cursor-pointer group">
+            <div className="w-5 h-5 rounded border-2 border-gray-300 group-hover:border-gray-400 transition-colors" style={{ backgroundColor: color }} />
+            <span className="text-xs text-gray-500">Warna</span>
+            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="sr-only" />
+          </label>
         </div>
 
         <div className="w-px h-5 bg-gray-200" />
 
-        {/* Font family */}
         <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}
-          className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-red-400 min-w-[120px]">
+          className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-red-400 min-w-[130px]">
           {FONTS.map(f => <option key={f}>{f}</option>)}
         </select>
 
-        {/* Font size */}
         <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))}
           className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-red-400 w-16">
           {[8, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60].map(s => <option key={s}>{s}</option>)}
@@ -399,40 +598,43 @@ export default function PdfEditorTool() {
         <div className="flex items-center gap-1">
           <button onClick={() => setScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))}
             className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500"><ZoomOut className="w-3.5 h-3.5" /></button>
-          <span className="text-xs text-gray-600 w-12 text-center font-medium">{Math.round(scale * 100)}%</span>
+          <span className="text-xs font-medium text-gray-700 w-12 text-center">{Math.round(scale * 100)}%</span>
           <button onClick={() => setScale(s => Math.min(3, +(s + 0.25).toFixed(2)))}
             className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500"><ZoomIn className="w-3.5 h-3.5" /></button>
         </div>
 
-        {/* Page nav (inline) */}
+        {/* Page nav */}
         {totalPages > 0 && (
           <>
             <div className="w-px h-5 bg-gray-200" />
             <div className="flex items-center gap-1.5">
               <button onClick={() => changePage(currentPage - 1)} disabled={currentPage <= 1}
                 className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft className="w-3.5 h-3.5" /></button>
-              <span className="text-xs text-gray-600 font-medium">
-                <span className="font-semibold">{currentPage}</span> / {totalPages}
-              </span>
+              <span className="text-xs text-gray-600 font-medium">{currentPage} / {totalPages}</span>
               <button onClick={() => changePage(currentPage + 1)} disabled={currentPage >= totalPages}
                 className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight className="w-3.5 h-3.5" /></button>
             </div>
           </>
         )}
 
-        {/* Hint */}
+        {/* Tool hint */}
         <span className="ml-auto text-[11px] text-gray-400 hidden md:block">
-          {activeTool === "text" && "Klik pada PDF untuk tambah teks"}
+          {activeTool === "addtext" && "Klik pada PDF untuk tambah teks"}
+          {activeTool === "edittext" && "Klik objek teks untuk edit"}
           {activeTool === "draw" && "Tahan & seret untuk melukis"}
-          {activeTool === "highlight" && "Tahan & seret untuk highlight"}
-          {activeTool === "eraser" && "Tahan & seret untuk padam"}
+          {activeTool === "highlight" && "Seret untuk highlight kawasan"}
+          {activeTool === "texthighlight" && "Seret untuk highlight teks"}
+          {activeTool === "eraser" && "Seret untuk padam annotation"}
           {activeTool === "select" && "Klik objek untuk pilih & alih"}
+          {activeTool === "stamp" && `Klik untuk letak stamp: ${pendingStamp}`}
+          {activeTool === "note" && "Klik untuk letak nota"}
+          {activeTool === "link" && "Klik untuk letak pautan"}
+          {activeTool === "sign" && "Tandatangan diletakkan pada PDF"}
         </span>
       </div>
 
-      {/* ── Body: sidebar + canvas ── */}
+      {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
-
         {/* Thumbnail sidebar */}
         {sidebarOpen && (
           <div className="w-28 flex-shrink-0 bg-gray-200 border-r border-gray-300 overflow-y-auto py-3 px-2 space-y-2">
@@ -458,19 +660,88 @@ export default function PdfEditorTool() {
               <p className="text-sm text-gray-500">Memuatkan PDF...</p>
             </div>
           ) : (
-            <div className="relative shadow-2xl inline-block"
-              style={{
-                cursor:
-                  activeTool === "text" ? "text"
-                  : activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser" ? "crosshair"
-                  : "default",
-              }}>
+            <div className="relative shadow-2xl inline-block" style={{ cursor: toolCursor(activeTool) }}>
               <canvas ref={pdfCanvasRef} className="block" />
               <div ref={fabricContainerRef} className="absolute top-0 left-0" />
             </div>
           )}
         </div>
       </div>
+
+      {/* ── Sign Modal ── */}
+      {showSignModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">Lukis Tandatangan</h3>
+              <button onClick={() => { setShowSignModal(false); setActiveTool("select"); }} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5">
+              <canvas
+                ref={signCanvasRef} width={420} height={160}
+                className="w-full border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 touch-none"
+                onMouseDown={signStart} onMouseMove={signMove} onMouseUp={signEnd} onMouseLeave={signEnd}
+                onTouchStart={signStart} onTouchMove={signMove} onTouchEnd={signEnd}
+              />
+              <p className="text-xs text-gray-400 text-center mt-2">Lukis tandatangan anda di atas</p>
+            </div>
+            <div className="flex gap-2 px-5 pb-5">
+              <button onClick={signClear} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Padam</button>
+              <button onClick={signPlace} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700">
+                <Check className="w-4 h-4 inline mr-1" />Letakkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Note Modal ── */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">Tambah Nota</h3>
+              <button onClick={() => setShowNoteModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5">
+              <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={4} placeholder="Tulis nota anda..."
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 resize-none" />
+            </div>
+            <div className="flex gap-2 px-5 pb-5">
+              <button onClick={() => setShowNoteModal(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Batal</button>
+              <button onClick={placeNote} disabled={!noteText.trim()} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">Letak Nota</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Link Modal ── */}
+      {showLinkModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">Tambah Pautan</h3>
+              <button onClick={() => setShowLinkModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">URL</label>
+                <input type="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Teks pautan</label>
+                <input type="text" value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Klik di sini"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
+              </div>
+            </div>
+            <div className="flex gap-2 px-5 pb-5">
+              <button onClick={() => setShowLinkModal(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Batal</button>
+              <button onClick={placeLink} disabled={!linkUrl.trim()} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">Letak Pautan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
