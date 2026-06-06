@@ -284,6 +284,32 @@ export default function PdfEditorTool() {
     setCanRedo(redoStack.current.length > 0);
   }
 
+  function deleteSelected() {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const active = fc.getActiveObjects();
+    if (active.length === 0) return;
+    pushUndo();
+    active.forEach((obj: any) => fc.remove(obj));
+    fc.discardActiveObject();
+    fc.renderAll();
+  }
+
+  // Keyboard: Delete/Backspace removes selected objects
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      // Don't intercept when user is typing in an input/textarea
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        deleteSelected();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function addShape(type: "line") {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
@@ -505,6 +531,10 @@ export default function PdfEditorTool() {
         <button onClick={redo} disabled={!canRedo} title="Redo"
           className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 min-w-[48px]">
           <Redo className="w-5 h-5" /><span className="text-[10px] font-medium">Redo</span>
+        </button>
+        <button onClick={deleteSelected} title="Padam objek dipilih (Delete)"
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-red-500 hover:bg-red-50 min-w-[48px]">
+          <X className="w-5 h-5" /><span className="text-[10px] font-medium">Delete</span>
         </button>
 
         <div className="w-px h-8 bg-gray-200 mx-1" />
