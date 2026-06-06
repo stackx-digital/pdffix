@@ -73,10 +73,12 @@ export default function PdfEditorTool() {
   const colorRef = useRef("#000000");
   const fontSizeRef = useRef(18);
   const fontFamilyRef = useRef("Arial");
+  const pendingStampRef = useRef("");
   activeToolRef.current = activeTool;
   colorRef.current = color;
   fontSizeRef.current = fontSize;
   fontFamilyRef.current = fontFamily;
+  pendingStampRef.current = pendingStamp;
 
   const pushUndo = useCallback(() => {
     if (!fabricRef.current) return;
@@ -205,19 +207,57 @@ export default function PdfEditorTool() {
             t.enterEditing();
             t.selectAll();
             fc.renderAll();
-          } else if (tool === "stamp" && pendingStamp) {
+          } else if (tool === "stamp" && pendingStampRef.current) {
+            const stamp = pendingStampRef.current;
             const { fabric: f2 } = await import("fabric");
             pushUndo();
-            const colors: Record<string, string> = {
+
+            // Draw stamp onto an offscreen canvas for authentic look
+            const stampColors: Record<string, string> = {
               APPROVED: "#16a34a", REJECTED: "#dc2626", DRAFT: "#d97706",
               CONFIDENTIAL: "#7c3aed", REVIEWED: "#0284c7", VOID: "#64748b",
             };
-            const col = colors[pendingStamp] || "#dc2626";
-            const rect = new f2.Rect({ left: pointer.x - 60, top: pointer.y - 18, width: 120, height: 36, fill: "transparent", stroke: col, strokeWidth: 2, rx: 4 });
-            const label = new f2.Text(pendingStamp, { left: pointer.x, top: pointer.y, fontSize: 16, fill: col, fontFamily: "Arial", fontWeight: "bold", originX: "center", originY: "center" });
-            const group = new f2.Group([rect, label], { left: pointer.x - 60, top: pointer.y - 18 });
-            fc.add(group);
-            fc.renderAll();
+            const col = stampColors[stamp] || "#dc2626";
+            const pad = 18;
+            const tmpC = document.createElement("canvas");
+            const tmpCtx = tmpC.getContext("2d")!;
+            const fnt = `bold 32px Arial`;
+            tmpCtx.font = fnt;
+            const tw = tmpCtx.measureText(stamp).width;
+            const tw2 = tw + pad * 2;
+            const th2 = 52;
+            tmpC.width = tw2 + 6;
+            tmpC.height = th2 + 6;
+            const ctx2 = tmpC.getContext("2d")!;
+
+            // Border rect
+            ctx2.strokeStyle = col;
+            ctx2.lineWidth = 4;
+            ctx2.globalAlpha = 0.85;
+            ctx2.beginPath();
+            ctx2.roundRect(3, 3, tw2, th2, 6);
+            ctx2.stroke();
+
+            // Text
+            ctx2.font = fnt;
+            ctx2.fillStyle = col;
+            ctx2.textAlign = "center";
+            ctx2.textBaseline = "middle";
+            ctx2.fillText(stamp, (tw2 + 6) / 2, (th2 + 6) / 2);
+
+            const dataUrl = tmpC.toDataURL();
+            f2.Image.fromURL(dataUrl, (img: any) => {
+              img.set({
+                left: pointer.x - img.width! / 2,
+                top: pointer.y - img.height! / 2,
+                angle: -20,
+                opacity: 0.82,
+              });
+              fc.add(img);
+              fc.setActiveObject(img);
+              fc.renderAll();
+            });
+
             setActiveTool("select");
             setPendingStamp("");
           } else if (tool === "note") {
