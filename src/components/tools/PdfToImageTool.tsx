@@ -6,7 +6,7 @@ import { Image as ImageIcon, Download } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 
 // Use bundled worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function PdfToImageTool() {
   const [file, setFile] = useState<File | null>(null);

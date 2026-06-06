@@ -6,7 +6,7 @@ import { PDFDocument } from "pdf-lib";
 import { Download, Trash2, PenLine, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface PlacedSignature {
   dataUrl: string;

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 type ToolType = "select" | "text" | "draw" | "highlight" | "line" | "rect" | "eraser";
 

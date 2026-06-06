@@ -5,7 +5,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import { ScanText, Copy, Check } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function OcrTool() {
   const [file, setFile] = useState<File | null>(null);
