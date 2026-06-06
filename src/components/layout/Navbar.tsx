@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
+import LocaleSwitcher from "@/components/ui/LocaleSwitcher";
 import type { User } from "@supabase/supabase-js";
 
 interface NavbarProps {
@@ -10,6 +11,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user }: NavbarProps) {
+  const t = useTranslations("nav");
   const router = useRouter();
   const supabase = createClient();
 
@@ -28,38 +30,34 @@ export default function Navbar({ user }: NavbarProps) {
 
         <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
           <Link href="/#tools" className="hover:text-gray-900">Tools</Link>
-          <Link href="/pricing" className="hover:text-gray-900">Harga</Link>
+          <Link href="/pricing" className="hover:text-gray-900">{t("pricing")}</Link>
         </nav>
 
         <div className="flex items-center gap-3">
+          <LocaleSwitcher />
+
           {user ? (
             <>
-              <Link
-                href="/dashboard"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Dashboard
+              <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+                {t("dashboard")}
               </Link>
               <button
                 onClick={signOut}
                 className="text-sm px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
               >
-                Log Keluar
+                {t("logout")}
               </button>
             </>
           ) : (
             <>
-              <Link
-                href="/auth/login"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Log Masuk
+              <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-900">
+                {t("login")}
               </Link>
               <Link
                 href="/auth/register"
                 className="text-sm px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
-                Daftar Percuma
+                {t("register")}
               </Link>
             </>
           )}

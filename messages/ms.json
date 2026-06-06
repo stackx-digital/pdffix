@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "login": "Log Masuk",
+    "register": "Daftar",
+    "logout": "Log Keluar",
+    "pricing": "Harga"
+  },
+  "home": {
+    "hero_title": "Editor PDF Percuma",
+    "hero_title2": "Untuk Semua Orang",
+    "hero_desc": "Gabung, pisah, mampat dan tukar PDF terus dalam browser. Fail anda tidak diupload ke mana-mana server.",
+    "cta_start": "Mula Gunakan",
+    "cta_pricing": "Lihat Harga",
+    "badge_server": "Tiada upload ke server",
+    "badge_browser": "Proses dalam browser",
+    "badge_free": "Percuma untuk kegunaan asas",
+    "badge_local": "Dibuat untuk Malaysia",
+    "tools_title": "Semua Tools",
+    "tools_desc": "Pilih tool yang anda perlukan.",
+    "cta_register_title": "Daftar Percuma Sekarang",
+    "cta_register_desc": "Dapatkan akses penuh kepada semua tools PDF asas.",
+    "cta_register_btn": "Daftar — Percuma"
+  },
+  "faq": {
+    "title": "Soalan Lazim (FAQ)",
+    "subtitle": "Jawapan kepada soalan yang sering ditanya.",
+    "q1": "Adakah PDFFix benar-benar percuma?",
+    "a1": "Ya! Tools asas seperti Edit PDF, Gabung PDF, Pisah PDF, Mampat PDF dan PDF ke Imej adalah percuma sepenuhnya. Plan Pro pula memberikan akses kepada tools lanjutan seperti OCR dan PDF ke Word.",
+    "q2": "Adakah fail saya selamat? Adakah ia diupload ke server?",
+    "a2": "Fail anda TIDAK diupload ke mana-mana server. Semua pemprosesan berlaku 100% dalam browser anda. Fail PDF anda tidak pernah meninggalkan peranti anda.",
+    "q3": "Apakah saiz fail maksimum yang disokong?",
+    "a3": "Pengguna percuma boleh memproses fail sehingga 10MB. Pengguna Pro boleh memproses fail sehingga 100MB.",
+    "q4": "Bagaimana cara Edit PDF berfungsi?",
+    "a4": "Buka fail PDF, gunakan toolbar untuk tambah teks, melukis, highlight, tandatangan, stamp dan lain-lain. Klik 'Simpan PDF' untuk muat turun.",
+    "q5": "Bolehkah saya tambah tandatangan pada PDF?",
+    "a5": "Ya! Gunakan tool 'Sign' dalam editor. Lukis tandatangan anda pada pad, kemudian letakkan pada PDF.",
+    "q6": "Apakah perbezaan antara plan Percuma dan Pro?",
+    "a6": "Plan Percuma termasuk semua tools asas dengan had 10MB. Plan Pro (RM19/bulan) menambah OCR dan PDF ke Word, dengan had 100MB.",
+    "q7": "Adakah PDFFix berfungsi di telefon bimbit?",
+    "a7": "Ya, PDFFix berfungsi di semua peranti. Pengalaman terbaik adalah menggunakan komputer untuk editing yang teliti.",
+    "q8": "Format fail apa yang disokong?",
+    "a8": "PDFFix memfokuskan operasi PDF. Kami menyokong PDF ke Imej (JPG/PNG) dan PDF ke Word (plan Pro)."
+  },
+  "pricing": {
+    "title": "Harga Mudah & Telus",
+    "subtitle": "Mulakan percuma. Naik taraf bila anda sedia.",
+    "free": "Percuma",
+    "pro": "Pro",
+    "per_month": "/bulan",
+    "free_desc": "Untuk individu dan kegunaan peribadi",
+    "pro_desc": "Untuk profesional dan perniagaan",
+    "get_started": "Mula Percuma",
+    "upgrade": "Naik Taraf ke Pro",
+    "popular": "Popular"
+  },
+  "tools": {
+    "upload": "Buka fail PDF",
+    "drag_drop": "Klik atau seret fail PDF ke sini",
+    "processing": "Sedang memproses...",
+    "download": "Muat Turun",
+    "save_pdf": "Simpan PDF",
+    "change_file": "Tukar fail",
+    "pages": "halaman",
+    "page": "Halaman"
+  },
+  "footer": {
+    "rights": "Hak cipta terpelihara.",
+    "privacy": "Privasi",
+    "terms": "Terma"
+  }
+}

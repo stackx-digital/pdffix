@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "login": "Log In",
+    "register": "Sign Up",
+    "logout": "Log Out",
+    "pricing": "Pricing"
+  },
+  "home": {
+    "hero_title": "Free PDF Editor",
+    "hero_title2": "For Everyone",
+    "hero_desc": "Merge, split, compress and convert PDFs directly in your browser. Your files are never uploaded to any server.",
+    "cta_start": "Get Started",
+    "cta_pricing": "View Pricing",
+    "badge_server": "No server uploads",
+    "badge_browser": "Runs in browser",
+    "badge_free": "Free for basic use",
+    "badge_local": "Built for Malaysia",
+    "tools_title": "All Tools",
+    "tools_desc": "Choose the tool you need.",
+    "cta_register_title": "Sign Up for Free",
+    "cta_register_desc": "Get full access to all basic PDF tools.",
+    "cta_register_btn": "Sign Up — Free"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Answers to commonly asked questions.",
+    "q1": "Is PDFFix really free?",
+    "a1": "Yes! Basic tools like Edit PDF, Merge PDF, Split PDF, Compress PDF and PDF to Image are completely free. The Pro plan gives access to advanced tools like OCR and PDF to Word.",
+    "q2": "Is my file safe? Is it uploaded to a server?",
+    "a2": "Your files are NOT uploaded to any server. All processing happens 100% in your browser. Your PDF files never leave your device.",
+    "q3": "What is the maximum file size supported?",
+    "a3": "Free users can process files up to 10MB. Pro users can process files up to 100MB.",
+    "q4": "How does PDF editing work?",
+    "a4": "Open a PDF file, use the toolbar to add text, draw, highlight, sign, stamp and more. Click 'Save PDF' to download.",
+    "q5": "Can I add a signature to a PDF?",
+    "a5": "Yes! Use the 'Sign' tool in the editor. Draw your signature on the pad, then place it on the PDF.",
+    "q6": "What is the difference between Free and Pro plans?",
+    "a6": "The Free plan includes all basic tools with a 10MB limit. The Pro plan (RM19/month) adds OCR and PDF to Word, with a 100MB limit.",
+    "q7": "Does PDFFix work on mobile?",
+    "a7": "Yes, PDFFix works on all devices. The best experience is on a desktop computer for detailed editing.",
+    "q8": "What file formats are supported?",
+    "a8": "PDFFix focuses on PDF operations. We support PDF to Image (JPG/PNG) and PDF to Word (Pro plan)."
+  },
+  "pricing": {
+    "title": "Simple & Transparent Pricing",
+    "subtitle": "Start free. Upgrade when you're ready.",
+    "free": "Free",
+    "pro": "Pro",
+    "per_month": "/month",
+    "free_desc": "For individuals and personal use",
+    "pro_desc": "For professionals and businesses",
+    "get_started": "Get Started Free",
+    "upgrade": "Upgrade to Pro",
+    "popular": "Popular"
+  },
+  "tools": {
+    "upload": "Open PDF file",
+    "drag_drop": "Click or drag a PDF file here",
+    "processing": "Processing...",
+    "download": "Download",
+    "save_pdf": "Save PDF",
+    "change_file": "Change file",
+    "pages": "pages",
+    "page": "Page"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  }
+}

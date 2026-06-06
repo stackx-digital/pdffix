@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "dashboard": "仪表板",
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出",
+    "pricing": "价格"
+  },
+  "home": {
+    "hero_title": "免费PDF编辑器",
+    "hero_title2": "人人可用",
+    "hero_desc": "直接在浏览器中合并、拆分、压缩和转换PDF。您的文件不会上传到任何服务器。",
+    "cta_start": "立即开始",
+    "cta_pricing": "查看价格",
+    "badge_server": "无需上传服务器",
+    "badge_browser": "浏览器内处理",
+    "badge_free": "基础功能免费",
+    "badge_local": "为马来西亚打造",
+    "tools_title": "所有工具",
+    "tools_desc": "选择您需要的工具。",
+    "cta_register_title": "免费注册",
+    "cta_register_desc": "获取所有基础PDF工具的完整访问权限。",
+    "cta_register_btn": "注册 — 免费"
+  },
+  "faq": {
+    "title": "常见问题",
+    "subtitle": "常见问题的解答。",
+    "q1": "PDFFix真的免费吗？",
+    "a1": "是的！编辑PDF、合并PDF、拆分PDF、压缩PDF和PDF转图片等基础工具完全免费。Pro计划提供OCR和PDF转Word等高级工具。",
+    "q2": "我的文件安全吗？会上传到服务器吗？",
+    "a2": "您的文件不会上传到任何服务器。所有处理100%在您的浏览器中进行。您的PDF文件永远不会离开您的设备。",
+    "q3": "支持的最大文件大小是多少？",
+    "a3": "免费用户可处理最大10MB的文件。Pro用户可处理最大100MB的文件。",
+    "q4": "PDF编辑如何工作？",
+    "a4": "打开PDF文件，使用工具栏添加文本、绘图、高亮、签名、盖章等。点击'保存PDF'下载。",
+    "q5": "我可以在PDF上添加签名吗？",
+    "a5": "可以！在编辑器中使用'签名'工具。在签名板上绘制签名，然后放置到PDF上。",
+    "q6": "免费版和Pro版有什么区别？",
+    "a6": "免费版包含所有基础工具，文件限制10MB。Pro版（RM19/月）增加OCR和PDF转Word，文件限制100MB。",
+    "q7": "PDFFix在手机上可以使用吗？",
+    "a7": "是的，PDFFix在所有设备上都可以使用。建议在桌面电脑上使用以获得最佳编辑体验。",
+    "q8": "支持哪些文件格式？",
+    "a8": "PDFFix专注于PDF操作。我们支持PDF转图片（JPG/PNG）和PDF转Word（Pro版）。"
+  },
+  "pricing": {
+    "title": "简单透明的价格",
+    "subtitle": "免费开始，准备好了再升级。",
+    "free": "免费版",
+    "pro": "专业版",
+    "per_month": "/月",
+    "free_desc": "适合个人和个人使用",
+    "pro_desc": "适合专业人士和企业",
+    "get_started": "免费开始",
+    "upgrade": "升级到专业版",
+    "popular": "热门"
+  },
+  "tools": {
+    "upload": "打开PDF文件",
+    "drag_drop": "点击或拖拽PDF文件到此处",
+    "processing": "处理中...",
+    "download": "下载",
+    "save_pdf": "保存PDF",
+    "change_file": "更换文件",
+    "pages": "页",
+    "page": "第"
+  },
+  "footer": {
+    "rights": "保留所有权利。",
+    "privacy": "隐私政策",
+    "terms": "服务条款"
+  }
+}
