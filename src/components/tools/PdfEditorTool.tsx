@@ -7,14 +7,14 @@ import {
   Pen, Highlighter, ImageIcon, Eraser, Download,
   ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Undo, Redo,
   MousePointer, Minus, Upload, PanelLeft, Type, PenLine,
-  Stamp, Link, StickyNote, X, Check,
+  Stamp, Link, StickyNote, X, Check, Hand,
 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 type ToolType =
-  | "select" | "addtext" | "edittext" | "sign"
+  | "select" | "move" | "addtext" | "edittext" | "sign"
   | "line" | "draw" | "eraser" | "highlight" | "texthighlight"
   | "image" | "stamp" | "link" | "note";
 
@@ -271,6 +271,12 @@ export default function PdfEditorTool() {
         });
 
         fc.on("object:modified", () => pushUndo());
+        fc.on("object:moving", (opt: any) => {
+          // Show grabbing cursor while dragging
+          if (activeToolRef.current === "move") {
+            opt.target.canvas.setCursor("grabbing");
+          }
+        });
       } catch (e) {
         console.error("Canvas init error:", e);
       }
@@ -287,7 +293,32 @@ export default function PdfEditorTool() {
 
   function applyTool(fc: any, tool: ToolType, col: string, _fsize: number) {
     fc.isDrawingMode = false;
-    fc.selection = tool === "select" || tool === "edittext";
+    fc.selection = tool === "select" || tool === "edittext" || tool === "move";
+
+    // Move tool: make every object draggable, lock rotation/scaling controls
+    const objs = fc.getObjects();
+    if (tool === "move") {
+      objs.forEach((obj: any) => {
+        obj.set({
+          selectable: true,
+          evented: true,
+          lockRotation: false,
+          lockScalingX: false,
+          lockScalingY: false,
+          hasControls: true,
+          hasBorders: true,
+        });
+      });
+      fc.defaultCursor = "grab";
+      fc.hoverCursor = "grab";
+      fc.moveCursor = "grabbing";
+    } else {
+      // Reset cursors for other tools
+      fc.defaultCursor = "default";
+      fc.hoverCursor = "move";
+      fc.moveCursor = "move";
+    }
+
     if (tool === "draw") {
       fc.isDrawingMode = true;
       fc.freeDrawingBrush.color = col;
@@ -506,6 +537,7 @@ export default function PdfEditorTool() {
   const FONTS = ["Arial", "Times New Roman", "Courier New", "Georgia", "Verdana"];
 
   const toolCursor = (tool: ToolType) => {
+    if (tool === "move") return "grab";
     if (tool === "addtext" || tool === "edittext") return "text";
     if (tool === "draw" || tool === "highlight" || tool === "texthighlight" || tool === "eraser") return "crosshair";
     if (tool === "stamp" || tool === "note" || tool === "link") return "cell";
@@ -576,6 +608,10 @@ export default function PdfEditorTool() {
           className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-red-500 hover:bg-red-50 min-w-[48px]">
           <X className="w-5 h-5" /><span className="text-[10px] font-medium">Delete</span>
         </button>
+
+        <div className="w-px h-8 bg-gray-200 mx-1" />
+
+        <TB id="move" icon={<Hand className="w-5 h-5" />} label="Susun" />
 
         <div className="w-px h-8 bg-gray-200 mx-1" />
 
@@ -696,6 +732,7 @@ export default function PdfEditorTool() {
           {activeTool === "texthighlight" && "Seret untuk highlight teks"}
           {activeTool === "eraser" && "Seret untuk padam annotation"}
           {activeTool === "select" && "Klik objek untuk pilih & alih"}
+          {activeTool === "move" && "Klik & seret objek untuk susun semula kedudukannya"}
           {activeTool === "stamp" && `Klik untuk letak stamp: ${pendingStamp}`}
           {activeTool === "note" && "Klik untuk letak nota"}
           {activeTool === "link" && "Klik untuk letak pautan"}
