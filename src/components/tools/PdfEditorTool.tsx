@@ -2,137 +2,170 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import {
   Type, Pen, Highlighter, ImageIcon, Eraser, Download,
-  ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Undo, Redo,
-  MousePointer, Minus, Square,
+  ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Undo,
+  MousePointer, Minus, Square, Upload,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-type Tool = "select" | "text" | "draw" | "highlight" | "line" | "rect" | "eraser" | "image";
-
-interface PageAnnotation {
-  type: "text" | "draw" | "highlight" | "line" | "rect" | "image";
-  data: any;
-}
-
-interface EditorPage {
-  pageNum: number;
-  annotations: PageAnnotation[];
-  fabricJson?: string;
-}
+type ToolType = "select" | "text" | "draw" | "highlight" | "line" | "rect" | "eraser";
 
 export default function PdfEditorTool() {
   const [file, setFile] = useState<File | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.5);
-  const [activeTool, setActiveTool] = useState<Tool>("select");
+  const [scale, setScale] = useState(1.4);
+  const [activeTool, setActiveTool] = useState<ToolType>("select");
   const [color, setColor] = useState("#000000");
   const [fontSize, setFontSize] = useState(16);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [pages, setPages] = useState<EditorPage[]>([]);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [error, setError] = useState("");
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<any>(null);
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricRef = useRef<any>(null);
   const fileBytes = useRef<ArrayBuffer | null>(null);
+  // Save fabric JSON per page
+  const pageStates = useRef<Record<number, string>>({});
 
-  // Load PDF
+  // Load PDF file
   const loadFile = useCallback(async (f: File | null) => {
     if (!f || f.type !== "application/pdf") return;
-    setFile(f);
+    setError("");
     setLoading(true);
+    setFile(f);
+    setPdfDoc(null);
+    setThumbnails([]);
+    setCurrentPage(1);
+    setTotalPages(0);
+    pageStates.current = {};
+
     try {
       const bytes = await f.arrayBuffer();
-      fileBytes.current = bytes;
-      const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
-      setPdfDoc(pdf);
+      fileBytes.current = bytes.slice(0);
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
       setTotalPages(pdf.numPages);
-      setCurrentPage(1);
-      setPages(Array.from({ length: pdf.numPages }, (_, i) => ({ pageNum: i + 1, annotations: [] })));
+      setPdfDoc(pdf);
 
       // Generate thumbnails
       const thumbs: string[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const vp = page.getViewport({ scale: 0.2 });
+        const vp = page.getViewport({ scale: 0.15 });
         const c = document.createElement("canvas");
-        c.width = vp.width; c.height = vp.height;
-        await page.render({ canvasContext: c.getContext("2d")! as any, viewport: vp, canvas: c }).promise;
+        c.width = vp.width;
+        c.height = vp.height;
+        const ctx = c.getContext("2d")!;
+        await page.render({ canvasContext: ctx as any, viewport: vp, canvas: c }).promise;
         thumbs.push(c.toDataURL());
       }
       setThumbnails(thumbs);
+    } catch (e) {
+      setError("Gagal memuatkan PDF. Sila cuba fail lain.");
+      setFile(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Render PDF page to background canvas
-  const renderPage = useCallback(async (pageNum: number) => {
-    if (!pdfDoc || !pdfCanvasRef.current) return;
-    const page = await pdfDoc.getPage(pageNum);
-    const viewport = page.getViewport({ scale });
-    const canvas = pdfCanvasRef.current;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({
-      canvasContext: canvas.getContext("2d")! as any,
-      viewport,
-      canvas,
-    }).promise;
-  }, [pdfDoc, scale]);
-
-  // Init/update Fabric canvas
+  // Render PDF page + init Fabric
   useEffect(() => {
-    if (!pdfDoc) return;
+    if (!pdfDoc || !pdfCanvasRef.current || !fabricCanvasRef.current) return;
 
-    const initFabric = async () => {
-      await renderPage(currentPage);
+    let cancelled = false;
 
-      if (!pdfCanvasRef.current) return;
-      const w = pdfCanvasRef.current.width;
-      const h = pdfCanvasRef.current.height;
+    async function init() {
+      const page = await pdfDoc!.getPage(currentPage);
+      const viewport = page.getViewport({ scale });
 
-      // Destroy old fabric canvas
-      if (fabricCanvasRef.current) {
-        const json = fabricCanvasRef.current.toJSON();
-        setPages(prev => prev.map(p =>
-          p.pageNum === currentPage ? { ...p, fabricJson: JSON.stringify(json) } : p
-        ));
-        fabricCanvasRef.current.dispose();
-        fabricCanvasRef.current = null;
+      if (cancelled) return;
+
+      // Render PDF to background canvas
+      const pdfCanvas = pdfCanvasRef.current!;
+      pdfCanvas.width = viewport.width;
+      pdfCanvas.height = viewport.height;
+      await page.render({
+        canvasContext: pdfCanvas.getContext("2d")! as any,
+        viewport,
+        canvas: pdfCanvas,
+      }).promise;
+
+      if (cancelled) return;
+
+      // Save current page fabric state before switching
+      if (fabricRef.current) {
+        pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+        fabricRef.current.dispose();
+        fabricRef.current = null;
       }
 
-      // Create new fabric canvas
+      // Init new Fabric canvas
+      const fc = fabricCanvasRef.current!;
+      fc.width = viewport.width;
+      fc.height = viewport.height;
+
       const { fabric } = await import("fabric");
-      const fc = new fabric.Canvas("fabric-canvas", { width: w, height: h, isDrawingMode: false });
-      fabricCanvasRef.current = fc;
+      if (cancelled) return;
 
-      // Restore saved annotations for this page
-      const savedPage = pages.find(p => p.pageNum === currentPage);
-      if (savedPage?.fabricJson) {
-        fc.loadFromJSON(JSON.parse(savedPage.fabricJson), () => fc.renderAll());
+      const fabricCanvas = new fabric.Canvas(fc, {
+        width: viewport.width,
+        height: viewport.height,
+        isDrawingMode: false,
+      });
+      fabricRef.current = fabricCanvas;
+
+      // Restore saved state for this page
+      if (pageStates.current[currentPage]) {
+        fabricCanvas.loadFromJSON(
+          JSON.parse(pageStates.current[currentPage]),
+          () => fabricCanvas.renderAll()
+        );
       }
 
-      updateToolMode(fc, activeTool, color, fontSize);
-    };
+      applyTool(fabricCanvas, activeTool, color, fontSize);
 
-    initFabric();
+      // Handle text tool: add text on click
+      fabricCanvas.on("mouse:down", async (opt: any) => {
+        if (activeTool !== "text") return;
+        const pointer = fabricCanvas.getPointer(opt.e);
+        const { fabric: f2 } = await import("fabric");
+        const t = new f2.IText("Teks", {
+          left: pointer.x,
+          top: pointer.y,
+          fontSize,
+          fill: color,
+          fontFamily: "Arial",
+        });
+        fabricCanvas.add(t);
+        fabricCanvas.setActiveObject(t);
+        t.enterEditing();
+        t.selectAll();
+      });
+    }
+
+    init();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, currentPage, scale]);
 
-  function updateToolMode(fc: any, tool: Tool, col: string, fsize: number) {
-    if (!fc) return;
+  // Update tool when it changes
+  useEffect(() => {
+    if (fabricRef.current) {
+      applyTool(fabricRef.current, activeTool, color, fontSize);
+    }
+  }, [activeTool, color, fontSize]);
+
+  function applyTool(fc: any, tool: ToolType, col: string, fsize: number) {
     fc.isDrawingMode = false;
     fc.selection = true;
+    fc.defaultCursor = "default";
 
     if (tool === "draw") {
       fc.isDrawingMode = true;
@@ -140,203 +173,152 @@ export default function PdfEditorTool() {
       fc.freeDrawingBrush.width = 3;
     } else if (tool === "highlight") {
       fc.isDrawingMode = true;
-      const hex = col === "#000000" ? "#FFFF00" : col;
-      fc.freeDrawingBrush.color = hex + "80";
-      fc.freeDrawingBrush.width = 20;
+      fc.freeDrawingBrush.color = "#FFFF0066";
+      fc.freeDrawingBrush.width = 18;
     } else if (tool === "eraser") {
       fc.isDrawingMode = true;
-      fc.freeDrawingBrush.color = "white";
-      fc.freeDrawingBrush.width = 20;
-    } else if (tool === "select") {
-      fc.selection = true;
+      fc.freeDrawingBrush.color = "#ffffff";
+      fc.freeDrawingBrush.width = 24;
     }
   }
 
-  // Update tool mode when tool changes
-  useEffect(() => {
-    if (fabricCanvasRef.current) {
-      updateToolMode(fabricCanvasRef.current, activeTool, color, fontSize);
-    }
-  }, [activeTool, color, fontSize]);
-
-  // Add text on click
-  useEffect(() => {
-    const fc = fabricCanvasRef.current;
-    if (!fc || activeTool !== "text") return;
-
-    const handler = async (opt: any) => {
-      const { fabric } = await import("fabric");
-      const pointer = fc.getPointer(opt.e);
-      const text = new fabric.IText("Taip teks di sini", {
-        left: pointer.x,
-        top: pointer.y,
-        fontSize,
-        fill: color,
-        fontFamily: "Arial",
-        editable: true,
-      });
-      fc.add(text);
-      fc.setActiveObject(text);
-      text.enterEditing();
-      text.selectAll();
-    };
-
-    fc.on("mouse:down", handler);
-    return () => fc.off("mouse:down", handler);
-  }, [activeTool, color, fontSize]);
-
-  // Add image
-  async function addImage(file: File) {
-    if (!fabricCanvasRef.current) return;
+  async function addShape(type: "line" | "rect") {
+    if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
-    const url = URL.createObjectURL(file);
+    const fc = fabricRef.current;
+    if (type === "rect") {
+      fc.add(new fabric.Rect({ left: 80, top: 80, width: 140, height: 80, fill: "transparent", stroke: color, strokeWidth: 2 }));
+    } else {
+      fc.add(new fabric.Line([80, 120, 280, 120], { stroke: color, strokeWidth: 2 }));
+    }
+    setActiveTool("select");
+  }
+
+  async function addImage(f: File) {
+    if (!fabricRef.current) return;
+    const { fabric } = await import("fabric");
+    const url = URL.createObjectURL(f);
     fabric.Image.fromURL(url, (img: any) => {
-      img.scaleToWidth(200);
-      fabricCanvasRef.current.add(img);
-      fabricCanvasRef.current.setActiveObject(img);
+      img.scaleToWidth(180);
+      fabricRef.current.add(img);
+      fabricRef.current.setActiveObject(img);
     });
   }
 
-  // Add shape
-  async function addShape(type: "line" | "rect") {
-    if (!fabricCanvasRef.current) return;
-    const { fabric } = await import("fabric");
-    const fc = fabricCanvasRef.current;
-    if (type === "rect") {
-      const rect = new fabric.Rect({ left: 100, top: 100, width: 150, height: 80, fill: "transparent", stroke: color, strokeWidth: 2 });
-      fc.add(rect); fc.setActiveObject(rect);
-    } else {
-      const line = new fabric.Line([100, 100, 300, 100], { stroke: color, strokeWidth: 2 });
-      fc.add(line); fc.setActiveObject(line);
-    }
-  }
-
-  function changePage(dir: number) {
-    const fc = fabricCanvasRef.current;
-    if (fc) {
-      const json = fc.toJSON();
-      setPages(prev => prev.map(p =>
-        p.pageNum === currentPage ? { ...p, fabricJson: JSON.stringify(json) } : p
-      ));
-    }
-    setCurrentPage(prev => Math.max(1, Math.min(totalPages, prev + dir)));
-  }
-
   function undo() {
-    const fc = fabricCanvasRef.current;
+    const fc = fabricRef.current;
     if (!fc) return;
     const objs = fc.getObjects();
     if (objs.length > 0) { fc.remove(objs[objs.length - 1]); fc.renderAll(); }
   }
 
-  // Save PDF with annotations
+  function changePage(delta: number) {
+    // Save current page state
+    if (fabricRef.current) {
+      pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+    }
+    setCurrentPage(p => Math.max(1, Math.min(totalPages, p + delta)));
+  }
+
   async function savePdf() {
-    if (!fileBytes.current) return;
+    if (!fileBytes.current || !pdfDoc) return;
+    // Save current page
+    if (fabricRef.current) {
+      pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+    }
+
     setSaving(true);
     try {
-      // Save current page canvas state
-      const fc = fabricCanvasRef.current;
-      const updatedPages = [...pages];
-      if (fc) {
-        const json = fc.toJSON();
-        const idx = updatedPages.findIndex(p => p.pageNum === currentPage);
-        if (idx >= 0) updatedPages[idx] = { ...updatedPages[idx], fabricJson: JSON.stringify(json) };
-      }
-
       const pdfLibDoc = await PDFDocument.load(fileBytes.current);
+      const { fabric } = await import("fabric");
 
-      // For each page with annotations, flatten canvas onto PDF
-      for (const pg of updatedPages) {
-        if (!pg.fabricJson) continue;
+      for (const [pageNumStr, stateJson] of Object.entries(pageStates.current)) {
+        const pageNum = Number(pageNumStr);
+        const state = JSON.parse(stateJson);
+        if (!state.objects || state.objects.length === 0) continue;
 
-        // Render the fabric canvas to image
-        const page = await pdfDoc!.getPage(pg.pageNum);
+        const page = await pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale });
 
-        // Create temp canvas and load fabric json
-        const { fabric } = await import("fabric");
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = viewport.width;
-        tempCanvas.height = viewport.height;
-        const tempFc = new fabric.StaticCanvas(tempCanvas);
-        await new Promise<void>((resolve) => {
-          tempFc.loadFromJSON(JSON.parse(pg.fabricJson!), () => {
-            tempFc.renderAll();
-            resolve();
-          });
+        // Render annotations to temp canvas
+        const tempEl = document.createElement("canvas");
+        tempEl.width = viewport.width;
+        tempEl.height = viewport.height;
+        const tempFc = new fabric.StaticCanvas(tempEl, { width: viewport.width, height: viewport.height });
+
+        await new Promise<void>((res) => {
+          tempFc.loadFromJSON(state, () => { tempFc.renderAll(); res(); });
         });
 
-        const imgData = tempCanvas.toDataURL("image/png");
+        const imgData = tempEl.toDataURL("image/png");
         const imgBytes = await fetch(imgData).then(r => r.arrayBuffer());
-        const embeddedImg = await pdfLibDoc.embedPng(imgBytes);
+        const embImg = await pdfLibDoc.embedPng(imgBytes);
 
-        const pdfPage = pdfLibDoc.getPage(pg.pageNum - 1);
+        const pdfPage = pdfLibDoc.getPage(pageNum - 1);
         const { width, height } = pdfPage.getSize();
-        pdfPage.drawImage(embeddedImg, { x: 0, y: 0, width, height, opacity: 1 });
-
+        pdfPage.drawImage(embImg, { x: 0, y: 0, width, height });
         tempFc.dispose();
       }
 
-      const bytes = await pdfLibDoc.save();
-      const blob = new Blob([bytes], { type: "application/pdf" });
+      const saved = await pdfLibDoc.save();
+      const blob = new Blob([saved], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = `edited-${file!.name}`; a.click();
+      a.href = url;
+      a.download = `edited-${file!.name}`;
+      a.click();
     } finally {
       setSaving(false);
     }
   }
 
-  const TOOLS: { id: Tool; icon: React.ReactNode; label: string }[] = [
+  const TOOLS: { id: ToolType; icon: React.ReactNode; label: string }[] = [
     { id: "select", icon: <MousePointer className="w-4 h-4" />, label: "Pilih" },
     { id: "text", icon: <Type className="w-4 h-4" />, label: "Teks" },
     { id: "draw", icon: <Pen className="w-4 h-4" />, label: "Lukis" },
     { id: "highlight", icon: <Highlighter className="w-4 h-4" />, label: "Highlight" },
-    { id: "line", icon: <Minus className="w-4 h-4" />, label: "Garisan" },
-    { id: "rect", icon: <Square className="w-4 h-4" />, label: "Kotak" },
     { id: "eraser", icon: <Eraser className="w-4 h-4" />, label: "Pemadam" },
   ];
 
+  // ── DROPZONE ──
   if (!file) {
     return (
-      <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-12 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
-        <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center mb-4">
-          <Type className="w-7 h-7 text-red-600" />
+      <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-16 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+          <Upload className="w-8 h-8 text-red-500" />
         </div>
-        <span className="font-semibold text-gray-800 text-lg">Buka fail PDF</span>
-        <span className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</span>
+        <p className="font-semibold text-gray-800 text-lg">Buka fail PDF untuk diedit</p>
+        <p className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</p>
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         <input type="file" accept="application/pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
       </label>
     );
   }
 
+  // ── LOADING ──
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm">Memuatkan PDF...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-gray-500">Memuatkan PDF...</p>
       </div>
     );
   }
 
+  // ── EDITOR ──
   return (
-    <div className="flex flex-col h-full">
-      {/* Top toolbar */}
-      <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-xl mb-3 flex-wrap">
-        {/* Tools */}
+    <div className="flex flex-col gap-3">
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-xl flex-wrap">
+        {/* PDF tools */}
         <div className="flex items-center gap-1 border-r border-gray-200 pr-2">
           {TOOLS.map((t) => (
             <button
               key={t.id}
-              onClick={() => {
-                setActiveTool(t.id);
-                if (t.id === "line" || t.id === "rect") addShape(t.id);
-              }}
+              onClick={() => setActiveTool(t.id)}
               title={t.label}
               className={cn(
-                "p-2 rounded-lg text-sm flex flex-col items-center gap-0.5 transition-colors",
+                "flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors text-xs",
                 activeTool === t.id ? "bg-red-600 text-white" : "text-gray-600 hover:bg-gray-100"
               )}
             >
@@ -344,23 +326,27 @@ export default function PdfEditorTool() {
               <span className="text-[10px] leading-none">{t.label}</span>
             </button>
           ))}
-          {/* Image upload */}
-          <label title="Imej" className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer flex flex-col items-center gap-0.5">
-            <ImageIcon className="w-4 h-4" />
-            <span className="text-[10px] leading-none">Imej</span>
+          <button onClick={() => addShape("line")} title="Garisan" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+            <Minus className="w-4 h-4" /><span className="text-[10px]">Garisan</span>
+          </button>
+          <button onClick={() => addShape("rect")} title="Kotak" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+            <Square className="w-4 h-4" /><span className="text-[10px]">Kotak</span>
+          </button>
+          <label title="Imej" className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer">
+            <ImageIcon className="w-4 h-4" /><span className="text-[10px]">Imej</span>
             <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addImage(e.target.files[0])} />
           </label>
         </div>
 
         {/* Color + font size */}
-        <div className="flex items-center gap-2 border-r border-gray-200 pr-2">
-          <div className="flex items-center gap-1">
-            <label className="text-xs text-gray-500">Warna</label>
+        <div className="flex items-center gap-3 border-r border-gray-200 pr-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Warna</span>
             <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border border-gray-200" />
           </div>
-          <div className="flex items-center gap-1">
-            <label className="text-xs text-gray-500">Saiz</label>
-            <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="text-xs border border-gray-200 rounded px-1 py-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Saiz</span>
+            <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="text-xs border border-gray-200 rounded px-1.5 py-1">
               {[10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48].map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
@@ -368,13 +354,15 @@ export default function PdfEditorTool() {
 
         {/* Undo + Zoom */}
         <div className="flex items-center gap-1 border-r border-gray-200 pr-2">
-          <button onClick={undo} title="Undo" className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><Undo className="w-4 h-4" /></button>
-          <button onClick={() => setScale(s => Math.max(0.5, s - 0.25))} title="Zoom Out" className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><ZoomOut className="w-4 h-4" /></button>
+          <button onClick={undo} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100" title="Undo"><Undo className="w-4 h-4" /></button>
+          <button onClick={() => setScale(s => Math.max(0.5, +(s - 0.25).toFixed(2)))} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><ZoomOut className="w-4 h-4" /></button>
           <span className="text-xs text-gray-500 w-10 text-center">{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(3, s + 0.25))} title="Zoom In" className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><ZoomIn className="w-4 h-4" /></button>
+          <button onClick={() => setScale(s => Math.min(3, +(s + 0.25).toFixed(2)))} className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"><ZoomIn className="w-4 h-4" /></button>
         </div>
 
-        {/* Save */}
+        {/* File info + save */}
+        <span className="text-xs text-gray-400 hidden md:block">{file.name} · {formatBytes(file.size)}</span>
+        <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500 ml-1">Tukar fail</button>
         <button
           onClick={savePdf}
           disabled={saving}
@@ -385,43 +373,61 @@ export default function PdfEditorTool() {
         </button>
       </div>
 
-      <div className="flex gap-3 flex-1 min-h-0">
+      <div className="flex gap-3">
         {/* Thumbnail sidebar */}
-        <div className="w-28 flex-shrink-0 overflow-y-auto space-y-2 bg-gray-50 rounded-xl p-2 border border-gray-200">
-          {thumbnails.map((thumb, i) => (
-            <button
-              key={i}
-              onClick={() => changePage(i + 1 - currentPage)}
-              className={cn("w-full rounded-lg overflow-hidden border-2 transition-all", currentPage === i + 1 ? "border-red-500" : "border-transparent hover:border-gray-300")}
-            >
-              <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full" />
-              <p className="text-center text-xs py-1 text-gray-500">{i + 1}</p>
-            </button>
-          ))}
-        </div>
+        {thumbnails.length > 0 && (
+          <div className="w-24 flex-shrink-0 overflow-y-auto max-h-[75vh] space-y-2 bg-gray-50 rounded-xl p-2 border border-gray-200">
+            {thumbnails.map((thumb, i) => (
+              <button
+                key={i}
+                onClick={() => changePage(i + 1 - currentPage)}
+                className={cn("w-full rounded-lg overflow-hidden border-2 transition-all", currentPage === i + 1 ? "border-red-500" : "border-transparent hover:border-gray-300")}
+              >
+                <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full" />
+                <p className="text-center text-[10px] py-0.5 text-gray-500">{i + 1}</p>
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Editor canvas area */}
+        {/* Canvas area */}
         <div className="flex-1 flex flex-col gap-2">
           {/* Page nav */}
           <div className="flex items-center justify-center gap-3">
-            <button onClick={() => changePage(-1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
-            <span className="text-sm text-gray-600">Halaman {currentPage} / {totalPages}</span>
-            <button onClick={() => changePage(1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => changePage(-1)} disabled={currentPage <= 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm text-gray-600 font-medium">Halaman {currentPage} / {totalPages}</span>
+            <button onClick={() => changePage(1)} disabled={currentPage >= totalPages} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Canvas stack */}
-          <div className="flex-1 overflow-auto bg-gray-200 rounded-xl p-4">
-            <div className="relative inline-block shadow-lg mx-auto">
+          <div className="overflow-auto bg-gray-300 rounded-xl p-4 flex justify-center min-h-[60vh]">
+            <div className="relative shadow-xl inline-block">
               {/* PDF background */}
               <canvas ref={pdfCanvasRef} className="block" />
-              {/* Fabric overlay */}
+              {/* Fabric overlay — positioned exactly on top */}
               <canvas
-                id="fabric-canvas"
-                className="absolute inset-0"
-                style={{ cursor: activeTool === "text" ? "text" : activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser" ? "crosshair" : "default" }}
+                ref={fabricCanvasRef}
+                className="absolute top-0 left-0"
+                style={{
+                  cursor: activeTool === "text" ? "text"
+                    : (activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser") ? "crosshair"
+                    : "default",
+                }}
               />
             </div>
           </div>
+
+          <p className="text-xs text-center text-gray-400">
+            {activeTool === "text" && "Klik pada PDF untuk tambah teks"}
+            {activeTool === "draw" && "Tahan dan lukis pada PDF"}
+            {activeTool === "highlight" && "Tahan dan seret untuk highlight"}
+            {activeTool === "eraser" && "Tahan dan seret untuk padam annotation"}
+            {activeTool === "select" && "Klik objek untuk pilih, drag untuk alih"}
+          </p>
         </div>
       </div>
     </div>

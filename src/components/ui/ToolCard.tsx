@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine } from "lucide-react";
+import { FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature, Droplets } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Tool } from "@/types";
 
@@ -11,6 +11,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Image,
   ScanText,
   PenLine,
+  Signature,
+  Droplets,
 };
 
 interface ToolCardProps {

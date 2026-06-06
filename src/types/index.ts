@@ -85,6 +85,24 @@ export const TOOLS: Tool[] = [
     proOnly: true,
     category: "edit",
   },
+  {
+    id: "e-sign",
+    name: "E-Sign PDF",
+    description: "Tambah tandatangan digital pada PDF anda.",
+    icon: "Signature",
+    href: "/tools/e-sign",
+    proOnly: false,
+    category: "edit",
+  },
+  {
+    id: "watermark",
+    name: "Watermark PDF",
+    description: "Tambah watermark teks atau logo pada PDF.",
+    icon: "Droplets",
+    href: "/tools/watermark",
+    proOnly: false,
+    category: "security",
+  },
 ];
 
 export const FREE_LIMITS = {
