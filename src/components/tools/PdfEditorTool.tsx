@@ -27,19 +27,17 @@ export default function PdfEditorTool() {
   const [saving, setSaving] = useState(false);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [error, setError] = useState("");
-  // Separate ready flag so useEffect triggers after canvases are mounted
-  const [canvasReady, setCanvasReady] = useState(false);
 
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricContainerRef = useRef<HTMLDivElement>(null);
   const fabricRef = useRef<any>(null);
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const pageStates = useRef<Record<number, string>>({});
+
+  // Refs for use inside fabric event handlers (avoid stale closures)
   const activeToolRef = useRef<ToolType>("select");
   const colorRef = useRef("#000000");
   const fontSizeRef = useRef(16);
-
-  // Keep refs in sync with state (for use inside fabric event handlers)
   activeToolRef.current = activeTool;
   colorRef.current = color;
   fontSizeRef.current = fontSize;
@@ -48,7 +46,6 @@ export default function PdfEditorTool() {
     if (!f || f.type !== "application/pdf") return;
     setError("");
     setLoading(true);
-    setCanvasReady(false);
     setFile(f);
     setPdfDoc(null);
     setThumbnails([]);
@@ -59,7 +56,7 @@ export default function PdfEditorTool() {
     try {
       const bytes = await f.arrayBuffer();
       fileBytes.current = bytes.slice(0);
-      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
 
       // Generate thumbnails
       const thumbs: string[] = [];
@@ -72,9 +69,11 @@ export default function PdfEditorTool() {
         await page.render({ canvasContext: c.getContext("2d")! as any, viewport: vp, canvas: c }).promise;
         thumbs.push(c.toDataURL());
       }
+
       setThumbnails(thumbs);
       setTotalPages(pdf.numPages);
-      // Set loading false FIRST so canvases render, THEN set pdfDoc to trigger the useEffect
+      // IMPORTANT: set loading=false first so canvases are mounted,
+      // then set pdfDoc to trigger the render useEffect
       setLoading(false);
       setPdfDoc(pdf);
     } catch (e) {
@@ -85,35 +84,37 @@ export default function PdfEditorTool() {
     }
   }, []);
 
-  // Signal that canvases are mounted (runs after editor renders)
+  // Render PDF page onto canvas + re-init Fabric overlay
   useEffect(() => {
-    if (file && !loading && pdfCanvasRef.current && fabricCanvasRef.current) {
-      setCanvasReady(true);
-    }
-  });
-
-  // Render PDF page + init Fabric — only after canvases are mounted
-  useEffect(() => {
-    if (!pdfDoc || !canvasReady || !pdfCanvasRef.current || !fabricCanvasRef.current) return;
+    if (!pdfDoc) return;
 
     let cancelled = false;
 
     async function init() {
+      // Wait one tick so React has painted the canvases into the DOM
+      await new Promise(r => setTimeout(r, 0));
+      if (cancelled) return;
+
+      const pdfCanvas = pdfCanvasRef.current;
+      const fabricContainer = fabricContainerRef.current;
+      if (!pdfCanvas || !fabricContainer) return;
+
       try {
         const page = await pdfDoc!.getPage(currentPage);
         const viewport = page.getViewport({ scale });
         if (cancelled) return;
 
         // Render PDF to background canvas
-        const pdfCanvas = pdfCanvasRef.current!;
         pdfCanvas.width = viewport.width;
         pdfCanvas.height = viewport.height;
-        const ctx = pdfCanvas.getContext("2d")!;
-        ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
-        await page.render({ canvasContext: ctx as any, viewport, canvas: pdfCanvas }).promise;
+        await page.render({
+          canvasContext: pdfCanvas.getContext("2d")! as any,
+          viewport,
+          canvas: pdfCanvas,
+        }).promise;
         if (cancelled) return;
 
-        // Dispose previous fabric canvas
+        // Save old fabric state, then dispose
         if (fabricRef.current) {
           try {
             pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
@@ -122,19 +123,20 @@ export default function PdfEditorTool() {
           fabricRef.current = null;
         }
 
-        // Create fabric canvas on top
-        const fc = fabricCanvasRef.current!;
-        fc.width = viewport.width;
-        fc.height = viewport.height;
+        // Create a fresh canvas element inside the container div
+        fabricContainer.innerHTML = "";
+        const newCanvas = document.createElement("canvas");
+        fabricContainer.appendChild(newCanvas);
 
         const { fabric } = await import("fabric");
         if (cancelled) return;
 
-        const fabricCanvas = new fabric.Canvas(fc, {
+        const fabricCanvas = new fabric.Canvas(newCanvas, {
           width: viewport.width,
           height: viewport.height,
           isDrawingMode: false,
           selection: true,
+          backgroundColor: "transparent",
         });
         fabricRef.current = fabricCanvas;
 
@@ -150,7 +152,6 @@ export default function PdfEditorTool() {
 
         applyTool(fabricCanvas, activeToolRef.current, colorRef.current, fontSizeRef.current);
 
-        // Text tool: click to place editable text
         fabricCanvas.on("mouse:down", async (opt: any) => {
           if (activeToolRef.current !== "text") return;
           const pointer = fabricCanvas.getPointer(opt.e);
@@ -176,9 +177,9 @@ export default function PdfEditorTool() {
     init();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfDoc, currentPage, scale, canvasReady]);
+  }, [pdfDoc, currentPage, scale]);
 
-  // Sync tool/color/size changes to existing fabric canvas
+  // Sync active tool/color/size to existing fabric canvas
   useEffect(() => {
     if (fabricRef.current) {
       applyTool(fabricRef.current, activeTool, color, fontSize);
@@ -188,7 +189,6 @@ export default function PdfEditorTool() {
   function applyTool(fc: any, tool: ToolType, col: string, fsize: number) {
     fc.isDrawingMode = false;
     fc.selection = tool === "select";
-    fc.defaultCursor = tool === "text" ? "text" : "default";
 
     if (tool === "draw") {
       fc.isDrawingMode = true;
@@ -210,9 +210,8 @@ export default function PdfEditorTool() {
     if (!fabricRef.current) return;
     const { fabric } = await import("fabric");
     const fc = fabricRef.current;
-    const { width, height } = fc;
-    const cx = width / 2;
-    const cy = height / 2;
+    const cx = fc.width / 2;
+    const cy = fc.height / 2;
     if (type === "rect") {
       fc.add(new fabric.Rect({ left: cx - 70, top: cy - 40, width: 140, height: 80, fill: "transparent", stroke: color, strokeWidth: 2 }));
     } else {
@@ -239,17 +238,16 @@ export default function PdfEditorTool() {
     const fc = fabricRef.current;
     if (!fc) return;
     const objs = fc.getObjects();
-    if (objs.length > 0) {
-      fc.remove(objs[objs.length - 1]);
-      fc.renderAll();
-    }
+    if (objs.length > 0) { fc.remove(objs[objs.length - 1]); fc.renderAll(); }
   }
 
   function changePage(newPage: number) {
+    const clamped = Math.max(1, Math.min(totalPages, newPage));
+    if (clamped === currentPage) return;
     if (fabricRef.current) {
       pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
     }
-    setCurrentPage(Math.max(1, Math.min(totalPages, newPage)));
+    setCurrentPage(clamped);
   }
 
   async function savePdf() {
@@ -268,8 +266,8 @@ export default function PdfEditorTool() {
         const state = JSON.parse(stateJson);
         if (!state.objects || state.objects.length === 0) continue;
 
-        const pdfPage = pdfDoc.getPage(pageNum);
-        const viewport = (await pdfPage).getViewport({ scale });
+        const pdfPage = await pdfDoc.getPage(pageNum);
+        const viewport = pdfPage.getViewport({ scale });
 
         const tempEl = document.createElement("canvas");
         tempEl.width = viewport.width;
@@ -309,7 +307,7 @@ export default function PdfEditorTool() {
     { id: "eraser", icon: <Eraser className="w-4 h-4" />, label: "Pemadam" },
   ];
 
-  // ── DROPZONE (no file yet) ──
+  // ── DROPZONE ──
   if (!file) {
     return (
       <label
@@ -323,32 +321,21 @@ export default function PdfEditorTool() {
         <p className="font-semibold text-gray-800 text-lg">Buka fail PDF untuk diedit</p>
         <p className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</p>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-        <input
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(e) => loadFile(e.target.files?.[0] ?? null)}
-        />
+        <input type="file" accept="application/pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
       </label>
     );
   }
 
-  // ── EDITOR (file selected — canvases always mounted so refs work) ──
+  // ── EDITOR ──
   return (
     <div className="flex flex-col gap-3">
       {/* Toolbar */}
       <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-xl flex-wrap">
         <div className="flex items-center gap-1 border-r border-gray-200 pr-2">
           {TOOLS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTool(t.id)}
-              title={t.label}
-              className={cn(
-                "flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors text-xs",
-                activeTool === t.id ? "bg-red-600 text-white" : "text-gray-600 hover:bg-gray-100"
-              )}
-            >
+            <button key={t.id} onClick={() => setActiveTool(t.id)} title={t.label}
+              className={cn("flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors text-xs",
+                activeTool === t.id ? "bg-red-600 text-white" : "text-gray-600 hover:bg-gray-100")}>
               {t.icon}
               <span className="text-[10px] leading-none">{t.label}</span>
             </button>
@@ -386,18 +373,15 @@ export default function PdfEditorTool() {
         </div>
 
         <span className="text-xs text-gray-400 hidden md:block">{file.name} · {formatBytes(file.size)}</span>
-        <button onClick={() => { setFile(null); setPdfDoc(null); setCanvasReady(false); }} className="text-xs text-gray-400 hover:text-red-500 ml-1">Tukar fail</button>
-        <button
-          onClick={savePdf}
-          disabled={saving || !pdfDoc}
-          className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-        >
+        <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500 ml-1">Tukar fail</button>
+        <button onClick={savePdf} disabled={saving || !pdfDoc}
+          className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">
           <Download className="w-4 h-4" />
           {saving ? "Menyimpan..." : "Simpan PDF"}
         </button>
       </div>
 
-      {/* Loading overlay */}
+      {/* Loading */}
       {loading && (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
           <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
@@ -405,61 +389,65 @@ export default function PdfEditorTool() {
         </div>
       )}
 
-      {/* Editor body — hidden while loading but canvases stay mounted */}
-      <div className={cn("flex gap-3", loading && "hidden")}>
-        {/* Thumbnail sidebar */}
-        {thumbnails.length > 0 && (
-          <div className="w-24 flex-shrink-0 overflow-y-auto max-h-[75vh] space-y-2 bg-gray-50 rounded-xl p-2 border border-gray-200">
-            {thumbnails.map((thumb, i) => (
-              <button
-                key={i}
-                onClick={() => changePage(i + 1)}
-                className={cn("w-full rounded-lg overflow-hidden border-2 transition-all", currentPage === i + 1 ? "border-red-500" : "border-transparent hover:border-gray-300")}
-              >
-                <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full" />
-                <p className="text-center text-[10px] py-0.5 text-gray-500">{i + 1}</p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Canvas area */}
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="flex items-center justify-center gap-3">
-            <button onClick={() => changePage(currentPage - 1)} disabled={currentPage <= 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm text-gray-600 font-medium">Halaman {currentPage} / {totalPages}</span>
-            <button onClick={() => changePage(currentPage + 1)} disabled={currentPage >= totalPages} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="overflow-auto bg-gray-300 rounded-xl p-4 flex justify-center min-h-[60vh]">
-            <div className="relative shadow-xl inline-block">
-              <canvas ref={pdfCanvasRef} className="block" />
-              <canvas
-                ref={fabricCanvasRef}
-                className="absolute top-0 left-0"
-                style={{
-                  cursor:
-                    activeTool === "text" ? "text"
-                    : activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser" ? "crosshair"
-                    : "default",
-                }}
-              />
+      {/* Editor body */}
+      {!loading && (
+        <div className="flex gap-3">
+          {/* Thumbnail sidebar */}
+          {thumbnails.length > 1 && (
+            <div className="w-24 flex-shrink-0 overflow-y-auto max-h-[75vh] space-y-2 bg-gray-50 rounded-xl p-2 border border-gray-200">
+              {thumbnails.map((thumb, i) => (
+                <button key={i} onClick={() => changePage(i + 1)}
+                  className={cn("w-full rounded-lg overflow-hidden border-2 transition-all",
+                    currentPage === i + 1 ? "border-red-500" : "border-transparent hover:border-gray-300")}>
+                  <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full" />
+                  <p className="text-center text-[10px] py-0.5 text-gray-500">{i + 1}</p>
+                </button>
+              ))}
             </div>
-          </div>
+          )}
 
-          <p className="text-xs text-center text-gray-400">
-            {activeTool === "text" && "Klik pada PDF untuk tambah teks"}
-            {activeTool === "draw" && "Tahan dan lukis pada PDF"}
-            {activeTool === "highlight" && "Tahan dan seret untuk highlight"}
-            {activeTool === "eraser" && "Tahan dan seret untuk padam annotation"}
-            {activeTool === "select" && "Klik objek untuk pilih, drag untuk alih"}
-          </p>
+          {/* Canvas area */}
+          <div className="flex-1 flex flex-col gap-2">
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-3">
+                <button onClick={() => changePage(currentPage - 1)} disabled={currentPage <= 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm text-gray-600 font-medium">Halaman {currentPage} / {totalPages}</span>
+                <button onClick={() => changePage(currentPage + 1)} disabled={currentPage >= totalPages} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="overflow-auto bg-gray-300 rounded-xl p-4 flex justify-center min-h-[60vh]">
+              {/* Canvas stack: PDF background + Fabric overlay */}
+              <div className="relative shadow-xl inline-block">
+                <canvas ref={pdfCanvasRef} className="block" />
+                {/* Fabric mounts a fresh canvas inside this div each page */}
+                <div
+                  ref={fabricContainerRef}
+                  className="absolute top-0 left-0"
+                  style={{
+                    cursor:
+                      activeTool === "text" ? "text"
+                      : activeTool === "draw" || activeTool === "highlight" || activeTool === "eraser" ? "crosshair"
+                      : "default",
+                  }}
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-gray-400">
+              {activeTool === "text" && "Klik pada PDF untuk tambah teks"}
+              {activeTool === "draw" && "Tahan dan lukis pada PDF"}
+              {activeTool === "highlight" && "Tahan dan seret untuk highlight"}
+              {activeTool === "eraser" && "Tahan dan seret untuk padam annotation"}
+              {activeTool === "select" && "Klik objek untuk pilih, drag untuk alih"}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
