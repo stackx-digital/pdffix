@@ -86,6 +86,15 @@ export const TOOLS: Tool[] = [
     category: "edit",
   },
   {
+    id: "delete-page",
+    name: "Delete Halaman PDF",
+    description: "Buang halaman tertentu dari fail PDF anda.",
+    icon: "Trash2",
+    href: "/tools/delete-page",
+    proOnly: false,
+    category: "edit",
+  },
+  {
     id: "e-sign",
     name: "E-Sign PDF",
     description: "Tambah tandatangan digital pada PDF anda.",
