@@ -23,6 +23,15 @@ export interface Tool {
 
 export const TOOLS: Tool[] = [
   {
+    id: "edit-pdf",
+    name: "Edit PDF",
+    description: "Tambah teks, lukis, highlight dan sisip imej dalam PDF.",
+    icon: "PenLine",
+    href: "/tools/edit-pdf",
+    proOnly: false,
+    category: "edit",
+  },
+  {
     id: "merge-pdf",
     name: "Gabung PDF",
     description: "Cantumkan beberapa fail PDF menjadi satu.",
