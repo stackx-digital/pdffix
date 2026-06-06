@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ToolCard from "@/components/ui/ToolCard";
+import Faq from "@/components/ui/Faq";
 import { TOOLS } from "@/types";
 
 export default async function HomePage() {
@@ -69,6 +70,9 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* FAQ */}
+        <Faq />
 
         {/* CTA */}
         {!user && (
