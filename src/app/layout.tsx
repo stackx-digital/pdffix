@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
   title: "PDFFix — Free PDF Editor Online",
-  description: "Merge, split, compress and convert PDF for free.",
+  description: "Merge, split, compress and convert PDF for free. No server upload. Safe and private.",
 };
 
-// Root layout — next-intl middleware handles locale routing.
-// This layout wraps the [locale] segment.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <html lang="ms">
+      <body className={inter.className}>{children}</body>
+    </html>
+  );
 }

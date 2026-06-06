@@ -1,15 +1,9 @@
-import createMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-import { routing } from "./src/i18n/routing";
-
-const intlMiddleware = createMiddleware(routing);
 
 export function middleware(req: NextRequest) {
-  // Auth guard — works regardless of locale prefix
   const path = req.nextUrl.pathname;
-  const pathWithoutLocale = path.replace(/^\/(ms|en|zh|ar)/, "") || "/";
 
-  if (pathWithoutLocale.startsWith("/dashboard")) {
+  if (path.startsWith("/dashboard")) {
     const hasSession = req.cookies
       .getAll()
       .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
@@ -21,7 +15,7 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  return intlMiddleware(req);
+  return NextResponse.next();
 }
 
 export const config = {
