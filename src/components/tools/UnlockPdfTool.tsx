@@ -4,8 +4,11 @@ import { useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import { Upload, Download, Unlock } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 export default function UnlockPdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("unlock-pdf");
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -20,12 +23,15 @@ export default function UnlockPdfTool() {
 
   async function process() {
     if (!file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setError("");
     setProcessing(true);
     try {
       const bytes = await file.arrayBuffer();
       const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const out = await pdf.save();
+      await recordUsage();
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       setError("PDF tidak dapat dibuka. Fail mungkin rosak atau dilindungi kata laluan penuh.");
@@ -38,6 +44,9 @@ export default function UnlockPdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Buang Sekatan PDF</h1>
       <p className="text-gray-500 mb-8">Buang sekatan cetak, salin dan edit dari PDF yang terhad.</p>
 
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
@@ -62,7 +71,7 @@ export default function UnlockPdfTool() {
               <Download className="w-5 h-5" /> Muat Turun PDF Tanpa Sekatan
             </a>
           ) : (
-            <button onClick={process} disabled={processing} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               <Unlock className="w-4 h-4" />
               {processing ? "Memproses..." : "Buka Kunci PDF"}
             </button>

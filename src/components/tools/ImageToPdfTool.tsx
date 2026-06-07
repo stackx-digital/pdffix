@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { PDFDocument } from "pdf-lib";
 import { Upload, Download, X, MoveUp, MoveDown } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 interface ImgFile {
   id: string;
@@ -12,6 +14,7 @@ interface ImgFile {
 }
 
 export default function ImageToPdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("image-to-pdf");
   const [images, setImages] = useState<ImgFile[]>([]);
   const [processing, setProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -42,6 +45,8 @@ export default function ImageToPdfTool() {
 
   async function process() {
     if (images.length === 0) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setProcessing(true);
     try {
       const pdf = await PDFDocument.create();
@@ -64,6 +69,7 @@ export default function ImageToPdfTool() {
       }
 
       const out = await pdf.save();
+      await recordUsage();
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       // error is swallowed — UI returns to idle state via finally
@@ -77,6 +83,9 @@ export default function ImageToPdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Imej ke PDF</h1>
       <p className="text-gray-500 mb-8">Tukar imej JPG atau PNG kepada PDF. Susun mengikut urutan yang anda mahu.</p>
 
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-10 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors mb-6">
         <Upload className="w-8 h-8 text-gray-400 mb-2" />
         <span className="font-medium text-gray-700">Klik atau seret imej ke sini</span>
@@ -119,7 +128,7 @@ export default function ImageToPdfTool() {
               <Download className="w-5 h-5" /> Muat Turun PDF
             </a>
           ) : (
-            <button onClick={process} disabled={processing} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <button onClick={process} disabled={processing || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               {processing ? "Memproses..." : "Tukar ke PDF"}
             </button>
           )}

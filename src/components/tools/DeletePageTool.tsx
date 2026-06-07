@@ -5,10 +5,13 @@ import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument } from "pdf-lib";
 import { Trash2, Download, Upload, RotateCcw } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function DeletePageTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("delete-page");
   const [file, setFile] = useState<File | null>(null);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -72,6 +75,8 @@ export default function DeletePageTool() {
 
   async function deletePages() {
     if (!fileBytes.current || selected.size === 0) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     if (selected.size === totalPages) {
       setError("Tidak boleh delete semua halaman. Sekurang-kurangnya satu halaman mesti dikekalkan.");
       return;
@@ -92,6 +97,7 @@ export default function DeletePageTool() {
       a.href = url;
       a.download = `deleted-pages-${file!.name}`;
       a.click();
+      await recordUsage();
       setDone(true);
     } finally {
       setProcessing(false);
@@ -118,6 +124,9 @@ export default function DeletePageTool() {
 
   return (
     <div className="space-y-5">
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       {/* File bar */}
       <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
         <div>
@@ -203,7 +212,7 @@ export default function DeletePageTool() {
           <div className="flex items-center gap-3">
             <button
               onClick={deletePages}
-              disabled={selected.size === 0 || processing}
+              disabled={selected.size === 0 || processing || limitReached}
               className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               <Download className="w-5 h-5" />

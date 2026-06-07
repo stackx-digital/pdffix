@@ -69,6 +69,7 @@ export default function OrganizePdfTool() {
       const copied = await outPdf.copyPages(srcPdf, indices);
       copied.forEach((page) => outPdf.addPage(page));
       const out = await outPdf.save();
+      await recordUsage();
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       // error is swallowed — UI returns to idle state via finally
@@ -82,6 +83,9 @@ export default function OrganizePdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Susun Halaman PDF</h1>
       <p className="text-gray-500 mb-8">Susun semula, buang atau ekstrak halaman PDF.</p>
 
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
@@ -135,7 +139,7 @@ export default function OrganizePdfTool() {
               <Download className="w-5 h-5" /> Muat Turun PDF
             </a>
           ) : (
-            <button onClick={process} disabled={processing || pages.length === 0} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <button onClick={process} disabled={processing || pages.length === 0 || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               {processing ? "Memproses..." : "Simpan PDF"}
             </button>
           )}
