@@ -25,8 +25,9 @@ function Cell({ val }: { val: CellValue }) {
 
 export default function ComparisonTable() {
   return (
-    <section className="max-w-5xl mx-auto px-4 py-16">
-      <div className="text-center mb-10">
+    <section className="max-w-5xl mx-auto px-4 py-24">
+      <div className="text-center mb-12">
+        <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Perbandingan</p>
         <h2 className="text-3xl font-bold text-gray-900">PDFix vs Pesaing</h2>
         <p className="text-gray-500 mt-2">Kenapa pilih PDFix berbanding alat lain?</p>
       </div>
@@ -39,7 +40,7 @@ export default function ComparisonTable() {
               <th className="px-4 py-4 text-center">
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-bold text-red-600 text-base">PDFix</span>
-                  <span className="text-xs text-gray-400">pdfix.vercel.app</span>
+                  <span className="text-xs text-gray-400">pdfix.my</span>
                 </div>
               </th>
               <th className="px-4 py-4 text-center">
