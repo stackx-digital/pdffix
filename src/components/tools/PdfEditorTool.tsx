@@ -10,6 +10,7 @@ import {
   Stamp, Link, StickyNote, X, Check, Hand,
 } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -21,6 +22,7 @@ type ToolType =
 const STAMPS = ["APPROVED", "REJECTED", "DRAFT", "CONFIDENTIAL", "REVIEWED", "VOID"];
 
 export default function PdfEditorTool() {
+  const { checkLimit, recordUsage } = useUsageLimit("edit-pdf");
   const [file, setFile] = useState<File | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -572,6 +574,8 @@ export default function PdfEditorTool() {
 
   async function savePdf() {
     if (!fileBytes.current || !pdfDoc) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
     setSaving(true);
     try {
@@ -599,6 +603,7 @@ export default function PdfEditorTool() {
       }
 
       const blob = new Blob([await pdfLibDoc.save()], { type: "application/pdf" });
+      await recordUsage();
       const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `edited-${file!.name}` });
       a.click();
     } finally {

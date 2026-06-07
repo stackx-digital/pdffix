@@ -18,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ used: 0, limit: FREE_LIMITS.editsPerMonth, canProceed: true, isPro: false, loggedIn: false });
   }
 
-  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle();
   const isPro = profile?.plan === "pro";
 
   if (isPro) {
