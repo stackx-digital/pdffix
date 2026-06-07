@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature, Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus } from "lucide-react";
+import { FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature, Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus, Unlock, Crop, FileInput, Layers, PackageOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Tool } from "@/types";
 
@@ -19,6 +19,11 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutList,
   BookOpen,
   ImagePlus,
+  Unlock,
+  Crop,
+  FileInput,
+  Layers,
+  PackageOpen,
 };
 
 interface ToolCardProps {
