@@ -27,11 +27,11 @@ export default function ComparisonTable() {
   return (
     <section className="max-w-5xl mx-auto px-4 py-16">
       <div className="text-center mb-10">
-        <h2 className="text-2xl font-bold text-gray-900">PDFix vs Pesaing</h2>
+        <h2 className="text-3xl font-bold text-gray-900">PDFix vs Pesaing</h2>
         <p className="text-gray-500 mt-2">Kenapa pilih PDFix berbanding alat lain?</p>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">

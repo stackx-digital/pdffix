@@ -39,24 +39,26 @@ export default function ToolCard({ tool, isPro = false }: ToolCardProps) {
     <Link
       href={locked ? "/pricing" : tool.href}
       className={cn(
-        "group relative flex flex-col gap-3 p-5 rounded-xl border bg-white hover:shadow-md transition-all",
-        locked ? "border-gray-200 opacity-75" : "border-gray-200 hover:border-red-200"
+        "group relative flex flex-col gap-3 p-5 rounded-2xl border bg-white transition-all duration-200",
+        locked
+          ? "border-gray-200 opacity-70 cursor-default"
+          : "border-gray-200 hover:border-red-200 hover:shadow-lg hover:shadow-red-50 hover:-translate-y-0.5"
       )}
     >
       {tool.proOnly && (
-        <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+        <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-semibold tracking-wide uppercase">
           Pro
         </span>
       )}
       <div className={cn(
-        "w-10 h-10 rounded-lg flex items-center justify-center",
+        "w-11 h-11 rounded-xl flex items-center justify-center transition-colors duration-200",
         locked ? "bg-gray-100" : "bg-red-50 group-hover:bg-red-100"
       )}>
         <Icon className={cn("w-5 h-5", locked ? "text-gray-400" : "text-red-600")} />
       </div>
       <div>
-        <h3 className="font-semibold text-gray-900 text-sm">{tool.name}</h3>
-        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{tool.description}</p>
+        <h3 className="font-semibold text-gray-900 text-sm leading-snug">{tool.name}</h3>
+        <p className="text-xs text-gray-400 mt-1 leading-relaxed">{tool.description}</p>
       </div>
     </Link>
   );

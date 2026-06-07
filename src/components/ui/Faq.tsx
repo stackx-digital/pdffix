@@ -43,23 +43,23 @@ export default function Faq() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section className="max-w-3xl mx-auto px-4 py-16">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl font-bold text-gray-900">Soalan Lazim</h2>
+    <section className="max-w-3xl mx-auto px-4 py-20">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-gray-900">Soalan Lazim</h2>
         <p className="text-gray-500 mt-2">Jawapan kepada soalan-soalan biasa.</p>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {FAQS.map((faq, i) => (
-          <div key={i} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+          <div key={i} className={cn("rounded-2xl border overflow-hidden transition-colors duration-200", open === i ? "border-red-200 bg-red-50/40" : "border-gray-200 bg-white")}>
             <button
               onClick={() => setOpen(open === i ? null : i)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between px-6 py-4 text-left"
             >
-              <span className="font-medium text-gray-900 pr-4">{faq.q}</span>
-              <ChevronDown className={cn("w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200", open === i && "rotate-180")} />
+              <span className="font-medium text-gray-900 pr-4 text-sm">{faq.q}</span>
+              <ChevronDown className={cn("w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200", open === i && "rotate-180 text-red-500")} />
             </button>
             {open === i && (
-              <div className="px-5 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
+              <div className="px-6 pb-5 text-sm text-gray-600 leading-relaxed">
                 {faq.a}
               </div>
             )}

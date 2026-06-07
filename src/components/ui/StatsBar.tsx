@@ -7,12 +7,12 @@ const stats = [
 
 export default function StatsBar() {
   return (
-    <section className="bg-red-600 py-10 px-4">
+    <section className="bg-gradient-to-r from-red-700 via-red-600 to-red-700 py-12 px-4">
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-white">
-        {stats.map((s) => (
-          <div key={s.label}>
-            <p className="text-3xl font-bold">{s.value}</p>
-            <p className="text-red-200 text-sm mt-1">{s.label}</p>
+        {stats.map((s, i) => (
+          <div key={s.label} className={`${i < stats.length - 1 ? "md:border-r md:border-red-500" : ""}`}>
+            <p className="text-4xl font-extrabold tracking-tight">{s.value}</p>
+            <p className="text-red-200 text-sm mt-1.5">{s.label}</p>
           </div>
         ))}
       </div>
