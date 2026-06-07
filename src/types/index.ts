@@ -73,7 +73,7 @@ export const TOOLS: Tool[] = [
     description: "Ekstrak teks daripada PDF yang diimbas.",
     icon: "ScanText",
     href: "/tools/ocr",
-    proOnly: false,
+    proOnly: true,
     category: "edit",
   },
   {
@@ -181,7 +181,7 @@ export const TOOLS: Tool[] = [
     description: "Tukar PDF interaktif kepada PDF statik.",
     icon: "Layers",
     href: "/tools/flatten-pdf",
-    proOnly: false,
+    proOnly: true,
     category: "edit",
   },
   {
@@ -190,7 +190,7 @@ export const TOOLS: Tool[] = [
     description: "Mampat banyak fail PDF sekaligus.",
     icon: "PackageOpen",
     href: "/tools/batch-compress",
-    proOnly: false,
+    proOnly: true,
     category: "optimize",
   },
 ];
