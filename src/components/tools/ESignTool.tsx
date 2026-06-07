@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument } from "pdf-lib";
-import { Download, Trash2, PenLine, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Download, Trash2, PenLine, ChevronLeft, ChevronRight, Check, Upload, ImagePlus } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
@@ -28,6 +28,8 @@ export default function ESignTool() {
   const [signatures, setSignatures] = useState<PlacedSignature[]>([]);
   const [activeSignatureUrl, setActiveSignatureUrl] = useState<string | null>(null);
   const [penColor, setPenColor] = useState("#000000");
+  const [signMode, setSignMode] = useState<"draw" | "upload">("draw");
+  const [uploadedSig, setUploadedSig] = useState<string | null>(null);
   const [step, setStep] = useState<"draw" | "place">("draw");
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -101,6 +103,22 @@ export default function ESignTool() {
   function useSignature() {
     const canvas = padRef.current!;
     setActiveSignatureUrl(canvas.toDataURL("image/png"));
+    setStep("place");
+  }
+
+  function handleUploadSig(f: File | null) {
+    if (!f || !f.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedSig(dataUrl);
+    };
+    reader.readAsDataURL(f);
+  }
+
+  function useUploadedSig() {
+    if (!uploadedSig) return;
+    setActiveSignatureUrl(uploadedSig);
     setStep("place");
   }
 
@@ -261,34 +279,81 @@ export default function ESignTool() {
         <div className="w-72 flex-shrink-0 space-y-3">
           {step === "draw" ? (
             <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-800">Pad Tandatangan</h3>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-gray-500">Warna</label>
-                  <input type="color" value={penColor} onChange={(e) => setPenColor(e.target.value)} className="w-6 h-6 rounded border border-gray-200 cursor-pointer" />
-                </div>
-              </div>
-              <canvas
-                ref={padRef}
-                width={400}
-                height={160}
-                className="w-full border-2 border-dashed border-gray-200 rounded-lg bg-white touch-none cursor-crosshair"
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={stopDraw}
-                onMouseLeave={stopDraw}
-                onTouchStart={startDraw}
-                onTouchMove={draw}
-                onTouchEnd={stopDraw}
-              />
-              <div className="flex gap-2">
-                <button onClick={clearPad} className="flex-1 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-gray-600">
-                  <Trash2 className="w-3.5 h-3.5" /> Padam
+              {/* Mode tabs */}
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setSignMode("draw")}
+                  className={cn("flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors", signMode === "draw" ? "bg-red-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50")}
+                >
+                  <PenLine className="w-3.5 h-3.5" /> Lukis
                 </button>
-                <button onClick={useSignature} className="flex-1 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-1.5 font-medium">
-                  <Check className="w-3.5 h-3.5" /> Guna
+                <button
+                  onClick={() => setSignMode("upload")}
+                  className={cn("flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors", signMode === "upload" ? "bg-red-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50")}
+                >
+                  <ImagePlus className="w-3.5 h-3.5" /> Upload Imej
                 </button>
               </div>
+
+              {signMode === "draw" ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-medium text-gray-600">Lukis tandatangan anda</h3>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500">Warna</label>
+                      <input type="color" value={penColor} onChange={(e) => setPenColor(e.target.value)} className="w-6 h-6 rounded border border-gray-200 cursor-pointer" />
+                    </div>
+                  </div>
+                  <canvas
+                    ref={padRef}
+                    width={400}
+                    height={160}
+                    className="w-full border-2 border-dashed border-gray-200 rounded-lg bg-white touch-none cursor-crosshair"
+                    onMouseDown={startDraw}
+                    onMouseMove={draw}
+                    onMouseUp={stopDraw}
+                    onMouseLeave={stopDraw}
+                    onTouchStart={startDraw}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDraw}
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={clearPad} className="flex-1 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-gray-600">
+                      <Trash2 className="w-3.5 h-3.5" /> Padam
+                    </button>
+                    <button onClick={useSignature} className="flex-1 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-1.5 font-medium">
+                      <Check className="w-3.5 h-3.5" /> Guna
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-500">Upload imej tandatangan anda (PNG, JPG). Latar belakang putih atau telus.</p>
+                  {uploadedSig ? (
+                    <div className="space-y-2">
+                      <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
+                        <img src={uploadedSig} alt="Tandatangan upload" className="w-full object-contain max-h-28" />
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="flex-1 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-gray-600 cursor-pointer">
+                          <Upload className="w-3.5 h-3.5" /> Tukar
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadSig(e.target.files?.[0] ?? null)} />
+                        </label>
+                        <button onClick={useUploadedSig} className="flex-1 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-1.5 font-medium">
+                          <Check className="w-3.5 h-3.5" /> Guna
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg p-6 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
+                      <Upload className="w-7 h-7 text-gray-300 mb-2" />
+                      <span className="text-sm text-gray-500">Klik untuk upload imej tandatangan</span>
+                      <span className="text-xs text-gray-400 mt-0.5">PNG, JPG, SVG</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUploadSig(e.target.files?.[0] ?? null)} />
+                    </label>
+                  )}
+                </>
+              )}
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
@@ -297,7 +362,7 @@ export default function ESignTool() {
                 <img src={activeSignatureUrl} alt="Tandatangan" className="w-full border border-gray-100 rounded-lg bg-white" />
               )}
               <button onClick={() => setStep("draw")} className="w-full py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">
-                Lukis semula
+                {signMode === "upload" ? "Upload semula" : "Lukis semula"}
               </button>
               <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
                 Klik pada mana-mana tempat dalam PDF untuk letak tandatangan. Drag untuk alih.
