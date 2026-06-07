@@ -59,15 +59,6 @@ export const TOOLS: Tool[] = [
     category: "optimize",
   },
   {
-    id: "pdf-to-word",
-    name: "PDF ke Word",
-    description: "Tukar PDF kepada dokumen Word yang boleh diedit.",
-    icon: "FileText",
-    href: "/tools/pdf-to-word",
-    proOnly: true,
-    category: "convert",
-  },
-  {
     id: "pdf-to-image",
     name: "PDF ke Imej",
     description: "Tukar setiap halaman PDF kepada imej JPG atau PNG.",
