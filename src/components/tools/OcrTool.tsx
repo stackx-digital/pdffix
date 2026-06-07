@@ -24,7 +24,7 @@ export default function OcrTool() {
   const [file, setFile] = useState<File | null>(null);
   const [lang, setLang] = useState<Lang>("eng");
   const [processing, setProcessing] = useState(false);
-  const [status, setStatus] = useState("");
+  const [ocrStatus, setOcrStatus] = useState("");
   const [progress, setProgress] = useState(0);
   const [text, setText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -33,7 +33,7 @@ export default function OcrTool() {
     if (!f || f.type !== "application/pdf") return;
     setFile(f);
     setText("");
-    setStatus("");
+    setOcrStatus("");
     setProgress(0);
   }
 
@@ -61,7 +61,7 @@ export default function OcrTool() {
       const totalPages = pdf.numPages;
       const results: string[] = [];
 
-      setStatus(`Memuatkan enjin OCR (${LANGUAGES.find((l) => l.value === lang)?.label})...`);
+      setOcrStatus(`Memuatkan enjin OCR (${LANGUAGES.find((l) => l.value === lang)?.label})...`);
       const worker = await createWorker(lang, 1, {
         logger: (m) => {
           if (m.status === "recognizing text") {
@@ -71,7 +71,7 @@ export default function OcrTool() {
       });
 
       for (let i = 1; i <= totalPages; i++) {
-        setStatus(`Memproses halaman ${i} / ${totalPages}...`);
+        setOcrStatus(`Memproses halaman ${i} / ${totalPages}...`);
         const page = await pdf.getPage(i);
         const canvas = await renderPageToCanvas(page);
         const { data } = await worker.recognize(canvas);
@@ -82,9 +82,9 @@ export default function OcrTool() {
       await worker.terminate();
       await recordUsage();
       setText(results.join("\n\n"));
-      setStatus("");
+      setOcrStatus("");
     } catch (e) {
-      setStatus("Ralat semasa OCR. Cuba semula.");
+      setOcrStatus("Ralat semasa OCR. Cuba semula.");
     }
 
     setProcessing(false);
@@ -148,7 +148,7 @@ export default function OcrTool() {
           {processing && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-gray-600">
-                <span>{status}</span>
+                <span>{ocrStatus}</span>
                 <span>{progress}%</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
