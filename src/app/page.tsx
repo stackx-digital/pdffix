@@ -5,6 +5,9 @@ import Footer from "@/components/layout/Footer";
 import ToolCard from "@/components/ui/ToolCard";
 import Faq from "@/components/ui/Faq";
 import ComparisonTable from "@/components/ui/ComparisonTable";
+import HowItWorks from "@/components/ui/HowItWorks";
+import StatsBar from "@/components/ui/StatsBar";
+import Testimonials from "@/components/ui/Testimonials";
 import { TOOLS } from "@/types";
 
 export default async function HomePage() {
@@ -47,6 +50,10 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <HowItWorks />
+
+        <StatsBar />
+
         <section id="tools" className="max-w-6xl mx-auto px-4 py-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Semua Alat</h2>
           <p className="text-gray-500 mb-8">Pilih alat yang anda perlukan.</p>
@@ -56,6 +63,8 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+
+        <Testimonials />
 
         <ComparisonTable />
 
