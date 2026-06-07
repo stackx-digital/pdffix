@@ -59,7 +59,12 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kata Laluan</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Kata Laluan</label>
+                <Link href="/auth/forgot-password" className="text-xs text-red-600 hover:underline">
+                  Terlupa kata laluan?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
