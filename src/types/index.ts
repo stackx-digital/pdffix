@@ -82,7 +82,7 @@ export const TOOLS: Tool[] = [
     description: "Ekstrak teks daripada PDF yang diimbas.",
     icon: "ScanText",
     href: "/tools/ocr",
-    proOnly: true,
+    proOnly: false,
     category: "edit",
   },
   {
