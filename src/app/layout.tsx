@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "latin-ext"] });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+});
 
 export const metadata: Metadata = {
   title: "PDFix — Free PDF Editor Online",
@@ -14,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ms">
-      <body className={inter.className}>
+      <body className={jakarta.className}>
         {children}
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
