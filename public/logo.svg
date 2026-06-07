@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Background rounded square -->
+  <rect width="200" height="200" rx="44" fill="#DC2626"/>
+
+  <!-- Document body -->
+  <rect x="52" y="38" width="80" height="100" rx="8" fill="white"/>
+
+  <!-- Document fold corner -->
+  <path d="M116 38 L132 54 L116 54 Z" fill="#DC2626" opacity="0.25"/>
+  <path d="M116 38 L132 54 L116 54 Z" fill="#FCA5A5"/>
+
+  <!-- Document lines -->
+  <rect x="64" y="72" width="56" height="6" rx="3" fill="#DC2626" opacity="0.3"/>
+  <rect x="64" y="86" width="44" height="6" rx="3" fill="#DC2626" opacity="0.2"/>
+  <rect x="64" y="100" width="50" height="6" rx="3" fill="#DC2626" opacity="0.2"/>
+
+  <!-- Fix badge - red circle bottom right -->
+  <circle cx="138" cy="138" r="34" fill="#991B1B"/>
+  <circle cx="138" cy="138" r="30" fill="#DC2626"/>
+
+  <!-- Wrench/fix icon inside badge -->
+  <path d="M148 128 C148 128 144 124 138 124 C132 124 126 130 126 136 C126 139 127.5 141.5 130 143.5 L124 149.5 C122.8 150.7 122.8 152.7 124 153.9 C125.2 155.1 127.2 155.1 128.4 153.9 L134.5 147.8 C135.6 148.2 136.8 148.4 138 148.4 C144 148.4 150 142.4 150 136.4 C150 133.4 148 128 148 128Z" fill="white" stroke="white" stroke-width="0.5"/>
+  <circle cx="138" cy="136" r="4" fill="#DC2626"/>
+</svg>
