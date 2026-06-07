@@ -38,7 +38,7 @@ export default async function HomePage() {
             </div>
 
             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-950 leading-[1.1] tracking-tight">
-              Alat PDF Percuma{" "}
+              Edit PDF Percuma{" "}
               <br className="hidden md:block" />
               <span className="text-red-600">Untuk Semua</span>
             </h1>
