@@ -57,7 +57,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="font-bold text-2xl text-red-600">PDFFix</Link>
+          <Link href="/" className="font-bold text-2xl text-red-600">PDFix</Link>
           <h1 className="mt-4 text-xl font-semibold text-gray-900">Daftar Percuma</h1>
         </div>
 

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "E-Sign PDF — PDFFix",
+  title: "E-Sign PDF — PDFix",
   description: "Tambah tandatangan digital pada PDF anda secara percuma.",
 };
 

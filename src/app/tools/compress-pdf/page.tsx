@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mampat PDF Percuma — PDFFix",
+  title: "Mampat PDF Percuma — PDFix",
   description: "Kurangkan saiz fail PDF tanpa hilang kualiti, terus dalam browser.",
 };
 

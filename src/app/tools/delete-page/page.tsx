@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Delete Halaman PDF — PDFFix",
+  title: "Delete Halaman PDF — PDFix",
   description: "Buang halaman tertentu dari fail PDF anda secara percuma.",
 };
 

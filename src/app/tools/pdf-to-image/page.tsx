@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "PDF ke Imej Percuma — PDFFix",
+  title: "PDF ke Imej Percuma — PDFix",
   description: "Tukar setiap halaman PDF kepada imej JPG atau PNG berkualiti tinggi.",
 };
 

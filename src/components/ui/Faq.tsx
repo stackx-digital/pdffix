@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const FAQS = [
   {
-    q: "Adakah PDFFix benar-benar percuma?",
+    q: "Adakah PDFix benar-benar percuma?",
     a: "Ya! Alat asas seperti edit PDF, gabung PDF, pisah PDF, mampat PDF dan PDF ke imej adalah percuma sepenuhnya. Pelan Pro menawarkan alat lanjutan seperti OCR dan PDF ke Word.",
   },
   {
@@ -30,12 +30,12 @@ const FAQS = [
     a: "Versi Percuma merangkumi semua alat asas dengan had fail 10MB. Versi Pro (RM19/bulan) menambah OCR dan PDF ke Word, dengan had fail 100MB.",
   },
   {
-    q: "Bolehkah PDFFix digunakan pada telefon?",
-    a: "Ya, PDFFix boleh digunakan pada semua peranti. Disyorkan menggunakan komputer desktop untuk pengalaman pengeditan terbaik.",
+    q: "Bolehkah PDFix digunakan pada telefon?",
+    a: "Ya, PDFix boleh digunakan pada semua peranti. Disyorkan menggunakan komputer desktop untuk pengalaman pengeditan terbaik.",
   },
   {
     q: "Format fail apa yang disokong?",
-    a: "PDFFix fokus pada operasi PDF. Kami menyokong PDF ke imej (JPG/PNG) dan PDF ke Word (versi Pro).",
+    a: "PDFix fokus pada operasi PDF. Kami menyokong PDF ke imej (JPG/PNG) dan PDF ke Word (versi Pro).",
   },
 ];
 

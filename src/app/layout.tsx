@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
-  title: "PDFFix — Free PDF Editor Online",
+  title: "PDFix — Free PDF Editor Online",
   description: "Merge, split, compress and convert PDF for free. No server upload. Safe and private.",
   icons: { icon: "/logo.svg" },
 };

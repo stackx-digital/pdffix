@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Watermark PDF — PDFFix",
+  title: "Watermark PDF — PDFix",
   description: "Tambah watermark teks atau logo pada PDF anda secara percuma.",
 };
 

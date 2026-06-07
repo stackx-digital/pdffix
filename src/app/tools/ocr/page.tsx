@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "OCR PDF — Ekstrak Teks — PDFFix",
+  title: "OCR PDF — Ekstrak Teks — PDFix",
   description: "Ekstrak teks dari PDF yang diimbas menggunakan OCR dalam pelayar.",
 };
 

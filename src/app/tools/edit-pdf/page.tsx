@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Edit PDF Percuma — PDFFix",
+  title: "Edit PDF Percuma — PDFix",
   description: "Tambah teks, lukis, highlight dan sisip imej terus dalam fail PDF anda.",
 };
 
