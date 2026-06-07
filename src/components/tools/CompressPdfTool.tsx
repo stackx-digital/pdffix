@@ -4,8 +4,11 @@ import { useState, useCallback } from "react";
 import { PDFDocument } from "pdf-lib";
 import { FileArchive, Download } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 export default function CompressPdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("compress-pdf");
   const [file, setFile] = useState<File | null>(null);
   const [compressing, setCompressing] = useState(false);
   const [result, setResult] = useState<{ url: string; size: number } | null>(null);
@@ -18,6 +21,8 @@ export default function CompressPdfTool() {
 
   async function compress() {
     if (!file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setCompressing(true);
     try {
       const bytes = await file.arrayBuffer();
@@ -25,6 +30,7 @@ export default function CompressPdfTool() {
       const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const compressed = await pdf.save({ useObjectStreams: true });
       const blob = new Blob([compressed], { type: "application/pdf" });
+      await recordUsage();
       setResult({ url: URL.createObjectURL(blob), size: blob.size });
     } finally {
       setCompressing(false);
@@ -35,6 +41,9 @@ export default function CompressPdfTool() {
 
   return (
     <div className="space-y-6">
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <FileArchive className="w-10 h-10 text-gray-300 mb-3" />
         <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
@@ -55,7 +64,7 @@ export default function CompressPdfTool() {
 
       <button
         onClick={compress}
-        disabled={!file || compressing}
+        disabled={!file || compressing || limitReached}
         className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
       >
         {compressing ? "Sedang memampatkan..." : "Mampat PDF"}

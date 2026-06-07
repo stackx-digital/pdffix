@@ -21,6 +21,7 @@ const FREE_FEATURES = [
   { label: "Buang Sekatan PDF", included: true },
   { label: "Potong PDF (crop margin)", included: true },
   { label: "Saiz fail maksimum 10MB", included: true },
+  { label: "Had 5 edit sebulan", included: true },
   { label: "OCR PDF (4 bahasa)", included: false },
   { label: "Flatten PDF (PDF statik)", included: false },
   { label: "Mampat Berganda (batch)", included: false },
@@ -32,6 +33,7 @@ const PRO_FEATURES = [
   { label: "OCR PDF — 4 bahasa (MS, EN, ZH, AR)", included: true },
   { label: "Flatten PDF — tukar ke PDF statik", included: true },
   { label: "Mampat Berganda — batch compress", included: true },
+  { label: "Edit tanpa had sebulan", included: true },
   { label: "Saiz fail sehingga 100MB", included: true },
   { label: "Sokongan prioriti", included: true },
 ];

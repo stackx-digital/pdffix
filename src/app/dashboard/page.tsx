@@ -20,17 +20,19 @@ export default async function DashboardPage() {
 
   const isPro = profile?.plan === "pro";
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const { count: usageToday } = await supabase
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const { count: usageThisMonth } = await supabase
     .from("usage")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .gte("created_at", today.toISOString());
+    .gte("created_at", startOfMonth.toISOString());
 
-  const filesUsed = usageToday ?? 0;
-  const filesLimit = isPro ? "∞" : FREE_LIMITS.filesPerDay;
-  const usagePct = isPro ? 0 : Math.min((filesUsed / FREE_LIMITS.filesPerDay) * 100, 100);
+  const editsUsed = usageThisMonth ?? 0;
+  const editsLimit = FREE_LIMITS.editsPerMonth;
+  const usagePct = isPro ? 0 : Math.min((editsUsed / editsLimit) * 100, 100);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -63,8 +65,8 @@ export default async function DashboardPage() {
         {!isPro && (
           <div className="mb-8 p-4 bg-white border border-gray-200 rounded-xl">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Penggunaan hari ini</span>
-              <span className="font-medium text-gray-900">{filesUsed} / {filesLimit} fail</span>
+              <span className="text-gray-600">Edit bulan ini</span>
+              <span className="font-medium text-gray-900">{editsUsed} / {editsLimit} edit</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
@@ -72,9 +74,13 @@ export default async function DashboardPage() {
                 style={{ width: `${usagePct}%` }}
               />
             </div>
-            {filesUsed >= FREE_LIMITS.filesPerDay && (
+            {editsUsed >= editsLimit ? (
               <p className="mt-2 text-xs text-red-600">
-                Had harian dicapai. <Link href="/pricing" className="underline">Naik taraf ke Pro</Link> untuk akses tanpa had.
+                Had bulanan dicapai. <Link href="/pricing" className="underline">Naik taraf ke Pro</Link> untuk akses tanpa had.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-gray-400">
+                Baki {editsLimit - editsUsed} edit lagi bulan ini. Had reset pada 1 haribulan.
               </p>
             )}
           </div>

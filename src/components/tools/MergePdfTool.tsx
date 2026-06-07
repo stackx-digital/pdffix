@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { PDFDocument } from "pdf-lib";
 import { FilePlus2, X, Download, MoveUp, MoveDown } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 interface PdfFile {
   id: string;
@@ -12,6 +14,7 @@ interface PdfFile {
 }
 
 export default function MergePdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("merge-pdf");
   const [files, setFiles] = useState<PdfFile[]>([]);
   const [merging, setMerging] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -46,6 +49,8 @@ export default function MergePdfTool() {
 
   async function merge() {
     if (files.length < 2) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setMerging(true);
     try {
       const merged = await PDFDocument.create();
@@ -57,6 +62,7 @@ export default function MergePdfTool() {
       }
       const bytes = await merged.save();
       const blob = new Blob([bytes], { type: "application/pdf" });
+      await recordUsage();
       setResultUrl(URL.createObjectURL(blob));
     } finally {
       setMerging(false);
@@ -65,6 +71,9 @@ export default function MergePdfTool() {
 
   return (
     <div className="space-y-6">
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       {/* Drop zone */}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <FilePlus2 className="w-10 h-10 text-gray-300 mb-3" />
@@ -110,7 +119,7 @@ export default function MergePdfTool() {
       <div className="flex gap-3">
         <button
           onClick={merge}
-          disabled={files.length < 2 || merging}
+          disabled={files.length < 2 || merging || limitReached}
           className="flex-1 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
         >
           {merging ? "Sedang menggabungkan..." : `Gabung ${files.length} Fail PDF`}

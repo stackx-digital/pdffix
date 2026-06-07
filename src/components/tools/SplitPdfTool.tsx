@@ -4,8 +4,11 @@ import { useState, useCallback } from "react";
 import { PDFDocument } from "pdf-lib";
 import { Scissors, Download } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 export default function SplitPdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("split-pdf");
   const [file, setFile] = useState<File | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [ranges, setRanges] = useState("1");
@@ -35,6 +38,8 @@ export default function SplitPdfTool() {
 
   async function split() {
     if (!file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setSplitting(true);
     setError("");
     try {
@@ -52,6 +57,7 @@ export default function SplitPdfTool() {
         const blob = new Blob([b], { type: "application/pdf" });
         out.push({ name: `bahagian-${i + 1}.pdf`, url: URL.createObjectURL(blob) });
       }
+      await recordUsage();
       setResults(out);
     } catch {
       setError("Format julat halaman tidak sah. Contoh: 1-3, 4-6");
@@ -62,6 +68,9 @@ export default function SplitPdfTool() {
 
   return (
     <div className="space-y-6">
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <Scissors className="w-10 h-10 text-gray-300 mb-3" />
         <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
@@ -104,7 +113,7 @@ export default function SplitPdfTool() {
 
       <button
         onClick={split}
-        disabled={!file || splitting}
+        disabled={!file || splitting || limitReached}
         className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
       >
         {splitting ? "Sedang memisahkan..." : "Pisah PDF"}

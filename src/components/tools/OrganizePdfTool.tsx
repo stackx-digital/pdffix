@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
 import { Upload, Download, GripVertical, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 interface Page {
   index: number;
@@ -11,6 +13,7 @@ interface Page {
 }
 
 export default function OrganizePdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("organize-pdf");
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -55,6 +58,8 @@ export default function OrganizePdfTool() {
 
   async function process() {
     if (!file || pages.length === 0) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setProcessing(true);
     try {
       const bytes = await file.arrayBuffer();

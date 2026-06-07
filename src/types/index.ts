@@ -196,11 +196,11 @@ export const TOOLS: Tool[] = [
 ];
 
 export const FREE_LIMITS = {
-  filesPerDay: 3,
+  editsPerMonth: 5,
   maxFileSizeMB: 10,
 };
 
 export const PRO_LIMITS = {
-  filesPerDay: Infinity,
+  editsPerMonth: Infinity,
   maxFileSizeMB: 100,
 };

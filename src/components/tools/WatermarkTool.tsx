@@ -4,10 +4,13 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { PDFDocument, rgb, degrees, StandardFonts } from "pdf-lib";
 import { Droplets, Download, Eye } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 type WatermarkType = "text" | "image";
 
 export default function WatermarkTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("watermark");
   const [file, setFile] = useState<File | null>(null);
   const [type, setType] = useState<WatermarkType>("text");
   const [text, setText] = useState("SULIT");
@@ -67,6 +70,8 @@ export default function WatermarkTool() {
 
   async function apply() {
     if (!fileBytes.current || !file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setProcessing(true);
     setDone(false);
     try {
@@ -128,6 +133,7 @@ export default function WatermarkTool() {
       a.href = url;
       a.download = `watermarked-${file.name}`;
       a.click();
+      await recordUsage();
       setDone(true);
     } finally {
       setProcessing(false);
@@ -146,6 +152,9 @@ export default function WatermarkTool() {
 
   return (
     <div className="space-y-6">
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       {/* File upload */}
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-12 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
@@ -285,7 +294,7 @@ export default function WatermarkTool() {
 
             <button
               onClick={apply}
-              disabled={processing || (type === "image" && !imageFile)}
+              disabled={processing || limitReached || (type === "image" && !imageFile)}
               className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               <Download className="w-5 h-5" />

@@ -4,11 +4,14 @@ import { useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Image as ImageIcon, Download } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 // Use bundled worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function PdfToImageTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("pdf-to-image");
   const [file, setFile] = useState<File | null>(null);
   const [converting, setConverting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -23,6 +26,8 @@ export default function PdfToImageTool() {
 
   async function convert() {
     if (!file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setConverting(true);
     setImages([]);
     setProgress(0);
@@ -44,6 +49,7 @@ export default function PdfToImageTool() {
         setProgress(Math.round((i / pdf.numPages) * 100));
       }
 
+      await recordUsage();
       setImages(results);
     } finally {
       setConverting(false);
@@ -54,6 +60,9 @@ export default function PdfToImageTool() {
 
   return (
     <div className="space-y-6">
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <ImageIcon className="w-10 h-10 text-gray-300 mb-3" />
         <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
@@ -93,7 +102,7 @@ export default function PdfToImageTool() {
 
       <button
         onClick={convert}
-        disabled={!file || converting}
+        disabled={!file || converting || limitReached}
         className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
       >
         {converting ? `Menukar... ${progress}%` : "Tukar ke Imej"}
