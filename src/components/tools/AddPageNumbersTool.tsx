@@ -29,30 +29,35 @@ export default function AddPageNumbersTool() {
   async function process() {
     if (!file) return;
     setProcessing(true);
-    const bytes = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const pages = pdf.getPages();
+    try {
+      const bytes = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes);
+      const font = await pdf.embedFont(StandardFonts.Helvetica);
+      const pages = pdf.getPages();
 
-    pages.forEach((page, i) => {
-      const { width, height } = page.getSize();
-      const text = String(startFrom + i);
-      const textWidth = font.widthOfTextAtSize(text, fontSize);
-      const margin = 20;
+      pages.forEach((page, i) => {
+        const { width, height } = page.getSize();
+        const text = String(startFrom + i);
+        const textWidth = font.widthOfTextAtSize(text, fontSize);
+        const margin = 20;
 
-      let x = width / 2 - textWidth / 2;
-      let y = margin;
+        let x = width / 2 - textWidth / 2;
+        let y = margin;
 
-      if (position.includes("right")) x = width - margin - textWidth;
-      if (position.includes("left")) x = margin;
-      if (position.includes("top")) y = height - margin - fontSize;
+        if (position.includes("right")) x = width - margin - textWidth;
+        if (position.includes("left")) x = margin;
+        if (position.includes("top")) y = height - margin - fontSize;
 
-      page.drawText(text, { x, y, size: fontSize, font, color: rgb(0.3, 0.3, 0.3) });
-    });
+        page.drawText(text, { x, y, size: fontSize, font, color: rgb(0.3, 0.3, 0.3) });
+      });
 
-    const out = await pdf.save();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+      const out = await pdf.save();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } catch {
+      // error is swallowed — UI returns to idle state via finally
+    } finally {
+      setProcessing(false);
+    }
   }
 
   const POSITIONS: { value: Position; label: string }[] = [

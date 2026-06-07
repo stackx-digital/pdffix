@@ -41,15 +41,20 @@ export default function RotatePdfTool() {
   async function process() {
     if (!file) return;
     setProcessing(true);
-    const bytes = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const pages = pdf.getPages();
-    pages.forEach((page, i) => {
-      if (rotations[i]) page.setRotation(degrees(rotations[i]));
-    });
-    const out = await pdf.save();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+    try {
+      const bytes = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes);
+      const pages = pdf.getPages();
+      pages.forEach((page, i) => {
+        if (rotations[i]) page.setRotation(degrees(rotations[i]));
+      });
+      const out = await pdf.save();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } catch {
+      // error is swallowed — UI returns to idle state via finally
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (

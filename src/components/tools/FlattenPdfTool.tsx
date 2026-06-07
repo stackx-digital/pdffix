@@ -29,36 +29,40 @@ export default function FlattenPdfTool() {
     if (!file) return;
     setProcessing(true);
     setProgress(0);
+    try {
+      const bytes = await file.arrayBuffer();
+      const srcPdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const outPdf = await PDFDocument.create();
 
-    const bytes = await file.arrayBuffer();
-    const srcPdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-    const outPdf = await PDFDocument.create();
+      for (let i = 1; i <= srcPdf.numPages; i++) {
+        const page = await srcPdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
 
-    for (let i = 1; i <= srcPdf.numPages; i++) {
-      const page = await srcPdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d")!;
+        await (page.render as any)({ canvasContext: ctx, viewport }).promise;
 
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d")!;
-      await (page.render as any)({ canvasContext: ctx, viewport }).promise;
+        const blob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((b) => resolve(b!), "image/jpeg", quality / 100)
+        );
+        const imgBytes = await blob.arrayBuffer();
+        const img = await outPdf.embedJpg(imgBytes);
 
-      const blob = await new Promise<Blob>((resolve) =>
-        canvas.toBlob((b) => resolve(b!), "image/jpeg", quality / 100)
-      );
-      const imgBytes = await blob.arrayBuffer();
-      const img = await outPdf.embedJpg(imgBytes);
+        const pdfPage = outPdf.addPage([viewport.width / 2, viewport.height / 2]);
+        pdfPage.drawImage(img, { x: 0, y: 0, width: viewport.width / 2, height: viewport.height / 2 });
 
-      const pdfPage = outPdf.addPage([viewport.width / 2, viewport.height / 2]);
-      pdfPage.drawImage(img, { x: 0, y: 0, width: viewport.width / 2, height: viewport.height / 2 });
+        setProgress(Math.round((i / srcPdf.numPages) * 100));
+      }
 
-      setProgress(Math.round((i / srcPdf.numPages) * 100));
+      const out = await outPdf.save();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } catch {
+      // error is swallowed — UI returns to idle state via finally
+    } finally {
+      setProcessing(false);
     }
-
-    const out = await outPdf.save();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
   }
 
   return (

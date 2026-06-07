@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { PDFDocument, rgb, degrees, StandardFonts } from "pdf-lib";
 import { Droplets, Download, Eye } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
@@ -20,6 +20,16 @@ export default function WatermarkTool() {
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
   const fileBytes = useRef<ArrayBuffer | null>(null);
+
+  const imagePreviewUrl = useMemo(() => {
+    if (!imageFile) return null;
+    const url = URL.createObjectURL(imageFile);
+    return url;
+  }, [imageFile]);
+
+  useEffect(() => {
+    return () => { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); };
+  }, [imagePreviewUrl]);
 
   const loadFile = useCallback(async (f: File | null) => {
     if (!f || f.type !== "application/pdf") return;
@@ -262,9 +272,9 @@ export default function WatermarkTool() {
                     {text}
                   </div>
                 )}
-                {type === "image" && imageFile && (
+                {type === "image" && imagePreviewUrl && (
                   <img
-                    src={URL.createObjectURL(imageFile)}
+                    src={imagePreviewUrl}
                     alt="watermark"
                     className="absolute"
                     style={{ opacity, transform: `rotate(${-rotation}deg)`, maxWidth: "40%", maxHeight: "40%" }}

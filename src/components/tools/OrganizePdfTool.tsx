@@ -56,15 +56,20 @@ export default function OrganizePdfTool() {
   async function process() {
     if (!file || pages.length === 0) return;
     setProcessing(true);
-    const bytes = await file.arrayBuffer();
-    const srcPdf = await PDFDocument.load(bytes);
-    const outPdf = await PDFDocument.create();
-    const indices = pages.map((p) => p.index);
-    const copied = await outPdf.copyPages(srcPdf, indices);
-    copied.forEach((page) => outPdf.addPage(page));
-    const out = await outPdf.save();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+    try {
+      const bytes = await file.arrayBuffer();
+      const srcPdf = await PDFDocument.load(bytes);
+      const outPdf = await PDFDocument.create();
+      const indices = pages.map((p) => p.index);
+      const copied = await outPdf.copyPages(srcPdf, indices);
+      copied.forEach((page) => outPdf.addPage(page));
+      const out = await outPdf.save();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } catch {
+      // error is swallowed — UI returns to idle state via finally
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (

@@ -37,32 +37,37 @@ export default function CropPdfTool() {
   async function process() {
     if (!file) return;
     setProcessing(true);
-    const bytes = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const pages = pdf.getPages();
+    try {
+      const bytes = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes);
+      const pages = pdf.getPages();
 
-    pages.forEach((page, i) => {
-      const pageNum = i + 1;
-      const shouldCrop =
-        applyTo === "all" ||
-        (applyTo === "odd" && pageNum % 2 !== 0) ||
-        (applyTo === "even" && pageNum % 2 === 0);
+      pages.forEach((page, i) => {
+        const pageNum = i + 1;
+        const shouldCrop =
+          applyTo === "all" ||
+          (applyTo === "odd" && pageNum % 2 !== 0) ||
+          (applyTo === "even" && pageNum % 2 === 0);
 
-      if (!shouldCrop) return;
+        if (!shouldCrop) return;
 
-      const { width, height } = page.getSize();
-      const x = margins.left;
-      const y = margins.bottom;
-      const w = width - margins.left - margins.right;
-      const h = height - margins.top - margins.bottom;
-      if (w > 0 && h > 0) {
-        page.setCropBox(x, y, w, h);
-      }
-    });
+        const { width, height } = page.getSize();
+        const x = margins.left;
+        const y = margins.bottom;
+        const w = width - margins.left - margins.right;
+        const h = height - margins.top - margins.bottom;
+        if (w > 0 && h > 0) {
+          page.setCropBox(x, y, w, h);
+        }
+      });
 
-    const out = await pdf.save();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+      const out = await pdf.save();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } catch {
+      // error is swallowed — UI returns to idle state via finally
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (

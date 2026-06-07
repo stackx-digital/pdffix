@@ -433,13 +433,11 @@ export default function ESignTool() {
             >
               <canvas ref={pdfCanvasRef} className="block" />
               {/* Placed signatures on current page */}
-              {signatures
-                .filter(s => s.page === currentPage)
-                .map((s, i) => {
-                  const realIdx = signatures.findIndex((sig, idx) => sig.page === currentPage && signatures.filter(ss => ss.page === currentPage).indexOf(sig) === i);
+              {signatures.map((s, globalIdx) => {
+                if (s.page !== currentPage) return null;
                   return (
                     <img
-                      key={i}
+                      key={globalIdx}
                       src={s.dataUrl}
                       alt="sig"
                       draggable={false}
@@ -449,7 +447,7 @@ export default function ESignTool() {
                         top: `${s.y * 100}%`,
                         width: `${s.w * 100}%`,
                       }}
-                      onMouseDown={(e) => startDragSig(e, realIdx)}
+                      onMouseDown={(e) => startDragSig(e, globalIdx)}
                     />
                   );
                 })}

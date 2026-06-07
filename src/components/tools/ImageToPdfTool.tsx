@@ -43,24 +43,33 @@ export default function ImageToPdfTool() {
   async function process() {
     if (images.length === 0) return;
     setProcessing(true);
-    const pdf = await PDFDocument.create();
+    try {
+      const pdf = await PDFDocument.create();
 
-    for (const img of images) {
-      const bytes = await img.file.arrayBuffer();
-      let pdfImage;
-      if (img.file.type === "image/png") {
-        pdfImage = await pdf.embedPng(bytes);
-      } else {
-        pdfImage = await pdf.embedJpg(bytes);
+      for (const img of images) {
+        try {
+          const bytes = await img.file.arrayBuffer();
+          let pdfImage;
+          if (img.file.type === "image/png") {
+            pdfImage = await pdf.embedPng(bytes);
+          } else {
+            pdfImage = await pdf.embedJpg(bytes);
+          }
+          const { width, height } = pdfImage;
+          const page = pdf.addPage([width, height]);
+          page.drawImage(pdfImage, { x: 0, y: 0, width, height });
+        } catch {
+          // skip unsupported or corrupt images
+        }
       }
-      const { width, height } = pdfImage;
-      const page = pdf.addPage([width, height]);
-      page.drawImage(pdfImage, { x: 0, y: 0, width, height });
-    }
 
-    const out = await pdf.save();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+      const out = await pdf.save();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } catch {
+      // error is swallowed — UI returns to idle state via finally
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (
