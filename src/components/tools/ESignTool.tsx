@@ -446,6 +446,7 @@ export default function ESignTool() {
                         left: `${s.x * 100}%`,
                         top: `${s.y * 100}%`,
                         width: `${s.w * 100}%`,
+                        height: `${s.h * 100}%`,
                       }}
                       onMouseDown={(e) => startDragSig(e, globalIdx)}
                     />

@@ -5,6 +5,8 @@ import * as pdfjsLib from "pdfjs-dist";
 import { createWorker } from "tesseract.js";
 import { ScanText, Copy, Check, Download, Upload } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -18,6 +20,7 @@ const LANGUAGES: { value: Lang; label: string }[] = [
 ];
 
 export default function OcrTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("ocr");
   const [file, setFile] = useState<File | null>(null);
   const [lang, setLang] = useState<Lang>("eng");
   const [processing, setProcessing] = useState(false);
@@ -46,6 +49,8 @@ export default function OcrTool() {
 
   async function runOcr() {
     if (!file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setProcessing(true);
     setText("");
     setProgress(0);
@@ -75,6 +80,7 @@ export default function OcrTool() {
       }
 
       await worker.terminate();
+      await recordUsage();
       setText(results.join("\n\n"));
       setStatus("");
     } catch (e) {
@@ -103,6 +109,9 @@ export default function OcrTool() {
     <div className="max-w-3xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">OCR PDF</h1>
       <p className="text-gray-500 mb-8">Ekstrak teks dari PDF yang diimbas menggunakan OCR. Berfungsi pada PDF imbasan dan imej.</p>
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
 
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
@@ -150,7 +159,7 @@ export default function OcrTool() {
           )}
 
           {!text && (
-            <button onClick={runOcr} disabled={processing} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <button onClick={runOcr} disabled={processing || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               {processing ? "Memproses..." : "Mula OCR"}
             </button>
           )}

@@ -42,14 +42,19 @@ export function useUsageLimit(tool: string) {
 
   // Call this before processing — returns true if allowed, false if limit reached
   async function checkLimit(): Promise<boolean> {
-    const res = await fetch("/api/usage");
-    const data: UsageStatus = await res.json();
-    setStatus(data);
-    if (!data.canProceed) {
-      setLimitReached(true);
-      return false;
+    try {
+      const res = await fetch("/api/usage");
+      if (!res.ok) return true;
+      const data: UsageStatus = await res.json();
+      setStatus(data);
+      if (!data.canProceed) {
+        setLimitReached(true);
+        return false;
+      }
+      return true;
+    } catch {
+      return true;
     }
-    return true;
   }
 
   return { status, limitReached, checkLimit, recordUsage };

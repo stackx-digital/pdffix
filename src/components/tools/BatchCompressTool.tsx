@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { PDFDocument } from "pdf-lib";
 import { Upload, Download, X, FileArchive, CheckCircle2 } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 interface PdfEntry {
   id: string;
@@ -15,6 +17,7 @@ interface PdfEntry {
 }
 
 export default function BatchCompressTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("batch-compress");
   const [entries, setEntries] = useState<PdfEntry[]>([]);
   const [processing, setProcessing] = useState(false);
 
@@ -37,6 +40,8 @@ export default function BatchCompressTool() {
   }
 
   async function processAll() {
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setProcessing(true);
     const pending = entries.filter((e) => e.status === "pending");
 
@@ -46,6 +51,7 @@ export default function BatchCompressTool() {
         const bytes = await entry.file.arrayBuffer();
         const out = await compressSingle(bytes);
         const url = URL.createObjectURL(new Blob([out], { type: "application/pdf" }));
+        await recordUsage();
         setEntries((prev) => prev.map((e) =>
           e.id === entry.id ? { ...e, status: "done", compressedSize: out.length, url } : e
         ));
@@ -74,6 +80,9 @@ export default function BatchCompressTool() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Mampat PDF Berganda</h1>
       <p className="text-gray-500 mb-8">Mampat banyak fail PDF sekaligus.</p>
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
 
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-10 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors mb-6">
         <Upload className="w-8 h-8 text-gray-400 mb-2" />
@@ -127,7 +136,7 @@ export default function BatchCompressTool() {
 
           <div className="flex gap-3">
             {hasPending && (
-              <button onClick={processAll} disabled={processing} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+              <button onClick={processAll} disabled={processing || limitReached} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
                 {processing ? "Memproses..." : `Mampat ${entries.filter((e) => e.status === "pending").length} Fail`}
               </button>
             )}

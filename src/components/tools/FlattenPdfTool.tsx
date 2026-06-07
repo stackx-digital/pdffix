@@ -5,10 +5,13 @@ import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument } from "pdf-lib";
 import { Upload, Download, Layers } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
+import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export default function FlattenPdfTool() {
+  const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("flatten-pdf");
   const [file, setFile] = useState<File | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [quality, setQuality] = useState(90);
@@ -27,6 +30,8 @@ export default function FlattenPdfTool() {
 
   async function process() {
     if (!file) return;
+    const allowed = await checkLimit();
+    if (!allowed) return;
     setProcessing(true);
     setProgress(0);
     try {
@@ -57,6 +62,7 @@ export default function FlattenPdfTool() {
       }
 
       const out = await outPdf.save();
+      await recordUsage();
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       // error is swallowed — UI returns to idle state via finally
@@ -69,6 +75,9 @@ export default function FlattenPdfTool() {
     <div className="max-w-lg mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Flatten PDF</h1>
       <p className="text-gray-500 mb-8">Tukar PDF interaktif (annotation, borang, layer) kepada PDF statik yang tidak boleh diedit. Sesuai untuk penghantaran rasmi.</p>
+      {status && !status.isPro && status.loggedIn && (
+        <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
 
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
@@ -115,7 +124,7 @@ export default function FlattenPdfTool() {
               <Download className="w-5 h-5" /> Muat Turun PDF Statik
             </a>
           ) : (
-            <button onClick={process} disabled={processing} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               <Layers className="w-4 h-4" />
               {processing ? "Memproses..." : "Flatten PDF"}
             </button>

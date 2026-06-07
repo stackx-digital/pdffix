@@ -271,7 +271,7 @@ export default function WatermarkTool() {
                       color,
                       fontSize: Math.min(fontSize * 0.5, 40),
                       opacity,
-                      transform: `rotate(${-rotation}deg)`,
+                      transform: `rotate(${rotation}deg)`,
                       ...(position === "top-left" && { top: 16, left: 16 }),
                       ...(position === "top-right" && { top: 16, right: 16 }),
                       ...(position === "bottom-left" && { bottom: 16, left: 16 }),
@@ -286,7 +286,7 @@ export default function WatermarkTool() {
                     src={imagePreviewUrl}
                     alt="watermark"
                     className="absolute"
-                    style={{ opacity, transform: `rotate(${-rotation}deg)`, maxWidth: "40%", maxHeight: "40%" }}
+                    style={{ opacity, transform: `rotate(${rotation}deg)`, maxWidth: "40%", maxHeight: "40%" }}
                   />
                 )}
               </div>
