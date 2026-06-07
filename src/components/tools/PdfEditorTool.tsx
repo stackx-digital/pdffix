@@ -338,22 +338,36 @@ export default function PdfEditorTool() {
 
   function undo() {
     if (!fabricRef.current || undoStack.current.length === 0) return;
-    const current = JSON.stringify(fabricRef.current.toJSON());
-    redoStack.current.push(current);
-    const prev = undoStack.current.pop()!;
-    fabricRef.current.loadFromJSON(JSON.parse(prev), () => fabricRef.current.renderAll());
-    setCanUndo(undoStack.current.length > 0);
-    setCanRedo(true);
+    try {
+      const current = JSON.stringify(fabricRef.current.toJSON());
+      redoStack.current.push(current);
+      const prev = undoStack.current.pop()!;
+      fabricRef.current.loadFromJSON(JSON.parse(prev), () => fabricRef.current.renderAll());
+      setCanUndo(undoStack.current.length > 0);
+      setCanRedo(true);
+    } catch {
+      undoStack.current = [];
+      redoStack.current = [];
+      setCanUndo(false);
+      setCanRedo(false);
+    }
   }
 
   function redo() {
     if (!fabricRef.current || redoStack.current.length === 0) return;
-    const current = JSON.stringify(fabricRef.current.toJSON());
-    undoStack.current.push(current);
-    const next = redoStack.current.pop()!;
-    fabricRef.current.loadFromJSON(JSON.parse(next), () => fabricRef.current.renderAll());
-    setCanUndo(true);
-    setCanRedo(redoStack.current.length > 0);
+    try {
+      const current = JSON.stringify(fabricRef.current.toJSON());
+      undoStack.current.push(current);
+      const next = redoStack.current.pop()!;
+      fabricRef.current.loadFromJSON(JSON.parse(next), () => fabricRef.current.renderAll());
+      setCanUndo(true);
+      setCanRedo(redoStack.current.length > 0);
+    } catch {
+      undoStack.current = [];
+      redoStack.current = [];
+      setCanUndo(false);
+      setCanRedo(false);
+    }
   }
 
   function deleteSelected() {

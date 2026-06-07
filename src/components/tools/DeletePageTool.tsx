@@ -215,8 +215,8 @@ export default function DeletePageTool() {
               disabled={selected.size === 0 || processing || limitReached}
               className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
-              <Download className="w-5 h-5" />
-              {processing ? "Memproses..." : `Delete ${selected.size > 0 ? selected.size + " halaman & " : ""}Muat Turun`}
+              <Trash2 className="w-5 h-5" />
+              {processing ? "Memproses..." : `Buang ${selected.size > 0 ? selected.size + " halaman & " : ""}Muat Turun`}
             </button>
 
             {selected.size > 0 && (
