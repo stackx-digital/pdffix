@@ -2,8 +2,14 @@
 User-agent: *
 Allow: /
 
+# *
+User-agent: *
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /api
+
 # Host
-Host: http://localhost:3000
+Host: https://pdfix.my
 
 # Sitemaps
-Sitemap: http://localhost:3000/sitemap.xml
+Sitemap: https://pdfix.my/sitemap.xml
