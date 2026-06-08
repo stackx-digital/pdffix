@@ -10,7 +10,6 @@ module.exports = {
       { userAgent: "*", allow: "/" },
       { userAgent: "*", disallow: ["/dashboard", "/auth", "/api"] },
     ],
-    additionalSitemaps: ["https://pdfix.my/sitemap.xml"],
   },
   additionalPaths: async (config) => [
     { loc: "/", changefreq: "daily", priority: 1.0, lastmod: new Date().toISOString() },
