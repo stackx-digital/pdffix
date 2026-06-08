@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CropPdfTool from "@/components/tools/CropPdfTool";
+
+export const metadata: Metadata = {
+  title: "Potong PDF Percuma — Crop PDF Online",
+  description: "Potong atau crop kawasan tertentu dalam PDF anda secara percuma terus dalam pelayar.",
+};
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import UnlockPdfTool from "@/components/tools/UnlockPdfTool";
+
+export const metadata: Metadata = {
+  title: "Buang Sekatan PDF Percuma — Unlock PDF Online",
+  description: "Buang password dan sekatan pada fail PDF percuma. Selamat, fail tidak keluar dari peranti anda.",
+};
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BatchCompressTool from "@/components/tools/BatchCompressTool";
+
+export const metadata: Metadata = {
+  title: "Mampat PDF Pukal Percuma",
+  description: "Compress beberapa fail PDF sekaligus tanpa hilang kualiti. Percuma dan selamat dalam pelayar.",
+};
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

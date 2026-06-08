@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
@@ -9,6 +10,13 @@ import HowItWorks from "@/components/ui/HowItWorks";
 import StatsBar from "@/components/ui/StatsBar";
 import Testimonials from "@/components/ui/Testimonials";
 import { TOOLS } from "@/types";
+
+export const metadata: Metadata = {
+  title: "PDFix — Edit PDF Percuma, Compress, Gabung & Tukar PDF Online Malaysia",
+  description:
+    "Alat PDF percuma untuk semua rakyat Malaysia. Edit PDF, compress PDF, gabung PDF, pisah PDF, tanda tangan PDF dan tukar PDF ke Word — terus dalam pelayar tanpa upload ke server.",
+  alternates: { canonical: "https://pdfix.my" },
+};
 
 export default async function HomePage() {
   const supabase = await createClient();

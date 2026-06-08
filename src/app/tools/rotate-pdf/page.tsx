@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RotatePdfTool from "@/components/tools/RotatePdfTool";
+
+export const metadata: Metadata = {
+  title: "Putar Halaman PDF Percuma — Rotate PDF Online",
+  description: "Putar halaman PDF 90° atau 180° secara percuma. Tiada software diperlukan, terus dalam pelayar.",
+};
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
