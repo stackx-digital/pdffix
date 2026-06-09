@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import type { Metadata } from "next";
 
@@ -14,9 +13,7 @@ export default async function AdminPage() {
 
   if (!user || user.email !== ADMIN_EMAIL) redirect("/dashboard");
 
-  const admin = createAdminClient();
-
-  const { data: profiles } = await admin
+  const { data: profiles } = await supabase
     .from("profiles")
     .select("id, email, full_name, plan, created_at")
     .order("created_at", { ascending: false });
@@ -25,12 +22,12 @@ export default async function AdminPage() {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const { data: usageMonth } = await admin
+  const { data: usageMonth } = await supabase
     .from("usage")
     .select("user_id, tool, created_at")
     .gte("created_at", startOfMonth.toISOString());
 
-  const { data: usageAll } = await admin.from("usage").select("user_id");
+  const { data: usageAll } = await supabase.from("usage").select("user_id");
 
   const usageThisMonth: Record<string, number> = {};
   for (const u of usageMonth ?? []) {
