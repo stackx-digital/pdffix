@@ -33,6 +33,8 @@ export default function ESignTool() {
   const [step, setStep] = useState<"draw" | "place">("draw");
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizing, setResizing] = useState<{ idx: number; corner: "se" | "sw" | "ne" | "nw"; startX: number; startY: number; origSig: PlacedSignature } | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
 
   // Signature pad
@@ -185,6 +187,7 @@ export default function ESignTool() {
     const overlay = overlayRef.current!;
     const rect = overlay.getBoundingClientRect();
     const sig = signatures[idx];
+    setSelected(idx);
     setDragging(idx);
     setDragOffset({
       x: (e.clientX - rect.left) / rect.width - sig.x,
@@ -192,12 +195,51 @@ export default function ESignTool() {
     });
   }
 
+  function startResize(e: React.MouseEvent, idx: number, corner: "se" | "sw" | "ne" | "nw") {
+    e.stopPropagation();
+    e.preventDefault();
+    setResizing({ idx, corner, startX: e.clientX, startY: e.clientY, origSig: { ...signatures[idx] } });
+  }
+
   function onOverlayMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (resizing !== null) {
+      const overlay = overlayRef.current!;
+      const rect = overlay.getBoundingClientRect();
+      const dx = (e.clientX - resizing.startX) / rect.width;
+      const dy = (e.clientY - resizing.startY) / rect.height;
+      const orig = resizing.origSig;
+      let { x, y, w, h } = orig;
+      const MIN = 0.04;
+      if (resizing.corner === "se") {
+        w = Math.max(MIN, orig.w + dx);
+        h = Math.max(MIN, orig.h + dy);
+      } else if (resizing.corner === "sw") {
+        w = Math.max(MIN, orig.w - dx);
+        h = Math.max(MIN, orig.h + dy);
+        x = orig.x + orig.w - w;
+      } else if (resizing.corner === "ne") {
+        w = Math.max(MIN, orig.w + dx);
+        h = Math.max(MIN, orig.h - dy);
+        y = orig.y + orig.h - h;
+      } else {
+        w = Math.max(MIN, orig.w - dx);
+        h = Math.max(MIN, orig.h - dy);
+        x = orig.x + orig.w - w;
+        y = orig.y + orig.h - h;
+      }
+      setSignatures(prev => prev.map((s, i) => i === resizing.idx ? { ...s, x, y, w, h } : s));
+      return;
+    }
     if (dragging === null) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - dragOffset.x;
     const y = (e.clientY - rect.top) / rect.height - dragOffset.y;
     setSignatures(prev => prev.map((s, i) => i === dragging ? { ...s, x, y } : s));
+  }
+
+  function stopInteraction() {
+    setDragging(null);
+    setResizing(null);
   }
 
   function removeSig(idx: number) {
@@ -425,31 +467,58 @@ export default function ESignTool() {
             <div
               ref={overlayRef}
               className={cn("relative inline-block shadow-lg mx-auto select-none", step === "place" && "cursor-copy")}
-              onClick={handleOverlayClick}
+              onClick={(e) => { handleOverlayClick(e); setSelected(null); }}
               onMouseMove={onOverlayMouseMove}
-              onMouseUp={() => setDragging(null)}
+              onMouseUp={stopInteraction}
+              onMouseLeave={stopInteraction}
             >
               <canvas ref={pdfCanvasRef} className="block" />
               {/* Placed signatures on current page */}
               {signatures.map((s, globalIdx) => {
                 if (s.page !== currentPage) return null;
-                  return (
-                    <img
-                      key={globalIdx}
-                      src={s.dataUrl}
-                      alt="sig"
-                      draggable={false}
-                      className="absolute cursor-move"
-                      style={{
-                        left: `${s.x * 100}%`,
-                        top: `${s.y * 100}%`,
-                        width: `${s.w * 100}%`,
-                        height: `${s.h * 100}%`,
-                      }}
-                      onMouseDown={(e) => startDragSig(e, globalIdx)}
-                    />
-                  );
-                })}
+                const isSel = selected === globalIdx;
+                return (
+                  <div
+                    key={globalIdx}
+                    className="absolute"
+                    style={{
+                      left: `${s.x * 100}%`,
+                      top: `${s.y * 100}%`,
+                      width: `${s.w * 100}%`,
+                      height: `${s.h * 100}%`,
+                    }}
+                    onMouseDown={(e) => { e.stopPropagation(); startDragSig(e, globalIdx); }}
+                    onClick={(e) => { e.stopPropagation(); setSelected(globalIdx); }}
+                  >
+                    <img src={s.dataUrl} alt="sig" draggable={false} className="w-full h-full cursor-move" style={{ userSelect: "none" }} />
+                    {/* Selection border + resize handles */}
+                    {isSel && (
+                      <>
+                        <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none rounded-sm" />
+                        {(["nw","ne","sw","se"] as const).map(corner => (
+                          <div
+                            key={corner}
+                            className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-sm z-10"
+                            style={{
+                              top: corner.startsWith("n") ? -6 : undefined,
+                              bottom: corner.startsWith("s") ? -6 : undefined,
+                              left: corner.endsWith("w") ? -6 : undefined,
+                              right: corner.endsWith("e") ? -6 : undefined,
+                              cursor: `${corner}-resize`,
+                            }}
+                            onMouseDown={(e) => startResize(e, globalIdx, corner)}
+                          />
+                        ))}
+                        {/* Delete button */}
+                        <button
+                          className="absolute -top-5 -right-5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10 hover:bg-red-600"
+                          onClick={(e) => { e.stopPropagation(); removeSig(globalIdx); setSelected(null); }}
+                        >×</button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
