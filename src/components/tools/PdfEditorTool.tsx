@@ -45,6 +45,8 @@ export default function PdfEditorTool() {
 
   // Sign modal
   const [showSignModal, setShowSignModal] = useState(false);
+  const [signTab, setSignTab] = useState<"draw" | "upload">("draw");
+  const [uploadedSignature, setUploadedSignature] = useState<string | null>(null);
   const signCanvasRef = useRef<HTMLCanvasElement>(null);
   const signDrawing = useRef(false);
   const signLastPos = useRef({ x: 0, y: 0 });
@@ -512,9 +514,10 @@ export default function PdfEditorTool() {
     canvas.getContext("2d")!.clearRect(0, 0, canvas.width, canvas.height);
   }
   async function signPlace() {
-    const canvas = signCanvasRef.current!;
-    const dataUrl = canvas.toDataURL("image/png");
     if (!fabricRef.current) return;
+    const dataUrl = signTab === "upload" && uploadedSignature
+      ? uploadedSignature
+      : signCanvasRef.current!.toDataURL("image/png");
     const { fabric } = await import("fabric");
     pushUndo();
     fabric.Image.fromURL(dataUrl, (img: any) => {
@@ -525,7 +528,16 @@ export default function PdfEditorTool() {
       fabricRef.current.renderAll();
     });
     setShowSignModal(false);
+    setUploadedSignature(null);
+    setSignTab("draw");
     setActiveTool("select");
+  }
+
+  function handleSignUpload(file: File | null) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => setUploadedSignature(e.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   // Note: place sticky note
@@ -886,21 +898,61 @@ export default function PdfEditorTool() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Lukis Tandatangan</h3>
-              <button onClick={() => { setShowSignModal(false); setActiveTool("select"); }} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+              <h3 className="font-semibold text-gray-900">Tandatangan</h3>
+              <button onClick={() => { setShowSignModal(false); setActiveTool("select"); setUploadedSignature(null); setSignTab("draw"); }} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200">
+              <button onClick={() => setSignTab("draw")} className={cn("flex-1 py-3 text-sm font-medium transition-colors", signTab === "draw" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700")}>
+                Lukis
+              </button>
+              <button onClick={() => setSignTab("upload")} className={cn("flex-1 py-3 text-sm font-medium transition-colors", signTab === "upload" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700")}>
+                Upload Imej
+              </button>
             </div>
             <div className="p-5">
-              <canvas
-                ref={signCanvasRef} width={420} height={160}
-                className="w-full border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 touch-none"
-                onMouseDown={signStart} onMouseMove={signMove} onMouseUp={signEnd} onMouseLeave={signEnd}
-                onTouchStart={signStart} onTouchMove={signMove} onTouchEnd={signEnd}
-              />
-              <p className="text-xs text-gray-400 text-center mt-2">Lukis tandatangan anda di atas</p>
+              {signTab === "draw" ? (
+                <>
+                  <canvas
+                    ref={signCanvasRef} width={420} height={160}
+                    className="w-full border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 touch-none cursor-crosshair"
+                    onMouseDown={signStart} onMouseMove={signMove} onMouseUp={signEnd} onMouseLeave={signEnd}
+                    onTouchStart={signStart} onTouchMove={signMove} onTouchEnd={signEnd}
+                  />
+                  <p className="text-xs text-gray-400 text-center mt-2">Lukis tandatangan anda di atas</p>
+                </>
+              ) : (
+                <>
+                  {uploadedSignature ? (
+                    <div className="space-y-3">
+                      <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 flex items-center justify-center h-40">
+                        <img src={uploadedSignature} alt="Tandatangan" className="max-h-full max-w-full object-contain" />
+                      </div>
+                      <label className="block w-full py-2 text-center text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 cursor-pointer">
+                        Tukar imej
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSignUpload(e.target.files?.[0] ?? null)} />
+                      </label>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl h-40 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
+                      <svg className="w-8 h-8 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      <span className="text-sm text-gray-500">Klik untuk upload imej tandatangan</span>
+                      <span className="text-xs text-gray-400 mt-1">PNG, JPG, SVG</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSignUpload(e.target.files?.[0] ?? null)} />
+                    </label>
+                  )}
+                </>
+              )}
             </div>
             <div className="flex gap-2 px-5 pb-5">
-              <button onClick={signClear} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Padam</button>
-              <button onClick={signPlace} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700">
+              {signTab === "draw" && (
+                <button onClick={signClear} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Padam</button>
+              )}
+              <button
+                onClick={signPlace}
+                disabled={signTab === "upload" && !uploadedSignature}
+                className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-40"
+              >
                 <Check className="w-4 h-4 inline mr-1" />Letakkan
               </button>
             </div>
