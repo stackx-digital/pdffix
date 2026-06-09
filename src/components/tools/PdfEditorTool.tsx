@@ -867,18 +867,17 @@ export default function PdfEditorTool() {
         )}
 
         {/* Canvas */}
-        <div className="flex-1 overflow-auto bg-gray-300 flex justify-center items-start p-6">
-          {loadingPdf ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="flex-1 overflow-auto bg-gray-300 flex justify-center items-start p-6 relative">
+          {loadingPdf && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 bg-gray-300/80">
               <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
               <p className="text-sm text-gray-500">Memuatkan PDF...</p>
             </div>
-          ) : (
-            <div className="relative shadow-2xl inline-block" style={{ cursor: toolCursor(activeTool) }}>
-              <canvas ref={pdfCanvasRef} className="block" />
-              <div ref={fabricContainerRef} className="absolute top-0 left-0" />
-            </div>
           )}
+          <div className="relative shadow-2xl inline-block" style={{ cursor: toolCursor(activeTool) }}>
+            <canvas ref={pdfCanvasRef} className="block" />
+            <div ref={fabricContainerRef} className="absolute top-0 left-0" />
+          </div>
         </div>
       </div>
 
