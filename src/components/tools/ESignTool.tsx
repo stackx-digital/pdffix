@@ -249,16 +249,6 @@ export default function ESignTool() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm">Memuatkan PDF...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -423,7 +413,15 @@ export default function ESignTool() {
             <p className="text-xs text-gray-400">{file.name} · {formatBytes(file.size)}</p>
           </div>
 
-          <div className="overflow-auto bg-gray-200 rounded-xl p-4 flex-1">
+          <div className="overflow-auto bg-gray-200 rounded-xl p-4 flex-1 relative">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-200/80 rounded-xl">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">Memuatkan PDF...</p>
+                </div>
+              </div>
+            )}
             <div
               ref={overlayRef}
               className={cn("relative inline-block shadow-lg mx-auto select-none", step === "place" && "cursor-copy")}
