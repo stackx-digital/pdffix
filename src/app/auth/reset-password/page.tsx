@@ -20,8 +20,9 @@ export default function ResetPasswordPage() {
       setError("Kata laluan tidak sepadan.");
       return;
     }
-    if (password.length < 6) {
-      setError("Kata laluan mesti sekurang-kurangnya 6 aksara.");
+    // FIXED: minimum 8 chars for better security
+    if (password.length < 8) {
+      setError("Kata laluan mesti sekurang-kurangnya 8 aksara.");
       return;
     }
 
@@ -84,9 +85,9 @@ export default function ResetPasswordPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Minimum 6 aksara"
+                placeholder="Minimum 8 aksara"
               />
             </div>
 
@@ -97,7 +98,7 @@ export default function ResetPasswordPage() {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Taip semula kata laluan"
               />

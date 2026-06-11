@@ -5,7 +5,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Admin — PDFix", robots: { index: false, follow: false } };
 
-const ADMIN_EMAIL = "stackxdigital@gmail.com";
+// FIXED: moved to env var to avoid hardcoding in source
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "stackxdigital@gmail.com";
 
 export default async function AdminPage() {
   const supabase = await createClient();

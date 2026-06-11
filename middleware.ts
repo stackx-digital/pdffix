@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  if (path.startsWith("/dashboard")) {
+  // FIXED: protect both /dashboard and /admin routes
+  if (path.startsWith("/dashboard") || path.startsWith("/admin")) {
     const hasSession = req.cookies
       .getAll()
       .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
