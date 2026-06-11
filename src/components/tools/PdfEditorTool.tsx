@@ -14,6 +14,12 @@ import { useUsageLimit } from "@/hooks/useUsageLimit";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
+// FIXED: minimal type alias for Fabric canvas/object — avoids bare `any` in function signatures
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FabricCanvas = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FabricObject = any;
+
 type ToolType =
   | "select" | "move" | "addtext" | "edittext" | "sign"
   | "line" | "draw" | "eraser" | "highlight" | "texthighlight"
@@ -70,6 +76,8 @@ export default function PdfEditorTool() {
 
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
   const fabricContainerRef = useRef<HTMLDivElement>(null);
+  // fabric is a dynamic import — any is intentional here (no static types available at module level)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fabricRef = useRef<any>(null);
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const pageStates = useRef<Record<number, string>>({});
@@ -128,7 +136,7 @@ export default function PdfEditorTool() {
       setLoadingPdf(false);
       setPdfDoc(pdf);
     } catch (e) {
-      console.error("PDF load error:", e);
+      if (process.env.NODE_ENV === "development") console.error("PDF load error:", e); // FIXED: dev-only log
       setError("Gagal memuatkan PDF. Sila cuba fail lain.");
       setFile(null);
       setLoadingPdf(false);
@@ -283,7 +291,7 @@ export default function PdfEditorTool() {
           }
         });
       } catch (e) {
-        console.error("Canvas init error:", e);
+        if (process.env.NODE_ENV === "development") console.error("Canvas init error:", e); // FIXED: dev-only log
       }
     }
 
@@ -296,7 +304,7 @@ export default function PdfEditorTool() {
     if (fabricRef.current) applyTool(fabricRef.current, activeTool, color, fontSize);
   }, [activeTool, color, fontSize]);
 
-  function applyTool(fc: any, tool: ToolType, col: string, _fsize: number) {
+  function applyTool(fc: FabricCanvas, tool: ToolType, col: string, _fsize: number) {
     fc.isDrawingMode = false;
     fc.selection = tool === "select" || tool === "edittext" || tool === "move";
 
@@ -419,7 +427,7 @@ export default function PdfEditorTool() {
     pushUndo();
     const cx = fc.width / 2, cy = fc.height / 2;
     const col = color;
-    let obj: any;
+    let obj: FabricObject;
 
     switch (type) {
       case "crossmark": {

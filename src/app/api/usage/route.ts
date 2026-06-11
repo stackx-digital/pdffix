@@ -46,15 +46,17 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ ok: false, error: "not logged in" });
+  if (!user) return NextResponse.json({ ok: false, error: "not logged in" }, { status: 401 });
 
-  const { tool } = await req.json().catch(() => ({ tool: "unknown" }));
+  // FIXED: parse body with fallback — malformed JSON defaults to "unknown" tool
+  const body = await req.json().catch(() => ({}));
+  const tool = typeof body?.tool === "string" ? body.tool : "unknown";
 
   const { error } = await supabase.from("usage").insert({
     user_id: user.id,
-    tool: tool ?? "unknown",
+    tool,
     files_processed: 1,
   });
 
-  return NextResponse.json({ ok: !error });
+  return NextResponse.json({ ok: !error }, { status: error ? 500 : 200 });
 }
