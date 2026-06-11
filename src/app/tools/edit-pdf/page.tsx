@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import PdfEditorTool from "@/components/tools/PdfEditorTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Edit PDF Percuma — PDFix",
@@ -22,7 +23,7 @@ export default async function EditPdfPage() {
           <p className="text-gray-500 text-xs mt-0.5">Tambah teks, lukis, highlight, sisip imej — terus dalam browser.</p>
         </div>
         <div className="flex-1 overflow-hidden">
-          <PdfEditorTool />
+          <ToolErrorBoundary toolName="Edit PDF"><PdfEditorTool /></ToolErrorBoundary>
         </div>
       </main>
     </div>

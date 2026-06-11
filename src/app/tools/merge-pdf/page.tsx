@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import MergePdfTool from "@/components/tools/MergePdfTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Gabung PDF Percuma — PDFix",
@@ -23,7 +24,7 @@ export default async function MergePdfPage() {
             Tambah beberapa fail PDF dan susun ikut urutan yang dikehendaki, kemudian gabungkan menjadi satu fail.
           </p>
         </div>
-        <MergePdfTool />
+        <ToolErrorBoundary toolName="Gabung PDF"><MergePdfTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

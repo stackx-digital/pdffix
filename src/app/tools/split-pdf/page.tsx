@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import SplitPdfTool from "@/components/tools/SplitPdfTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Pisah PDF Percuma — PDFix",
@@ -23,7 +24,7 @@ export default async function SplitPdfPage() {
             Tentukan julat halaman untuk setiap bahagian. Contoh: <code className="bg-gray-100 px-1 rounded">1-3, 4-6, 7</code>
           </p>
         </div>
-        <SplitPdfTool />
+        <ToolErrorBoundary toolName="Pisah PDF"><SplitPdfTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

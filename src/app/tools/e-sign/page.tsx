@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import ESignTool from "@/components/tools/ESignTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "E-Sign PDF — PDFix",
@@ -23,7 +24,7 @@ export default async function ESignPage() {
             Lukis tandatangan anda dan letakkan pada mana-mana halaman PDF.
           </p>
         </div>
-        <ESignTool />
+        <ToolErrorBoundary toolName="E-Sign PDF"><ESignTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import WatermarkTool from "@/components/tools/WatermarkTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Watermark PDF — PDFix",
@@ -23,7 +24,7 @@ export default async function WatermarkPage() {
             Tambah watermark teks atau imej pada semua halaman PDF anda.
           </p>
         </div>
-        <WatermarkTool />
+        <ToolErrorBoundary toolName="Watermark PDF"><WatermarkTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

@@ -4,6 +4,7 @@ import Footer from "@/components/layout/Footer";
 import OcrTool from "@/components/tools/OcrTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "OCR PDF — Ekstrak Teks — PDFix",
@@ -23,7 +24,7 @@ export default async function OcrPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar user={user} />
       <main className="flex-1">
-        <OcrTool />
+        <ToolErrorBoundary toolName="OCR PDF"><OcrTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ImageToPdfTool from "@/components/tools/ImageToPdfTool";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Tukar Imej ke PDF Percuma — JPG PNG ke PDF",
@@ -11,5 +12,5 @@ export const metadata: Metadata = {
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ImageToPdfTool /></main><Footer /></div>;
+  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Imej ke PDF"><ImageToPdfTool /></ToolErrorBoundary></main><Footer /></div>;
 }

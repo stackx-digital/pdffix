@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import CompressPdfTool from "@/components/tools/CompressPdfTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Mampat PDF Percuma — PDFix",
@@ -23,7 +24,7 @@ export default async function CompressPdfPage() {
             Optimumkan fail PDF anda untuk saiz yang lebih kecil tanpa kehilangan kandungan.
           </p>
         </div>
-        <CompressPdfTool />
+        <ToolErrorBoundary toolName="Mampat PDF"><CompressPdfTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

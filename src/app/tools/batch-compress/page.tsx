@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BatchCompressTool from "@/components/tools/BatchCompressTool";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Mampat PDF Pukal Percuma",
@@ -15,5 +16,5 @@ export default async function Page() {
   if (!user) redirect("/auth/login?next=/tools/batch-compress");
   const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
   if (profile?.plan !== "pro") redirect("/pricing");
-  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><BatchCompressTool /></main><Footer /></div>;
+  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Mampat PDF Pukal"><BatchCompressTool /></ToolErrorBoundary></main><Footer /></div>;
 }

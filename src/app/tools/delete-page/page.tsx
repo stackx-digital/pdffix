@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import DeletePageTool from "@/components/tools/DeletePageTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Delete Halaman PDF — PDFix",
@@ -23,7 +24,7 @@ export default async function DeletePagePage() {
             Pilih halaman yang ingin dibuang, kemudian muat turun PDF baharu.
           </p>
         </div>
-        <DeletePageTool />
+        <ToolErrorBoundary toolName="Delete Halaman PDF"><DeletePageTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

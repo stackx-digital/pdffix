@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import PdfToImageTool from "@/components/tools/PdfToImageTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
   title: "PDF ke Imej Percuma — PDFix",
@@ -23,7 +24,7 @@ export default async function PdfToImagePage() {
             Setiap halaman PDF akan ditukar kepada imej berasingan dalam format JPG atau PNG.
           </p>
         </div>
-        <PdfToImageTool />
+        <ToolErrorBoundary toolName="PDF ke Imej"><PdfToImageTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>
