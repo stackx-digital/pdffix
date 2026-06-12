@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature, Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus, Unlock, Crop, FileInput, Layers, PackageOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TOOLS } from "@/types";
 import type { User } from "@supabase/supabase-js";
@@ -11,6 +11,12 @@ import type { User } from "@supabase/supabase-js";
 interface NavbarProps {
   user: User | null;
 }
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature,
+  Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus, Unlock, Crop,
+  FileInput, Layers, PackageOpen,
+};
 
 const CATEGORIES = [
   { key: "edit",     label: "Edit" },
@@ -73,7 +79,7 @@ export default function Navbar({ user }: NavbarProps) {
                           onClick={() => setOpen(false)}
                           className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
                         >
-                          <span className="text-base">{tool.icon}</span>
+                          {(() => { const Icon = ICON_MAP[tool.icon] ?? FilePlus2; return <Icon className="w-3.5 h-3.5 flex-shrink-0" />; })()}
                           {tool.name}
                           {tool.proOnly && <span className="ml-auto text-[9px] font-semibold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">PRO</span>}
                         </Link>

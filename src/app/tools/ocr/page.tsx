@@ -17,7 +17,7 @@ export default async function OcrPage() {
 
   if (!user) redirect("/auth/login?next=/tools/ocr");
 
-  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle();
   if (profile?.plan !== "pro") redirect("/pricing");
 
   return (

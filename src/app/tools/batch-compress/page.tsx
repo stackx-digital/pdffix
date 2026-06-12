@@ -14,7 +14,7 @@ export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/tools/batch-compress");
-  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle();
   if (profile?.plan !== "pro") redirect("/pricing");
   return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Mampat PDF Pukal"><BatchCompressTool /></ToolErrorBoundary></main><Footer /></div>;
 }
