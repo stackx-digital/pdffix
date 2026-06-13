@@ -25,7 +25,7 @@ export default function Footer() {
             </p>
             <div className="mt-4 flex flex-col gap-1.5 text-xs text-gray-500">
               <Link href="/pricing" className="hover:text-gray-900">Harga</Link>
-              <Link href="/privacy" className="hover:text-gray-900">Privasi</Link>
+              <Link href="/privacy-policy" className="hover:text-gray-900">Privasi</Link>
               <Link href="/terms" className="hover:text-gray-900">Terma</Link>
             </div>
           </div>
