@@ -61,7 +61,7 @@ export default function OcrTool() {
       const totalPages = pdf.numPages;
       const results: string[] = [];
 
-      setOcrStatus(`Memuatkan enjin OCR (${LANGUAGES.find((l) => l.value === lang)?.label})...`);
+      setOcrStatus(`Loading OCR engine (${LANGUAGES.find((l) => l.value === lang)?.label})...`);
       const worker = await createWorker(lang, 1, {
         logger: (m) => {
           if (m.status === "recognizing text") {
@@ -71,11 +71,11 @@ export default function OcrTool() {
       });
 
       for (let i = 1; i <= totalPages; i++) {
-        setOcrStatus(`Memproses halaman ${i} / ${totalPages}...`);
+        setOcrStatus(`Processing page ${i} / ${totalPages}...`);
         const page = await pdf.getPage(i);
         const canvas = await renderPageToCanvas(page);
         const { data } = await worker.recognize(canvas);
-        results.push(`--- Halaman ${i} ---\n${data.text.trim()}`);
+        results.push(`--- Page ${i} ---\n${data.text.trim()}`);
         setProgress(Math.round((i / totalPages) * 100));
       }
 
@@ -84,7 +84,7 @@ export default function OcrTool() {
       setText(results.join("\n\n"));
       setOcrStatus("");
     } catch (e) {
-      setOcrStatus("Ralat semasa OCR. Cuba semula.");
+      setOcrStatus("Error during OCR. Please try again.");
     }
 
     setProcessing(false);
@@ -108,7 +108,7 @@ export default function OcrTool() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">OCR PDF</h1>
-      <p className="text-gray-500 mb-8">Ekstrak teks dari PDF yang diimbas menggunakan OCR. Berfungsi pada PDF imbasan dan imej.</p>
+      <p className="text-gray-500 mb-8">Extract text from scanned PDFs using OCR. Works on scanned PDFs and image-based PDFs.</p>
       {status && !status.isPro && status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
@@ -116,8 +116,8 @@ export default function OcrTool() {
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
-          <span className="text-sm text-gray-400 mt-1">PDF imbasan, PDF imej</span>
+          <span className="font-medium text-gray-700">Click or drag a PDF file here</span>
+          <span className="text-sm text-gray-400 mt-1">Scanned PDF, image-based PDF</span>
           <input type="file" accept=".pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
         </label>
       ) : (
@@ -127,11 +127,11 @@ export default function OcrTool() {
               <p className="font-medium text-gray-900">{file.name}</p>
               <p className="text-sm text-gray-500">{formatBytes(file.size)}</p>
             </div>
-            <button onClick={() => { setFile(null); setText(""); }} className="text-sm text-gray-400 hover:text-gray-600">Tukar</button>
+            <button onClick={() => { setFile(null); setText(""); }} className="text-sm text-gray-400 hover:text-gray-600">Change</button>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Bahasa Dokumen</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Document Language</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {LANGUAGES.map((l) => (
                 <button
@@ -154,27 +154,27 @@ export default function OcrTool() {
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-red-500 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
               </div>
-              <p className="text-xs text-gray-400">OCR mengambil masa bergantung pada saiz PDF. Sila tunggu...</p>
+              <p className="text-xs text-gray-400">OCR may take a while depending on the PDF size. Please wait...</p>
             </div>
           )}
 
           {!text && (
             <button onClick={runOcr} disabled={processing || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
-              {processing ? "Memproses..." : "Mula OCR"}
+              {processing ? "Processing..." : "Start OCR"}
             </button>
           )}
 
           {text && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-green-700">✅ OCR selesai</p>
+                <p className="text-sm font-medium text-green-700">✅ OCR complete</p>
                 <div className="flex gap-2">
                   <button onClick={copy} className="flex items-center gap-1.5 text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50">
                     {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                    {copied ? "Disalin!" : "Salin"}
+                    {copied ? "Copied!" : "Copy"}
                   </button>
                   <button onClick={downloadTxt} className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    <Download className="w-4 h-4" /> Muat Turun .txt
+                    <Download className="w-4 h-4" /> Download .txt
                   </button>
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function OcrTool() {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-mono bg-gray-50 resize-y focus:outline-none"
               />
               <button onClick={() => { setText(""); setProgress(0); }} className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">
-                OCR semula
+                Run OCR again
               </button>
             </div>
           )}
@@ -193,8 +193,8 @@ export default function OcrTool() {
       )}
 
       <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-        <p className="text-sm text-blue-700 font-medium mb-1">ℹ️ Maklumat OCR</p>
-        <p className="text-xs text-blue-600">OCR menggunakan Tesseract.js — berfungsi sepenuhnya dalam pelayar tanpa upload ke pelayan. Ketepatan bergantung pada kualiti imbasan. Untuk hasil terbaik, gunakan PDF dengan resolusi tinggi.</p>
+        <p className="text-sm text-blue-700 font-medium mb-1">ℹ️ OCR Information</p>
+        <p className="text-xs text-blue-600">OCR uses Tesseract.js — runs entirely in the browser without uploading to a server. Accuracy depends on scan quality. For best results, use high-resolution PDFs.</p>
       </div>
     </div>
   );

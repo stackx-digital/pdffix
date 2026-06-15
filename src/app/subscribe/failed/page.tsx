@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-export const metadata: Metadata = { title: "Pembayaran Gagal — PDFix" };
+export const metadata: Metadata = { title: "Payment Failed — PDFix" };
 
 export default async function FailedPage() {
   const supabase = await createClient();
@@ -20,23 +20,23 @@ export default async function FailedPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Pembayaran Tidak Berjaya</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Unsuccessful</h1>
           <p className="text-gray-500 mb-8">
-            Pembayaran anda tidak dapat diproses. Sila cuba semula atau hubungi kami
-            di <a href="mailto:stackxdigital@gmail.com" className="text-red-600 hover:underline">stackxdigital@gmail.com</a>.
+            Your payment could not be processed. Please try again or contact us
+            at <a href="mailto:stackxdigital@gmail.com" className="text-red-600 hover:underline">stackxdigital@gmail.com</a>.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/pricing"
               className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
-              Cuba Semula
+              Try Again
             </Link>
             <Link
               href="/"
               className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              Laman Utama
+              Homepage
             </Link>
           </div>
         </div>

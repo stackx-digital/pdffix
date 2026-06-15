@@ -23,7 +23,7 @@ export default function DocToMarkdownTool() {
     } else if (name.endsWith(".pdf")) {
       setFileType("pdf");
     } else {
-      setError("Format tidak disokong. Sila muat naik fail .docx, .doc, atau .pdf.");
+      setError("Unsupported format. Please upload a .docx, .doc, or .pdf file.");
       return;
     }
     setFile(f);
@@ -95,7 +95,7 @@ export default function DocToMarkdownTool() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">DOC / PDF ke Markdown</h1>
-      <p className="text-gray-500 mb-8">Tukar fail Word (.docx) atau PDF kepada format Markdown (.md).</p>
+      <p className="text-gray-500 mb-8">Convert Word files (.docx) or PDF to Markdown format (.md).</p>
 
       {status && !status.isPro && status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
@@ -104,7 +104,7 @@ export default function DocToMarkdownTool() {
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-12 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-8 h-8 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail ke sini</span>
+          <span className="font-medium text-gray-700">Click or drag a file here</span>
           <span className="text-sm text-gray-400 mt-1">.docx, .doc, .pdf</span>
           <input
             type="file"
@@ -125,7 +125,7 @@ export default function DocToMarkdownTool() {
               onClick={() => { setFile(null); setFileType(null); setMarkdown(""); setError(null); }}
               className="ml-auto text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
             >
-              Tukar fail
+              Change file
             </button>
           </div>
 
@@ -139,27 +139,27 @@ export default function DocToMarkdownTool() {
               disabled={processing || limitReached}
               className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60 transition-colors"
             >
-              {processing ? "Memproses..." : "Tukar ke Markdown"}
+              {processing ? "Processing..." : "Convert to Markdown"}
             </button>
           )}
 
           {markdown && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-gray-700">Hasil Markdown</p>
+                <p className="text-sm font-medium text-gray-700">Markdown Output</p>
                 <div className="flex gap-2">
                   <button
                     onClick={copy}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copied ? "Disalin!" : "Salin"}
+                    {copied ? "Copied!" : "Copy"}
                   </button>
                   <button
                     onClick={download}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                   >
-                    <Download className="w-3.5 h-3.5" /> Muat Turun .md
+                    <Download className="w-3.5 h-3.5" /> Download .md
                   </button>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export default function DocToMarkdownTool() {
                 onClick={() => { setFile(null); setFileType(null); setMarkdown(""); }}
                 className="w-full mt-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                Mula semula
+                Start over
               </button>
             </div>
           )}

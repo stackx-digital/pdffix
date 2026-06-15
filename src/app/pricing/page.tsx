@@ -1,41 +1,52 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Check, X } from "lucide-react";
 
+export const metadata: Metadata = {
+  title: "Pricing — PDFix Free & Pro Plans",
+  description: "Simple, transparent pricing. 20+ free PDF tools, or upgrade to Pro for unlimited usage, large files, OCR, batch processing and more.",
+  alternates: { canonical: "https://pdfix.my/pricing" },
+};
+
 const FREE_FEATURES = [
-  { label: "Edit PDF (teks, lukis, highlight, tandatangan)", included: true },
-  { label: "Gabung PDF", included: true },
-  { label: "Pisah PDF", included: true },
-  { label: "Mampat PDF", included: true },
-  { label: "PDF ke Imej (JPG/PNG)", included: true },
-  { label: "Imej ke PDF", included: true },
-  { label: "Putar PDF", included: true },
-  { label: "Buang / Ekstrak Halaman PDF", included: true },
-  { label: "Susun Semula Halaman PDF", included: true },
-  { label: "Tambah Nombor Halaman", included: true },
+  { label: "Edit PDF (text, draw, highlight, signature)", included: true },
+  { label: "Merge PDF", included: true },
+  { label: "Split PDF", included: true },
+  { label: "Compress PDF", included: true },
+  { label: "PDF to Image (JPG/PNG)", included: true },
+  { label: "Image to PDF", included: true },
+  { label: "Rotate PDF", included: true },
+  { label: "Delete / Extract PDF Pages", included: true },
+  { label: "Organize PDF Pages", included: true },
+  { label: "Add Page Numbers", included: true },
   { label: "Watermark PDF", included: true },
-  { label: "E-Sign PDF (lukis / upload tandatangan)", included: true },
-  { label: "Isi Borang PDF", included: true },
-  { label: "Buang Sekatan PDF", included: true },
-  { label: "Potong PDF (crop margin)", included: true },
-  { label: "Saiz fail maksimum 10MB", included: true },
-  { label: "Had 5 edit sebulan", included: true },
-  { label: "OCR PDF (4 bahasa)", included: false },
-  { label: "Flatten PDF (PDF statik)", included: false },
-  { label: "Mampat Berganda (batch)", included: false },
-  { label: "Saiz fail sehingga 100MB", included: false },
+  { label: "E-Sign PDF (draw / upload signature)", included: true },
+  { label: "Fill PDF Forms", included: true },
+  { label: "Unlock PDF", included: true },
+  { label: "Crop PDF", included: true },
+  { label: "PDF to Text (.txt)", included: true },
+  { label: "DOC/PDF to Markdown", included: true },
+  { label: "Max file size 10MB", included: true },
+  { label: "5 operations per month", included: true },
+  { label: "OCR PDF (4 languages)", included: false },
+  { label: "Edit original PDF text (Pro)", included: false },
+  { label: "Flatten PDF", included: false },
+  { label: "Batch Compress", included: false },
+  { label: "Files up to 100MB", included: false },
 ];
 
 const PRO_FEATURES = [
-  { label: "Semua ciri pelan Percuma", included: true },
-  { label: "OCR PDF — 4 bahasa (MS, EN, ZH, AR)", included: true },
-  { label: "Flatten PDF — tukar ke PDF statik", included: true },
-  { label: "Mampat Berganda — batch compress", included: true },
-  { label: "Edit tanpa had sebulan", included: true },
-  { label: "Saiz fail sehingga 100MB", included: true },
-  { label: "Sokongan prioriti", included: true },
+  { label: "Everything in Free plan", included: true },
+  { label: "Edit original PDF text in-place", included: true },
+  { label: "OCR PDF — 4 languages (MS, EN, ZH, AR)", included: true },
+  { label: "Flatten PDF — convert to static PDF", included: true },
+  { label: "Batch Compress — compress multiple files", included: true },
+  { label: "Unlimited operations per month", included: true },
+  { label: "Files up to 100MB", included: true },
+  { label: "Priority support", included: true },
 ];
 
 export default async function PricingPage() {
@@ -48,18 +59,18 @@ export default async function PricingPage() {
 
       <main className="flex-1 max-w-5xl mx-auto px-4 py-16 w-full">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900">Harga Yang Berpatutan</h1>
-          <p className="text-gray-500 mt-2">15+ alat PDF percuma. Naik taraf untuk ciri lanjutan.</p>
+          <h1 className="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h1>
+          <p className="text-gray-500 mt-2">20+ free PDF tools. Upgrade for advanced features.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {/* Free */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Percuma</h2>
-            <p className="text-sm text-gray-500 mt-1">Untuk semua pengguna</p>
+            <h2 className="text-lg font-semibold text-gray-900">Free</h2>
+            <p className="text-sm text-gray-500 mt-1">For everyone</p>
             <div className="mt-4 mb-6">
               <span className="text-4xl font-bold text-gray-900">RM0</span>
-              <span className="text-gray-500">/bulan</span>
+              <span className="text-gray-500">/month</span>
             </div>
             <ul className="space-y-2.5 mb-8">
               {FREE_FEATURES.map((f) => (
@@ -76,7 +87,7 @@ export default async function PricingPage() {
               href={user ? "/dashboard" : "/auth/register"}
               className="block text-center py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
             >
-              {user ? "Dashboard" : "Daftar Percuma"}
+              {user ? "Go to Dashboard" : "Sign Up Free"}
             </Link>
           </div>
 
@@ -86,10 +97,10 @@ export default async function PricingPage() {
               Popular
             </span>
             <h2 className="text-lg font-semibold">Pro</h2>
-            <p className="text-sm text-red-200 mt-1">Untuk profesional & perniagaan</p>
+            <p className="text-sm text-red-200 mt-1">For professionals & teams</p>
             <div className="mt-4 mb-6">
               <span className="text-4xl font-bold">RM19</span>
-              <span className="text-red-200">/bulan</span>
+              <span className="text-red-200">/month</span>
             </div>
             <ul className="space-y-2.5 mb-8">
               {PRO_FEATURES.map((f) => (
@@ -103,20 +114,19 @@ export default async function PricingPage() {
               href={user ? "/api/subscribe/toyyibpay" : "/auth/register?next=/pricing"}
               className="block text-center py-2.5 bg-white text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50"
             >
-              {user ? "Langgan Sekarang" : "Daftar & Langgan"}
+              {user ? "Subscribe Now" : "Sign Up & Subscribe"}
             </Link>
           </div>
         </div>
 
-        {/* Comparison note */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
           <p className="text-sm text-gray-600">
-            💡 Semua pemprosesan dilakukan <strong>100% dalam pelayar anda</strong> — fail tidak dihantar ke mana-mana pelayan.
+            💡 All processing is done <strong>100% in your browser</strong> — your files are never sent to any server.
           </p>
         </div>
 
         <p className="text-center text-sm text-gray-400 mt-6">
-          Bayaran selamat melalui ToyyibPay (FPX / Kad Kredit) · Boleh batalkan bila-bila masa · Tiada kontrak
+          Secure payment via ToyyibPay (FPX / Credit Card) · Cancel anytime · No contract
         </p>
       </main>
 

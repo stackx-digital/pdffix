@@ -3,18 +3,18 @@ import { Upload, SlidersHorizontal, Download } from "lucide-react";
 const steps = [
   {
     icon: Upload,
-    title: "Muat Naik Fail",
-    desc: "Pilih fail PDF dari peranti anda. Fail tidak dihantar ke mana-mana pelayan — semuanya berlaku dalam pelayar anda.",
+    title: "Upload Your File",
+    desc: "Select a PDF file from your device. Files are never sent to any server — everything happens right in your browser.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Edit Mengikut Keperluan",
-    desc: "Gabung, pisah, mampat, tandatangan, watermark dan banyak lagi. Lebih 15 alat tersedia percuma.",
+    title: "Edit as Needed",
+    desc: "Merge, split, compress, sign, watermark, and more. Over 15 tools available for free.",
   },
   {
     icon: Download,
-    title: "Muat Turun Terus",
-    desc: "Fail yang telah diproses boleh dimuat turun serta-merta. Tiada pendaftaran diperlukan untuk fungsi asas.",
+    title: "Download Instantly",
+    desc: "Your processed file is ready to download immediately. No registration required for basic features.",
   },
 ];
 
@@ -23,9 +23,9 @@ export default function HowItWorks() {
     <section className="py-24 px-4 bg-white border-b border-gray-100">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16">
-          <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Cara Guna</p>
-          <h2 className="text-3xl font-bold text-gray-900">3 Langkah Mudah</h2>
-          <p className="text-gray-500 mt-2">Selesai dalam masa kurang dari seminit</p>
+          <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">How It Works</p>
+          <h2 className="text-3xl font-bold text-gray-900">3 Simple Steps</h2>
+          <p className="text-gray-500 mt-2">Done in under a minute</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

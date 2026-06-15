@@ -55,12 +55,12 @@ export default function SplitPdfTool() {
         copied.forEach((p) => newPdf.addPage(p));
         const b = await newPdf.save();
         const blob = new Blob([b], { type: "application/pdf" });
-        out.push({ name: `bahagian-${i + 1}.pdf`, url: URL.createObjectURL(blob) });
+        out.push({ name: `part-${i + 1}.pdf`, url: URL.createObjectURL(blob) });
       }
       await recordUsage();
       setResults(out);
     } catch {
-      setError("Format julat halaman tidak sah. Contoh: 1-3, 4-6");
+      setError("Invalid page range format. Example: 1-3, 4-6");
     } finally {
       setSplitting(false);
     }
@@ -73,7 +73,7 @@ export default function SplitPdfTool() {
       )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <Scissors className="w-10 h-10 text-gray-300 mb-3" />
-        <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+        <span className="font-medium text-gray-700">Click or drag a PDF file here</span>
         <input
           type="file"
           accept="application/pdf"
@@ -85,24 +85,24 @@ export default function SplitPdfTool() {
       {file && (
         <div className="p-3 bg-white border border-gray-200 rounded-lg text-sm">
           <p className="font-medium text-gray-900">{file.name}</p>
-          <p className="text-gray-400">{pageCount} halaman · {formatBytes(file.size)}</p>
+          <p className="text-gray-400">{pageCount} page(s) · {formatBytes(file.size)}</p>
         </div>
       )}
 
       {pageCount > 0 && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Julat halaman (pisahkan dengan koma)
+            Page ranges (separate with commas)
           </label>
           <input
             type="text"
             value={ranges}
             onChange={(e) => setRanges(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            placeholder="contoh: 1-3, 4-6, 7"
+            placeholder="e.g. 1-3, 4-6, 7"
           />
           <p className="text-xs text-gray-400 mt-1">
-            Setiap julat akan jadi satu fail PDF berasingan. Jumlah halaman: {pageCount}
+            Each range will become a separate PDF file. Total pages: {pageCount}
           </p>
         </div>
       )}
@@ -116,12 +116,12 @@ export default function SplitPdfTool() {
         disabled={!file || splitting || limitReached}
         className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
       >
-        {splitting ? "Sedang memisahkan..." : "Pisah PDF"}
+        {splitting ? "Splitting..." : "Split PDF"}
       </button>
 
       {results.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-green-700">✅ {results.length} fail berjaya dihasilkan:</p>
+          <p className="text-sm font-medium text-green-700">✅ {results.length} file(s) created successfully:</p>
           {results.map((r) => (
             <a
               key={r.name}
@@ -131,7 +131,7 @@ export default function SplitPdfTool() {
             >
               <Download className="w-4 h-4 text-gray-400" />
               <span className="flex-1 text-gray-700">{r.name}</span>
-              <span className="text-xs text-green-600 font-medium">Muat Turun</span>
+              <span className="text-xs text-green-600 font-medium">Download</span>
             </a>
           ))}
         </div>

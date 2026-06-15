@@ -42,11 +42,11 @@ export default async function DashboardPage() {
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Selamat datang, {profile?.full_name ?? user.email}!
+              Welcome, {profile?.full_name ?? user.email}!
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               Plan: <span className={`font-medium ${isPro ? "text-amber-600" : "text-gray-700"}`}>
-                {isPro ? "Pro" : "Percuma"}
+                {isPro ? "Pro" : "Free"}
               </span>
             </p>
           </div>
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
               href="/pricing"
               className="inline-block px-5 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 text-sm"
             >
-              Naik Taraf ke Pro →
+              Upgrade to Pro →
             </Link>
           )}
         </div>
@@ -65,8 +65,8 @@ export default async function DashboardPage() {
         {!isPro && (
           <div className="mb-8 p-4 bg-white border border-gray-200 rounded-xl">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Edit bulan ini</span>
-              <span className="font-medium text-gray-900">{editsUsed} / {editsLimit} edit</span>
+              <span className="text-gray-600">Edits this month</span>
+              <span className="font-medium text-gray-900">{editsUsed} / {editsLimit} edits</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
@@ -76,11 +76,11 @@ export default async function DashboardPage() {
             </div>
             {editsUsed >= editsLimit ? (
               <p className="mt-2 text-xs text-red-600">
-                Had bulanan dicapai. <Link href="/pricing" className="underline">Naik taraf ke Pro</Link> untuk akses tanpa had.
+                Monthly limit reached. <Link href="/pricing" className="underline">Upgrade to Pro</Link> for unlimited access.
               </p>
             ) : (
               <p className="mt-2 text-xs text-gray-400">
-                Baki {editsLimit - editsUsed} edit lagi bulan ini. Had reset pada 1 haribulan.
+                {editsLimit - editsUsed} edits remaining this month. Limit resets on the 1st.
               </p>
             )}
           </div>

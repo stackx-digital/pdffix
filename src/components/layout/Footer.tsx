@@ -3,9 +3,9 @@ import { TOOLS } from "@/types";
 
 const categories = [
   { label: "Edit", key: "edit" },
-  { label: "Tukar", key: "convert" },
-  { label: "Optimum", key: "optimize" },
-  { label: "Keselamatan", key: "security" },
+  { label: "Convert", key: "convert" },
+  { label: "Optimize", key: "optimize" },
+  { label: "Security", key: "security" },
 ] as const;
 
 export default function Footer() {
@@ -21,12 +21,12 @@ export default function Footer() {
               <span className="font-bold text-red-600">PDFix</span>
             </Link>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Alat PDF percuma, selamat dan peribadi. Fail anda tidak keluar dari peranti anda.
+              Free, secure, and private PDF tools. Your files never leave your device.
             </p>
             <div className="mt-4 flex flex-col gap-1.5 text-xs text-gray-500">
-              <Link href="/pricing" className="hover:text-gray-900">Harga</Link>
-              <Link href="/privacy-policy" className="hover:text-gray-900">Privasi</Link>
-              <Link href="/terms" className="hover:text-gray-900">Terma</Link>
+              <Link href="/pricing" className="hover:text-gray-900">Pricing</Link>
+              <Link href="/privacy-policy" className="hover:text-gray-900">Privacy</Link>
+              <Link href="/terms" className="hover:text-gray-900">Terms</Link>
             </div>
           </div>
 
@@ -57,8 +57,8 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-gray-400">
-          <p>© {new Date().getFullYear()} PDFix. Hak cipta terpelihara.</p>
-          <p>Dibina dengan ❤️ untuk pengguna Malaysia</p>
+          <p>© {new Date().getFullYear()} PDFix. All rights reserved.</p>
+          <p>Built with ❤️ for users everywhere</p>
         </div>
       </div>
     </footer>

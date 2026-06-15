@@ -41,12 +41,12 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="text-center max-w-md">
           <div className="text-5xl mb-4">📧</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Semak e-mel anda</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Check your email</h2>
           <p className="text-gray-500">
-            Kami telah hantar pautan pengesahan ke <strong>{email}</strong>. Sila klik pautan tersebut untuk aktifkan akaun anda.
+            We have sent a confirmation link to <strong>{email}</strong>. Please click that link to activate your account.
           </p>
           <Link href="/auth/login" className="mt-6 inline-block text-red-600 hover:underline text-sm">
-            Kembali ke Log Masuk
+            Back to Sign In
           </Link>
         </div>
       </div>
@@ -58,7 +58,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="font-bold text-2xl text-red-600">PDFix</Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">Daftar Percuma</h1>
+          <h1 className="mt-4 text-xl font-semibold text-gray-900">Sign Up for Free</h1>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -70,19 +70,19 @@ export default function RegisterPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Penuh</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Ahmad bin Ali"
+                placeholder="John Smith"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">E-mel</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 value={email}
@@ -94,7 +94,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kata Laluan</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 value={password}
@@ -102,7 +102,7 @@ export default function RegisterPage() {
                 required
                 minLength={8}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Sekurang-kurangnya 8 aksara"
+                placeholder="At least 8 characters"
               />
             </div>
 
@@ -111,14 +111,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
-              {loading ? "Sedang mendaftar..." : "Daftar Sekarang"}
+              {loading ? "Signing up..." : "Sign Up Now"}
             </button>
           </form>
 
           <p className="mt-4 text-center text-sm text-gray-500">
-            Sudah ada akaun?{" "}
+            Already have an account?{" "}
             <Link href="/auth/login" className="text-red-600 hover:underline">
-              Log masuk
+              Sign in
             </Link>
           </p>
         </div>
