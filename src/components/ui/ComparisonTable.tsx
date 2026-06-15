@@ -11,7 +11,7 @@ const rows = [
   { feature: "Remove PDF restrictions", pdfix: true, ilovepdf: true, smallpdf: true, adobe: false },
   { feature: "Crop PDF", pdfix: true, ilovepdf: false, smallpdf: false, adobe: true },
   { feature: "Privacy — files never leave your device", pdfix: true, ilovepdf: false, smallpdf: false, adobe: false },
-  { feature: "Starting price", pdfix: "RM19/mo", ilovepdf: "RM45/mo", smallpdf: "RM52/mo", adobe: "RM85/mo" },
+  { feature: "Starting price", pdfix: "Free", ilovepdf: "RM45/mo", smallpdf: "RM52/mo", adobe: "RM85/mo" },
 ];
 
 type CellValue = boolean | "partial" | string;
