@@ -193,6 +193,15 @@ export const TOOLS: Tool[] = [
     proOnly: true,
     category: "optimize",
   },
+  {
+    id: "doc-to-markdown",
+    name: "DOC/PDF ke Markdown",
+    description: "Tukar fail Word atau PDF kepada format Markdown.",
+    icon: "FileCode",
+    href: "/tools/doc-to-markdown",
+    proOnly: false,
+    category: "convert",
+  },
 ];
 
 export const FREE_LIMITS = {
