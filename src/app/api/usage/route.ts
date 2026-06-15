@@ -18,8 +18,10 @@ export async function GET() {
     return NextResponse.json({ used: 0, limit: FREE_LIMITS.editsPerMonth, canProceed: true, isPro: false, loggedIn: false });
   }
 
-  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle();
-  const isPro = profile?.plan === "pro";
+  const { data: profile } = await supabase.from("profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle();
+  const planActive = profile?.plan === "pro" &&
+    (!profile.plan_expires_at || new Date(profile.plan_expires_at) > new Date());
+  const isPro = planActive;
 
   if (isPro) {
     return NextResponse.json({ used: 0, limit: null, canProceed: true, isPro: true, loggedIn: true });
