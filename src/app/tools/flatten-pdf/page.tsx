@@ -7,8 +7,8 @@ import FlattenPdfTool from "@/components/tools/FlattenPdfTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Flatten PDF Percuma — Kunci Borang PDF",
-  description: "Ratakan borang dan anotasi PDF supaya tidak boleh diedit. Percuma dan selamat.",
+  title: "Flatten PDF — Free Online Tool | PDFix",
+  description: "Flatten PDF forms and annotations to make them non-editable. Free and secure.",
 };
 export default async function Page() {
   const supabase = await createClient();

@@ -6,8 +6,8 @@ import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "E-Sign PDF — PDFix",
-  description: "Tambah tandatangan digital pada PDF anda secara percuma.",
+  title: "E-Sign PDF — Free Digital Signature Tool | PDFix",
+  description: "Add a digital signature to your PDF for free, directly in your browser.",
 };
 
 export default async function ESignPage() {
@@ -21,7 +21,7 @@ export default async function ESignPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">E-Sign PDF</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Lukis tandatangan anda dan letakkan pada mana-mana halaman PDF.
+            Draw your signature and place it on any page of your PDF.
           </p>
         </div>
         <ToolErrorBoundary toolName="E-Sign PDF"><ESignTool /></ToolErrorBoundary>

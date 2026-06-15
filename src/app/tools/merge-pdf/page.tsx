@@ -6,8 +6,8 @@ import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Gabung PDF Percuma — PDFix",
-  description: "Cantumkan beberapa PDF menjadi satu fail dalam browser. Selamat, tiada upload ke server.",
+  title: "Merge PDF — Free Online Tool | PDFix",
+  description: "Combine multiple PDF files into one in your browser. Secure, no server upload required.",
 };
 
 export default async function MergePdfPage() {

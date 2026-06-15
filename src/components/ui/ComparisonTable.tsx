@@ -36,7 +36,7 @@ export default function ComparisonTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left px-5 py-4 text-gray-500 font-medium w-1/3">Ciri</th>
+              <th className="text-left px-5 py-4 text-gray-500 font-medium w-1/3">Feature</th>
               <th className="px-4 py-4 text-center">
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-bold text-red-600 text-base">PDFix</span>
@@ -89,7 +89,7 @@ export default function ComparisonTable() {
       </div>
 
       <p className="text-center text-xs text-gray-400 mt-4">
-        * Perbandingan berdasarkan maklumat umum. Harga pesaing mungkin berbeza mengikut kadar semasa.
+        * Comparison based on publicly available information. Competitor pricing may vary.
       </p>
     </section>
   );
