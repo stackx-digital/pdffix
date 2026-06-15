@@ -738,7 +738,7 @@ export default function PdfEditorTool() {
         <div className="w-px h-8 bg-gray-200 mx-1" />
 
         <TB id="addtext" icon={<Type className="w-5 h-5" />} label="Add text" />
-        <TB id="edittext" icon={<PenLine className="w-5 h-5" />} label="Edit text" />
+        <TB id="select" icon={<MousePointer className="w-5 h-5" />} label="Select" />
 
         {/* Sign */}
         <TB id="sign" icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 17c3-4 5-7 7-7s2 4 4 4 3-3 5-5"/><path d="M19 17h2"/></svg>} label="Sign" onClick={() => { setShowSignModal(true); setActiveTool("sign"); }} />
@@ -877,8 +877,8 @@ export default function PdfEditorTool() {
 
         {/* Tool hint */}
         <span className="ml-auto text-[11px] text-gray-400 hidden md:block">
-          {activeTool === "addtext" && "Klik pada PDF untuk tambah teks"}
-          {activeTool === "edittext" && "Klik objek teks untuk edit"}
+          {activeTool === "addtext" && "Klik pada PDF untuk tambah teks baru"}
+          {activeTool === "select" && "Klik objek yang ditambah untuk pilih — double-click teks untuk edit"}
           {activeTool === "draw" && "Tahan & seret untuk melukis"}
           {activeTool === "highlight" && "Seret untuk highlight kawasan"}
           {activeTool === "texthighlight" && "Seret untuk highlight teks"}
@@ -890,6 +890,12 @@ export default function PdfEditorTool() {
           {activeTool === "link" && "Klik untuk letak pautan"}
           {activeTool === "sign" && "Tandatangan diletakkan pada PDF"}
         </span>
+      </div>
+
+      {/* ── Info banner ── */}
+      <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 border-b border-blue-100 text-xs text-blue-700">
+        <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd"/></svg>
+        Teks asal PDF tidak boleh diedit secara langsung. Gunakan <strong className="mx-0.5">Add text</strong> untuk tambah teks baru di atas PDF.
       </div>
 
       {/* ── Body ── */}
