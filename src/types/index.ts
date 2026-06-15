@@ -194,6 +194,15 @@ export const TOOLS: Tool[] = [
     category: "optimize",
   },
   {
+    id: "pdf-to-text",
+    name: "PDF ke Teks",
+    description: "Ekstrak semua teks dari PDF kepada fail .txt.",
+    icon: "FileText",
+    href: "/tools/pdf-to-text",
+    proOnly: false,
+    category: "convert",
+  },
+  {
     id: "doc-to-markdown",
     name: "DOC/PDF ke Markdown",
     description: "Tukar fail Word atau PDF kepada format Markdown.",
