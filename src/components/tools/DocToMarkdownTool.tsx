@@ -60,17 +60,17 @@ export default function DocToMarkdownTool() {
             .join(" ")
             .replace(/\s+/g, " ")
             .trim();
-          if (text) parts.push(`## Halaman ${i}\n\n${text}`);
+          if (text) parts.push(`## Page ${i}\n\n${text}`);
         }
         if (parts.length === 0) {
-          throw new Error("PDF ini tidak mengandungi teks yang boleh diekstrak (mungkin PDF imbasan/imej).");
+          throw new Error("This PDF contains no extractable text (it may be a scanned/image PDF).");
         }
         md = parts.join("\n\n---\n\n");
       }
       await recordUsage();
       setMarkdown(md);
     } catch (e: any) {
-      setError(e?.message ?? "Gagal memproses fail. Sila cuba fail lain.");
+      setError(e?.message ?? "Failed to process file. Please try another file.");
     } finally {
       setProcessing(false);
     }
@@ -94,7 +94,7 @@ export default function DocToMarkdownTool() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">DOC / PDF ke Markdown</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">DOC / PDF to Markdown</h1>
       <p className="text-gray-500 mb-8">Convert Word files (.docx) or PDF to Markdown format (.md).</p>
 
       {status && !status.isPro && status.loggedIn && (

@@ -1,8 +1,8 @@
 const stats = [
-  { value: "15+", label: "Alat PDF Percuma", icon: "🛠️" },
-  { value: "100%", label: "Diproses Dalam Pelayar", icon: "🔒" },
-  { value: "0MB", label: "Data Dihantar ke Pelayan", icon: "🛡️" },
-  { value: "RM19", label: "Harga Pro Sebulan", icon: "💎" },
+  { value: "15+", label: "Free PDF Tools", icon: "🛠️" },
+  { value: "100%", label: "Processed In-Browser", icon: "🔒" },
+  { value: "0MB", label: "Data Sent to Servers", icon: "🛡️" },
+  { value: "RM19", label: "Pro Price Per Month", icon: "💎" },
 ];
 
 export default function StatsBar() {

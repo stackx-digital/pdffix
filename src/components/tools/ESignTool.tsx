@@ -284,8 +284,8 @@ export default function ESignTool() {
         <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center mb-4">
           <PenLine className="w-7 h-7 text-red-600" />
         </div>
-        <span className="font-semibold text-gray-800 text-lg">Buka fail PDF untuk ditandatangani</span>
-        <span className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</span>
+        <span className="font-semibold text-gray-800 text-lg">Open a PDF file to sign</span>
+        <span className="text-sm text-gray-400 mt-1">Click or drag a PDF file here</span>
         <input type="file" accept="application/pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
       </label>
     );
@@ -298,11 +298,11 @@ export default function ESignTool() {
       <div className="flex items-center gap-2 text-sm">
         <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium", step === "draw" ? "bg-red-600 text-white" : "bg-green-100 text-green-700")}>
           {step !== "draw" && <Check className="w-3.5 h-3.5" />}
-          <span>1. Lukis Tandatangan</span>
+          <span>1. Draw Signature</span>
         </div>
         <div className="h-px w-6 bg-gray-300" />
         <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium", step === "place" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-500")}>
-          <span>2. Letak pada PDF</span>
+          <span>2. Place on PDF</span>
         </div>
       </div>
 
@@ -317,22 +317,22 @@ export default function ESignTool() {
                   onClick={() => setSignMode("draw")}
                   className={cn("flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors", signMode === "draw" ? "bg-red-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50")}
                 >
-                  <PenLine className="w-3.5 h-3.5" /> Lukis
+                  <PenLine className="w-3.5 h-3.5" /> Draw
                 </button>
                 <button
                   onClick={() => setSignMode("upload")}
                   className={cn("flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors", signMode === "upload" ? "bg-red-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50")}
                 >
-                  <ImagePlus className="w-3.5 h-3.5" /> Upload Imej
+                  <ImagePlus className="w-3.5 h-3.5" /> Upload Image
                 </button>
               </div>
 
               {signMode === "draw" ? (
                 <>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-medium text-gray-600">Lukis tandatangan anda</h3>
+                    <h3 className="text-xs font-medium text-gray-600">Draw your signature</h3>
                     <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500">Warna</label>
+                      <label className="text-xs text-gray-500">Color</label>
                       <input type="color" value={penColor} onChange={(e) => setPenColor(e.target.value)} className="w-6 h-6 rounded border border-gray-200 cursor-pointer" />
                     </div>
                   </div>
@@ -351,16 +351,16 @@ export default function ESignTool() {
                   />
                   <div className="flex gap-2">
                     <button onClick={clearPad} className="flex-1 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-gray-600">
-                      <Trash2 className="w-3.5 h-3.5" /> Padam
+                      <Trash2 className="w-3.5 h-3.5" /> Clear
                     </button>
                     <button onClick={useSignature} className="flex-1 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-1.5 font-medium">
-                      <Check className="w-3.5 h-3.5" /> Guna
+                      <Check className="w-3.5 h-3.5" /> Use
                     </button>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-gray-500">Upload imej tandatangan anda (PNG, JPG). Latar belakang putih atau telus.</p>
+                  <p className="text-xs text-gray-500">Upload your signature image (PNG, JPG). White or transparent background.</p>
                   {uploadedSig ? (
                     <div className="space-y-2">
                       <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-2">
