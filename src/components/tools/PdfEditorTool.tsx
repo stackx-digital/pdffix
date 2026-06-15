@@ -220,6 +220,14 @@ export default function PdfEditorTool() {
             t.enterEditing();
             t.selectAll();
             fc.renderAll();
+          } else if (tool === "edittext") {
+            const target = opt.target;
+            if (target && (target.type === "i-text" || target.type === "textbox" || target.type === "text")) {
+              fc.setActiveObject(target);
+              target.enterEditing?.();
+              target.selectAll?.();
+              fc.renderAll();
+            }
           } else if (tool === "stamp" && pendingStampRef.current) {
             const stamp = pendingStampRef.current;
             const { fabric: f2 } = await import("fabric");
@@ -280,6 +288,15 @@ export default function PdfEditorTool() {
           } else if (tool === "link") {
             setPendingLinkPos({ x: pointer.x, y: pointer.y });
             setShowLinkModal(true);
+          }
+        });
+
+        fc.on("mouse:dblclick", (opt: any) => {
+          const target = opt.target;
+          if (target && (target.type === "i-text" || target.type === "textbox" || target.type === "text")) {
+            fc.setActiveObject(target);
+            target.enterEditing?.();
+            fc.renderAll();
           }
         });
 
