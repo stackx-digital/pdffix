@@ -7,8 +7,8 @@ import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "OCR PDF — Ekstrak Teks — PDFix",
-  description: "Ekstrak teks dari PDF yang diimbas menggunakan OCR dalam pelayar.",
+  title: "OCR PDF — Extract Text from Scanned PDF | PDFix",
+  description: "Extract text from scanned PDFs using OCR, right in your browser.",
 };
 
 export default async function OcrPage() {

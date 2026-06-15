@@ -6,8 +6,8 @@ import PdfToTextTool from "@/components/tools/PdfToTextTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "PDF ke Teks Percuma — Ekstrak Teks dari PDF",
-  description: "Tukar PDF kepada fail teks (.txt) secara percuma. Ekstrak semua teks dari PDF dalam pelayar anda — tiada upload ke pelayan.",
+  title: "PDF to Text — Free Online Extractor | PDFix",
+  description: "Convert PDF to a text file (.txt) for free. Extract all text from your PDF in the browser — no server upload.",
   alternates: { canonical: "https://pdfix.my/tools/pdf-to-text" },
 };
 
@@ -18,7 +18,7 @@ export default async function Page() {
     <div className="min-h-screen flex flex-col">
       <Navbar user={user} />
       <main className="flex-1">
-        <ToolErrorBoundary toolName="PDF ke Teks">
+        <ToolErrorBoundary toolName="PDF to Text">
           <PdfToTextTool />
         </ToolErrorBoundary>
       </main>

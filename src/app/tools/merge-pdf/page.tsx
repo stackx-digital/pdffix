@@ -19,12 +19,12 @@ export default async function MergePdfPage() {
       <Navbar user={user} />
       <main className="flex-1 max-w-2xl mx-auto px-4 py-12 w-full">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Gabung PDF</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Merge PDF</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Tambah beberapa fail PDF dan susun ikut urutan yang dikehendaki, kemudian gabungkan menjadi satu fail.
+            Add multiple PDF files and arrange them in the desired order, then merge them into a single file.
           </p>
         </div>
-        <ToolErrorBoundary toolName="Gabung PDF"><MergePdfTool /></ToolErrorBoundary>
+        <ToolErrorBoundary toolName="Merge PDF"><MergePdfTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

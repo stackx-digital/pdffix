@@ -6,8 +6,8 @@ import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Watermark PDF — PDFix",
-  description: "Tambah watermark teks atau logo pada PDF anda secara percuma.",
+  title: "Watermark PDF — Free Online Tool | PDFix",
+  description: "Add a text or image watermark to your PDF for free.",
 };
 
 export default async function WatermarkPage() {
@@ -21,7 +21,7 @@ export default async function WatermarkPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Watermark PDF</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Tambah watermark teks atau imej pada semua halaman PDF anda.
+            Add a text or image watermark to all pages of your PDF.
           </p>
         </div>
         <ToolErrorBoundary toolName="Watermark PDF"><WatermarkTool /></ToolErrorBoundary>

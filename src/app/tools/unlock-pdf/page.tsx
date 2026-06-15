@@ -6,8 +6,8 @@ import UnlockPdfTool from "@/components/tools/UnlockPdfTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Buang Sekatan PDF Percuma — Unlock PDF Online",
-  description: "Buang password dan sekatan pada fail PDF percuma. Selamat, fail tidak keluar dari peranti anda.",
+  title: "Unlock PDF — Free Online PDF Unlocker | PDFix",
+  description: "Remove passwords and restrictions from PDF files for free. Secure — your file never leaves your device.",
 };
 export default async function Page() {
   const supabase = await createClient();
