@@ -66,7 +66,7 @@ export default function ExtractPagesTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Ekstrak Halaman PDF</h1>
       <p className="text-gray-500 mb-8">Pilih halaman yang anda mahu ekstrak dan simpan sebagai PDF baru.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (

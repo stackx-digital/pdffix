@@ -111,7 +111,7 @@ export default function ImageToPdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Image to PDF</h1>
       <p className="text-gray-500 mb-8">Convert JPG or PNG images to PDF. Arrange them in the order you want.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 

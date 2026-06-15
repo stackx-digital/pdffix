@@ -152,7 +152,7 @@ export default function WatermarkTool() {
 
   return (
     <div className="space-y-6">
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {/* File upload */}

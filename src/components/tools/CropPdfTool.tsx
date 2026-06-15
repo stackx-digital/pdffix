@@ -81,7 +81,7 @@ export default function CropPdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Potong PDF</h1>
       <p className="text-gray-500 mb-8">Potong margin halaman PDF mengikut ukuran yang anda tetapkan.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (

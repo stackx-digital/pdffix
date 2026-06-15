@@ -103,7 +103,7 @@ export default function PdfFormsTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Isi Borang PDF</h1>
       <p className="text-gray-500 mb-8">Isi medan borang interaktif dalam PDF secara terus.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (

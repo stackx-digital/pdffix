@@ -75,7 +75,7 @@ export default function FlattenPdfTool() {
     <div className="max-w-lg mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Flatten PDF</h1>
       <p className="text-gray-500 mb-8">Convert interactive PDFs (annotations, forms, layers) to a static PDF that cannot be edited. Ideal for official submissions.</p>
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 

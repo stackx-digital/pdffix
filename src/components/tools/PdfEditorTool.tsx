@@ -37,7 +37,7 @@ interface TextEditState {
 
 export default function PdfEditorTool() {
   const { checkLimit, recordUsage, status } = useUsageLimit("edit-pdf");
-  const isPro = status?.isPro ?? false;
+
   const [file, setFile] = useState<File | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -790,16 +790,7 @@ export default function PdfEditorTool() {
         <div className="w-px h-8 bg-gray-200 mx-1" />
 
         <TB id="addtext" icon={<Type className="w-5 h-5" />} label="Add text" />
-        {isPro ? (
-          <TB id="edittext" icon={<PenLine className="w-5 h-5" />} label="Edit text" />
-        ) : (
-          <a href="/pricing" title="Edit teks asal PDF — Pro sahaja"
-            className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:bg-amber-50 min-w-[48px] relative">
-            <PenLine className="w-5 h-5" />
-            <span className="text-[10px] leading-none font-medium">Edit text</span>
-            <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-amber-400 text-white px-1 rounded-full font-bold">PRO</span>
-          </a>
-        )}
+        <TB id="edittext" icon={<PenLine className="w-5 h-5" />} label="Edit text" />
         <TB id="select" icon={<MousePointer className="w-5 h-5" />} label="Select" />
 
         {/* Sign */}
@@ -956,15 +947,10 @@ export default function PdfEditorTool() {
       </div>
 
       {/* ── Info banner ── */}
-      {!isPro ? (
-        <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 border-b border-blue-100 text-xs text-blue-700">
-          <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd"/></svg>
-          Gunakan <strong className="mx-0.5">Add text</strong> untuk tambah teks baru. Untuk edit teks asal PDF, naik taraf ke <a href="/pricing" className="font-semibold underline text-amber-600 ml-0.5">Pro →</a>
-        </div>
-      ) : activeTool === "edittext" ? (
+      {activeTool === "edittext" ? (
         <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700">
           <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd"/></svg>
-          Hover pada teks untuk highlight, klik untuk edit. Tekan <kbd className="bg-amber-100 px-1 rounded">Enter</kbd> untuk simpan atau <kbd className="bg-amber-100 px-1 rounded">Esc</kbd> untuk batal.
+          Hover over text to highlight, click to edit. Press <kbd className="bg-amber-100 px-1 rounded">Enter</kbd> to save or <kbd className="bg-amber-100 px-1 rounded">Esc</kbd> to cancel.
         </div>
       ) : null}
 

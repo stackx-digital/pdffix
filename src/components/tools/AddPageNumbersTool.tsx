@@ -80,7 +80,7 @@ export default function AddPageNumbersTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Nombor Halaman PDF</h1>
       <p className="text-gray-500 mb-8">Tambah nombor halaman pada PDF anda.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (

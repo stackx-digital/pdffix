@@ -96,7 +96,7 @@ export default function PdfToTextTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">PDF to Text</h1>
       <p className="text-gray-500 mb-8">Extract all text from a PDF to a .txt file. Free & secure — processed in your browser.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 
