@@ -122,9 +122,10 @@ export default function PdfEditorTool() {
       const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
 
       const thumbs: string[] = [];
+      const thumbDpr = window.devicePixelRatio || 1;
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const vp = page.getViewport({ scale: 0.18 });
+        const vp = page.getViewport({ scale: 0.18 * thumbDpr });
         const c = document.createElement("canvas");
         c.width = vp.width; c.height = vp.height;
         await page.render({ canvasContext: c.getContext("2d")! as any, viewport: vp, canvas: c }).promise;
@@ -161,10 +162,16 @@ export default function PdfEditorTool() {
         const viewport = page.getViewport({ scale });
         if (cancelled) return;
 
-        pdfCanvas.width = viewport.width;
-        pdfCanvas.height = viewport.height;
+        const dpr = window.devicePixelRatio || 1;
+        pdfCanvas.width = viewport.width * dpr;
+        pdfCanvas.height = viewport.height * dpr;
+        pdfCanvas.style.width = `${viewport.width}px`;
+        pdfCanvas.style.height = `${viewport.height}px`;
+
+        const ctx = pdfCanvas.getContext("2d")!;
+        ctx.scale(dpr, dpr);
         await page.render({
-          canvasContext: pdfCanvas.getContext("2d")! as any,
+          canvasContext: ctx as any,
           viewport,
           canvas: pdfCanvas,
         }).promise;
@@ -188,6 +195,7 @@ export default function PdfEditorTool() {
         const fc = new fabric.Canvas(newCanvas, {
           width: viewport.width,
           height: viewport.height,
+          enableRetinaScaling: true,
           isDrawingMode: false,
           selection: true,
           backgroundColor: "transparent",
