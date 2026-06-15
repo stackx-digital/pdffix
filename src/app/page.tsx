@@ -40,7 +40,7 @@ export default async function HomePage() {
           <div className="relative max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 bg-red-50 border border-red-100 rounded-full text-xs font-semibold text-red-600 tracking-wide">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              100% Free · No Upload · No Registration Required
+              100% Free · No Upload · No Credit Card Ever
             </div>
 
             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-950 leading-[1.1] tracking-tight">

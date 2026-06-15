@@ -73,7 +73,7 @@ export const TOOLS: Tool[] = [
     description: "Extract text from scanned PDF documents.",
     icon: "ScanText",
     href: "/tools/ocr",
-    proOnly: true,
+    proOnly: false,
     category: "edit",
   },
   {
@@ -181,7 +181,7 @@ export const TOOLS: Tool[] = [
     description: "Convert an interactive PDF to a static PDF.",
     icon: "Layers",
     href: "/tools/flatten-pdf",
-    proOnly: true,
+    proOnly: false,
     category: "edit",
   },
   {
@@ -190,7 +190,7 @@ export const TOOLS: Tool[] = [
     description: "Compress multiple PDF files at once.",
     icon: "PackageOpen",
     href: "/tools/batch-compress",
-    proOnly: true,
+    proOnly: false,
     category: "optimize",
   },
   {
