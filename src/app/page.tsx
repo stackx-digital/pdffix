@@ -21,11 +21,6 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let isPro = false;
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
-    isPro = profile?.plan === "pro";
-  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -116,7 +111,7 @@ export default async function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {TOOLS.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} isPro={isPro} />
+              <ToolCard key={tool.id} tool={tool} isPro={true} />
             ))}
           </div>
         </section>
