@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "stackxdigital@gmail.com";
 const WEBHOOK_SECRET = process.env.SIGNUP_WEBHOOK_SECRET ?? "";
 
@@ -31,6 +30,7 @@ export async function POST(req: NextRequest) {
     ? new Date(record.created_at).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })
     : new Date().toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" });
 
+  const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: "PDFix <noreply@pdfix.my>",
     to: ADMIN_EMAIL,
