@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "stackxdigital@gmail.com";
 const WEBHOOK_SECRET = process.env.SIGNUP_WEBHOOK_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
-  // Verify simple secret header to prevent abuse
   const secret = req.headers.get("x-webhook-secret");
   if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,10 +16,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Supabase Database Webhook sends { type, table, record, old_record, schema }
   const record = body?.record;
   if (!record) {
     return NextResponse.json({ error: "No record" }, { status: 400 });
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: "Resend not configured" }, { status: 500 });
   }
 
   const email = record.email ?? "unknown";
@@ -30,7 +32,9 @@ export async function POST(req: NextRequest) {
     ? new Date(record.created_at).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })
     : new Date().toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" });
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const { Resend } = await import("resend");
+  const resend = new Resend(apiKey);
+
   await resend.emails.send({
     from: "PDFix <noreply@pdfix.my>",
     to: ADMIN_EMAIL,
