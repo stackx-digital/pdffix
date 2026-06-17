@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature, Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus, Unlock, Crop, FileInput, Layers, PackageOpen } from "lucide-react";
+import { ChevronDown, FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature, Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus, Unlock, Crop, FileInput, Layers, PackageOpen, ShieldX, FileCode } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TOOLS } from "@/types";
 import type { User } from "@supabase/supabase-js";
@@ -15,7 +15,7 @@ interface NavbarProps {
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   FilePlus2, Scissors, FileArchive, FileText, Image, ScanText, PenLine, Signature,
   Droplets, Trash2, RotateCw, Hash, LayoutList, BookOpen, ImagePlus, Unlock, Crop,
-  FileInput, Layers, PackageOpen,
+  FileInput, Layers, PackageOpen, ShieldX, FileCode,
 };
 
 const CATEGORIES = [

@@ -211,6 +211,15 @@ export const TOOLS: Tool[] = [
     proOnly: false,
     category: "convert",
   },
+  {
+    id: "strike-ic",
+    name: "Strike IC Copy",
+    description: "Add a diagonal cross and purpose label to your IC photocopy to prevent misuse.",
+    icon: "ShieldX",
+    href: "/tools/strike-ic",
+    proOnly: false,
+    category: "security",
+  },
 ];
 
 export const FREE_LIMITS = {
