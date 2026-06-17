@@ -34,13 +34,17 @@ function effectivePurpose(s: StampConfig) {
   return s.useCustom ? (s.customPurpose.trim() || PURPOSES[0]) : s.purpose;
 }
 
-function stampBounds(
-  cfg: StampConfig, W: number, H: number
-): { cx: number; cy: number; r: number } {
+/** Returns true if canvas-pixel point (px, py) is inside the stamp's oriented bounding box */
+function hitStamp(cfg: StampConfig, W: number, H: number, px: number, py: number): boolean {
   const baseFont = Math.round(Math.min(W, H) * 0.09 * cfg.scale);
   const cx = W * cfg.x;
   const cy = H * cfg.y;
-  return { cx, cy, r: baseFont * 1.2 };
+  const rad = cfg.angle * (Math.PI / 180);
+  // Rotate point into stamp's local frame
+  const dx = (px - cx) * Math.cos(-rad) - (py - cy) * Math.sin(-rad);
+  const dy = (px - cx) * Math.sin(-rad) + (py - cy) * Math.cos(-rad);
+  // Generous hit box: ±3× font wide, ±1.4× font tall
+  return Math.abs(dx) < baseFont * 3 && Math.abs(dy) < baseFont * 1.4;
 }
 
 function renderStamp(ctx: CanvasRenderingContext2D, W: number, H: number, cfg: StampConfig, active = false) {
@@ -118,8 +122,6 @@ export default function StrikeIcTool() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
-  const [totalPages, setTotalPages] = useState(1);
-
   const [stamps, setStamps] = useState<StampConfig[]>([makeStamp(0.5, 0.3)]);
   const [activeId, setActiveId] = useState<number>(stamps[0].id);
 
@@ -152,15 +154,25 @@ export default function StrikeIcTool() {
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
-      const canvas = canvasRef.current!;
-      const maxW = Math.min(700, window.innerWidth - 64);
-      const ratio = img.naturalHeight / img.naturalWidth;
-      canvas.width = maxW;
-      canvas.height = Math.round(maxW * ratio);
+      // Canvas may not be in DOM yet if React hasn't re-rendered; resize happens in
+      // the useEffect below once imgSrc state is set and canvas is mounted.
     };
     img.src = src;
     setImgSrc(src);
   }, []);
+
+  // Size the canvas once the image is loaded and canvas is in the DOM
+  useEffect(() => {
+    if (!imgSrc || !canvasRef.current || !imgRef.current) return;
+    const img = imgRef.current;
+    const canvas = canvasRef.current;
+    if (canvas.width === 0 || canvas.dataset.src !== imgSrc) {
+      const maxW = Math.min(700, window.innerWidth - 64);
+      canvas.width = maxW;
+      canvas.height = Math.round(maxW * (img.naturalHeight / img.naturalWidth));
+      canvas.dataset.src = imgSrc;
+    }
+  }, [imgSrc]);
 
   const handleFile = useCallback(async (f: File) => {
     setError(null); setResult(null);
@@ -173,7 +185,6 @@ export default function StrikeIcTool() {
         const bytes = new Uint8Array(await f.arrayBuffer());
         setPdfBytes(bytes);
         const doc = await pdfjs.getDocument({ data: bytes.slice() }).promise;
-        setTotalPages(doc.numPages);
         const page = await doc.getPage(1);
         const vp = page.getViewport({ scale: 2 });
         const c = document.createElement("canvas");
@@ -193,13 +204,10 @@ export default function StrikeIcTool() {
   function hitTest(relX: number, relY: number): StampConfig | null {
     const canvas = canvasRef.current!;
     const W = canvas.width, H = canvas.height;
-    // Test in reverse order (topmost stamp first)
+    const px = relX * W, py = relY * H;
+    // Reverse order: topmost stamp first
     for (let i = stamps.length - 1; i >= 0; i--) {
-      const s = stamps[i];
-      const { cx, cy, r } = stampBounds(s, W, H);
-      const dx = relX * W - cx;
-      const dy = relY * H - cy;
-      if (Math.sqrt(dx * dx + dy * dy) < r) return s;
+      if (hitStamp(stamps[i], W, H, px, py)) return stamps[i];
     }
     return null;
   }
