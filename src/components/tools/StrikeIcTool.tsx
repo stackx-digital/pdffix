@@ -172,7 +172,7 @@ export default function StrikeIcTool() {
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
         const bytes = new Uint8Array(await f.arrayBuffer());
         setPdfBytes(bytes);
-        const doc = await pdfjs.getDocument({ data: bytes }).promise;
+        const doc = await pdfjs.getDocument({ data: bytes.slice() }).promise;
         setTotalPages(doc.numPages);
         const page = await doc.getPage(1);
         const vp = page.getViewport({ scale: 2 });
@@ -263,7 +263,7 @@ export default function StrikeIcTool() {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
         const { PDFDocument } = await import("pdf-lib");
-        const pdfjsDoc = await pdfjs.getDocument({ data: pdfBytes }).promise;
+        const pdfjsDoc = await pdfjs.getDocument({ data: pdfBytes.slice() }).promise;
         const outPdf = await PDFDocument.create();
         for (let i = 1; i <= pdfjsDoc.numPages; i++) {
           const page = await pdfjsDoc.getPage(i);
