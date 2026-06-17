@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, Download, RefreshCw, ZoomIn, ZoomOut, Move } from "lucide-react";
+import { Upload, Download, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
@@ -16,24 +16,34 @@ const PURPOSES = [
   "For medical purposes only",
 ];
 
+const DATE_STR = new Date().toLocaleDateString("en-MY", { day: "2-digit", month: "long", year: "numeric" });
+
 interface StampConfig {
-  x: number; // 0–1 relative to image
+  id: number;
+  x: number;
   y: number;
-  scale: number; // 1 = default
-  angle: number; // degrees
+  scale: number;
+  angle: number;
   purpose: string;
+  useCustom: boolean;
+  customPurpose: string;
   color: "red" | "blue" | "black";
-  date: string;
 }
 
-type FileType = "image" | "pdf";
+function effectivePurpose(s: StampConfig) {
+  return s.useCustom ? (s.customPurpose.trim() || PURPOSES[0]) : s.purpose;
+}
 
-function renderStamp(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number,
-  cfg: StampConfig
-) {
+function stampBounds(
+  cfg: StampConfig, W: number, H: number
+): { cx: number; cy: number; r: number } {
+  const baseFont = Math.round(Math.min(W, H) * 0.09 * cfg.scale);
+  const cx = W * cfg.x;
+  const cy = H * cfg.y;
+  return { cx, cy, r: baseFont * 1.2 };
+}
+
+function renderStamp(ctx: CanvasRenderingContext2D, W: number, H: number, cfg: StampConfig, active = false) {
   const rgba = (a: number) =>
     cfg.color === "red" ? `rgba(220,38,38,${a})`
     : cfg.color === "blue" ? `rgba(29,78,216,${a})`
@@ -48,77 +58,94 @@ function renderStamp(
   ctx.translate(cx, cy);
   ctx.rotate(angle);
 
-  // Main purpose text
+  // Active stamp: dashed selection ring
+  if (active) {
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = "rgba(59,130,246,0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(
+      -baseFont * 2.2, -baseFont * 0.9,
+      baseFont * 4.4, baseFont * 1.8
+    );
+    ctx.restore();
+  }
+
   ctx.font = `900 ${baseFont}px Arial, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // Outline for legibility
   ctx.strokeStyle = "rgba(255,255,255,0.6)";
   ctx.lineWidth = baseFont * 0.12;
   ctx.lineJoin = "round";
-  ctx.strokeText(cfg.purpose.toUpperCase(), 0, 0);
-
+  ctx.strokeText(effectivePurpose(cfg).toUpperCase(), 0, 0);
   ctx.fillStyle = rgba(0.82);
-  ctx.fillText(cfg.purpose.toUpperCase(), 0, 0);
+  ctx.fillText(effectivePurpose(cfg).toUpperCase(), 0, 0);
 
-  // Date below
   const dateFont = Math.round(baseFont * 0.42);
   ctx.font = `bold ${dateFont}px Arial, sans-serif`;
   ctx.strokeStyle = "rgba(255,255,255,0.6)";
   ctx.lineWidth = dateFont * 0.15;
-  ctx.strokeText(cfg.date, 0, baseFont * 0.72);
+  ctx.strokeText(DATE_STR, 0, baseFont * 0.72);
   ctx.fillStyle = rgba(0.65);
-  ctx.fillText(cfg.date, 0, baseFont * 0.72);
+  ctx.fillText(DATE_STR, 0, baseFont * 0.72);
 
   ctx.restore();
 }
+
+let nextId = 1;
+function makeStamp(x = 0.5, y = 0.3): StampConfig {
+  return {
+    id: nextId++,
+    x, y,
+    scale: 1,
+    angle: -30,
+    purpose: PURPOSES[0],
+    useCustom: false,
+    customPurpose: "",
+    color: "red",
+  };
+}
+
+type FileType = "image" | "pdf";
 
 export default function StrikeIcTool() {
   const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("strike-ic");
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>("image");
-  const [imgSrc, setImgSrc] = useState<string | null>(null); // original clean image
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Stamp config
-  const dateStr = new Date().toLocaleDateString("en-MY", { day: "2-digit", month: "long", year: "numeric" });
-  const [purpose, setPurpose] = useState(PURPOSES[0]);
-  const [customPurpose, setCustomPurpose] = useState("");
-  const [useCustom, setUseCustom] = useState(false);
-  const [color, setColor] = useState<"red" | "blue" | "black">("red");
-  const [scale, setScale] = useState(1);
-  const [angle, setAngle] = useState(-30);
+  const [stamps, setStamps] = useState<StampConfig[]>([makeStamp(0.5, 0.3)]);
+  const [activeId, setActiveId] = useState<number>(stamps[0].id);
 
-  // Stamp position (relative 0–1 within the display canvas)
-  const [stampPos, setStampPos] = useState({ x: 0.5, y: 0.35 });
-  const [dragging, setDragging] = useState(false);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);     // display / interaction canvas
-  const hiddenRef = useRef<HTMLCanvasElement>(null);     // offscreen full-res rendering
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hiddenRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const finalPurpose = useCustom ? customPurpose.trim() || PURPOSES[0] : purpose;
+  const activeStamp = stamps.find(s => s.id === activeId) ?? stamps[0];
 
-  // Draw preview whenever config changes
+  function updateActive(patch: Partial<StampConfig>) {
+    setStamps(prev => prev.map(s => s.id === activeId ? { ...s, ...patch } : s));
+  }
+
+  // Redraw on every render
   useEffect(() => {
-    if (!imgSrc || !canvasRef.current) return;
+    if (!imgSrc || !canvasRef.current || !imgRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d")!;
-    const img = imgRef.current;
-    if (!img) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    renderStamp(ctx, canvas.width, canvas.height, {
-      x: stampPos.x, y: stampPos.y, scale, angle,
-      purpose: finalPurpose, color, date: dateStr,
-    });
+    ctx.drawImage(imgRef.current, 0, 0, canvas.width, canvas.height);
+    for (const s of stamps) {
+      renderStamp(ctx, canvas.width, canvas.height, s, s.id === activeId && !result);
+    }
   });
 
   const loadImage = useCallback((src: string) => {
@@ -126,7 +153,6 @@ export default function StrikeIcTool() {
     img.onload = () => {
       imgRef.current = img;
       const canvas = canvasRef.current!;
-      // Fit to container width max 700px
       const maxW = Math.min(700, window.innerWidth - 64);
       const ratio = img.naturalHeight / img.naturalWidth;
       canvas.width = maxW;
@@ -164,42 +190,73 @@ export default function StrikeIcTool() {
     }
   }, [loadImage]);
 
-  // Drag handlers
+  function hitTest(relX: number, relY: number): StampConfig | null {
+    const canvas = canvasRef.current!;
+    const W = canvas.width, H = canvas.height;
+    // Test in reverse order (topmost stamp first)
+    for (let i = stamps.length - 1; i >= 0; i--) {
+      const s = stamps[i];
+      const { cx, cy, r } = stampBounds(s, W, H);
+      const dx = relX * W - cx;
+      const dy = relY * H - cy;
+      if (Math.sqrt(dx * dx + dy * dy) < r) return s;
+    }
+    return null;
+  }
+
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (result) return;
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const px = (e.clientX - rect.left) * scaleX / canvas.width;
-    const py = (e.clientY - rect.top) * scaleY / canvas.height;
-    dragOffset.current = { x: px - stampPos.x, y: py - stampPos.y };
-    setDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const rx = (e.clientX - rect.left) / rect.width;
+    const ry = (e.clientY - rect.top) / rect.height;
+    const hit = hitTest(rx, ry);
+    if (hit) {
+      setActiveId(hit.id);
+      setDraggingId(hit.id);
+      dragOffset.current = { x: rx - hit.x, y: ry - hit.y };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!dragging || result) return;
+    if (draggingId === null || result) return;
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const px = (e.clientX - rect.left) * scaleX / canvas.width;
-    const py = (e.clientY - rect.top) * scaleY / canvas.height;
-    setStampPos({
-      x: Math.max(0.05, Math.min(0.95, px - dragOffset.current.x)),
-      y: Math.max(0.05, Math.min(0.95, py - dragOffset.current.y)),
-    });
+    const rx = (e.clientX - rect.left) / rect.width;
+    const ry = (e.clientY - rect.top) / rect.height;
+    setStamps(prev => prev.map(s => s.id === draggingId ? {
+      ...s,
+      x: Math.max(0.05, Math.min(0.95, rx - dragOffset.current.x)),
+      y: Math.max(0.05, Math.min(0.95, ry - dragOffset.current.y)),
+    } : s));
   }
 
-  function onPointerUp() { setDragging(false); }
+  function onPointerUp() { setDraggingId(null); }
+
+  function addStamp() {
+    // Place new stamp in the lower half by default
+    const lastY = stamps[stamps.length - 1]?.y ?? 0.3;
+    const newY = lastY > 0.5 ? 0.3 : 0.7;
+    const s = makeStamp(0.5, newY);
+    setStamps(prev => [...prev, s]);
+    setActiveId(s.id);
+  }
+
+  function deleteStamp(id: number) {
+    if (stamps.length === 1) return;
+    setStamps(prev => {
+      const next = prev.filter(s => s.id !== id);
+      if (id === activeId) setActiveId(next[next.length - 1].id);
+      return next;
+    });
+  }
 
   async function applyStamp() {
     if (!file || !imgSrc) return;
     const allowed = await checkLimit();
     if (!allowed) return;
     setProcessing(true); setError(null);
-    const cfg: StampConfig = { x: stampPos.x, y: stampPos.y, scale, angle, purpose: finalPurpose, color, date: dateStr };
 
     try {
       if (fileType === "pdf" && pdfBytes) {
@@ -208,7 +265,6 @@ export default function StrikeIcTool() {
         const { PDFDocument } = await import("pdf-lib");
         const pdfjsDoc = await pdfjs.getDocument({ data: pdfBytes }).promise;
         const outPdf = await PDFDocument.create();
-
         for (let i = 1; i <= pdfjsDoc.numPages; i++) {
           const page = await pdfjsDoc.getPage(i);
           const vp = page.getViewport({ scale: 2 });
@@ -216,7 +272,7 @@ export default function StrikeIcTool() {
           c.width = vp.width; c.height = vp.height;
           const ctx = c.getContext("2d")!;
           await page.render({ canvasContext: ctx, viewport: vp, canvas: c } as any).promise;
-          renderStamp(ctx, c.width, c.height, cfg);
+          for (const s of stamps) renderStamp(ctx, c.width, c.height, s);
           const jpegBuf = await fetch(c.toDataURL("image/jpeg", 0.92)).then(r => r.arrayBuffer());
           const img = await outPdf.embedJpg(jpegBuf);
           const p = outPdf.addPage([img.width / 2, img.height / 2]);
@@ -231,7 +287,7 @@ export default function StrikeIcTool() {
         hidden.height = img.naturalHeight;
         const ctx = hidden.getContext("2d")!;
         ctx.drawImage(img, 0, 0);
-        renderStamp(ctx, hidden.width, hidden.height, cfg);
+        for (const s of stamps) renderStamp(ctx, hidden.width, hidden.height, s);
         setResult(hidden.toDataURL("image/jpeg", 0.92));
       }
       await recordUsage();
@@ -251,8 +307,9 @@ export default function StrikeIcTool() {
   }
 
   function reset() {
-    setFile(null); setImgSrc(null); setResult(null); setError(null);
-    setPdfBytes(null); setStampPos({ x: 0.5, y: 0.35 }); setScale(1); setAngle(-30);
+    setFile(null); setImgSrc(null); setResult(null); setError(null); setPdfBytes(null);
+    const s = makeStamp(0.5, 0.3);
+    setStamps([s]); setActiveId(s.id);
   }
 
   return (
@@ -281,8 +338,8 @@ export default function StrikeIcTool() {
         </label>
       ) : (
         <div className="space-y-4">
-          {/* Interactive canvas */}
-          <div ref={containerRef} className="relative rounded-xl overflow-hidden border border-gray-200 shadow bg-gray-100">
+          {/* Canvas */}
+          <div className="relative rounded-xl overflow-hidden border border-gray-200 shadow bg-gray-100">
             <canvas
               ref={canvasRef}
               className={`w-full block ${!result ? "cursor-grab active:cursor-grabbing" : ""}`}
@@ -291,8 +348,8 @@ export default function StrikeIcTool() {
               onPointerUp={onPointerUp}
             />
             {!result && (
-              <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-lg">
-                <Move className="w-3 h-3" /> Drag to reposition stamp
+              <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-lg">
+                Click stamp to select · Drag to reposition
               </div>
             )}
             {result && (
@@ -306,64 +363,103 @@ export default function StrikeIcTool() {
 
           {!result && (
             <>
-              {/* Purpose */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Purpose</label>
-                <div className="space-y-2">
-                  <select
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    value={useCustom ? "__custom__" : purpose}
-                    onChange={(e) => { if (e.target.value === "__custom__") setUseCustom(true); else { setUseCustom(false); setPurpose(e.target.value); } }}
-                  >
-                    {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
-                    <option value="__custom__">Custom...</option>
-                  </select>
-                  {useCustom && (
-                    <input type="text" placeholder="e.g. For Maybank account opening only"
-                      value={customPurpose} onChange={(e) => setCustomPurpose(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
-                  )}
-                </div>
+              {/* Stamp tabs */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {stamps.map((s, i) => (
+                  <div key={s.id} className="flex items-center">
+                    <button
+                      onClick={() => setActiveId(s.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                        s.id === activeId
+                          ? "bg-red-600 text-white border-red-600"
+                          : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      Stamp {i + 1}
+                    </button>
+                    {stamps.length > 1 && (
+                      <button
+                        onClick={() => deleteStamp(s.id)}
+                        className="ml-1 p-1 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove this stamp"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addStamp}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm border border-dashed border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add stamp
+                </button>
               </div>
 
-              {/* Colour + controls */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Active stamp controls */}
+              <div className="p-4 border border-gray-200 rounded-xl space-y-4">
+                {/* Purpose */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Colour</label>
-                  <div className="flex gap-2">
-                    {(["red", "blue", "black"] as const).map((c) => (
-                      <button key={c} onClick={() => setColor(c)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${color === c ? "border-gray-900 bg-gray-100" : "border-gray-200 hover:bg-gray-50"}`}>
-                        <span className={`w-2.5 h-2.5 rounded-full ${c === "red" ? "bg-red-600" : c === "blue" ? "bg-blue-700" : "bg-gray-900"}`} />
-                        {c.charAt(0).toUpperCase() + c.slice(1)}
-                      </button>
-                    ))}
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Purpose</label>
+                  <div className="space-y-2">
+                    <select
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      value={activeStamp.useCustom ? "__custom__" : activeStamp.purpose}
+                      onChange={(e) => {
+                        if (e.target.value === "__custom__") updateActive({ useCustom: true });
+                        else updateActive({ useCustom: false, purpose: e.target.value });
+                      }}
+                    >
+                      {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
+                      <option value="__custom__">Custom...</option>
+                    </select>
+                    {activeStamp.useCustom && (
+                      <input type="text" placeholder="e.g. For Maybank account opening only"
+                        value={activeStamp.customPurpose}
+                        onChange={(e) => updateActive({ customPurpose: e.target.value })}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                    )}
                   </div>
                 </div>
+
+                {/* Colour + Angle */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Colour</label>
+                    <div className="flex gap-2">
+                      {(["red", "blue", "black"] as const).map((c) => (
+                        <button key={c} onClick={() => updateActive({ color: c })}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${activeStamp.color === c ? "border-gray-900 bg-gray-100" : "border-gray-200 hover:bg-gray-50"}`}>
+                          <span className={`w-2.5 h-2.5 rounded-full ${c === "red" ? "bg-red-600" : c === "blue" ? "bg-blue-700" : "bg-gray-900"}`} />
+                          {c.charAt(0).toUpperCase() + c.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Angle: {activeStamp.angle}°
+                    </label>
+                    <input type="range" min="-60" max="60" value={activeStamp.angle}
+                      onChange={(e) => updateActive({ angle: Number(e.target.value) })}
+                      className="w-full accent-red-600" />
+                  </div>
+                </div>
+
+                {/* Size */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Angle: {angle}°
+                    Size: {Math.round(activeStamp.scale * 100)}%
                   </label>
-                  <input type="range" min="-60" max="60" value={angle}
-                    onChange={(e) => setAngle(Number(e.target.value))}
+                  <input type="range" min="30" max="200" value={Math.round(activeStamp.scale * 100)}
+                    onChange={(e) => updateActive({ scale: Number(e.target.value) / 100 })}
                     className="w-full accent-red-600" />
                 </div>
               </div>
 
-              {/* Size */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
-                  <ZoomOut className="w-3.5 h-3.5" /> Size: {Math.round(scale * 100)}%
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </label>
-                <input type="range" min="30" max="200" value={Math.round(scale * 100)}
-                  onChange={(e) => setScale(Number(e.target.value) / 100)}
-                  className="w-full accent-red-600" />
-              </div>
-
               <button onClick={applyStamp} disabled={processing || limitReached}
                 className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors">
-                {processing ? "Applying..." : "Apply Stamp"}
+                {processing ? "Applying..." : `Apply ${stamps.length} Stamp${stamps.length > 1 ? "s" : ""}`}
               </button>
             </>
           )}
