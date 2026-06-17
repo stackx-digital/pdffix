@@ -123,7 +123,7 @@ export default function StrikeIcTool() {
   const [stamps, setStamps] = useState<StampConfig[]>([makeStamp(0.5, 0.3)]);
   const [activeId, setActiveId] = useState<number>(stamps[0].id);
 
-  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const draggingId = useRef<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -213,26 +213,26 @@ export default function StrikeIcTool() {
     const hit = hitTest(rx, ry);
     if (hit) {
       setActiveId(hit.id);
-      setDraggingId(hit.id);
+      draggingId.current = hit.id;
       dragOffset.current = { x: rx - hit.x, y: ry - hit.y };
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     }
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (draggingId === null || result) return;
+    if (draggingId.current === null || result) return;
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const rx = (e.clientX - rect.left) / rect.width;
     const ry = (e.clientY - rect.top) / rect.height;
-    setStamps(prev => prev.map(s => s.id === draggingId ? {
+    setStamps(prev => prev.map(s => s.id === draggingId.current ? {
       ...s,
       x: Math.max(0.05, Math.min(0.95, rx - dragOffset.current.x)),
       y: Math.max(0.05, Math.min(0.95, ry - dragOffset.current.y)),
     } : s));
   }
 
-  function onPointerUp() { setDraggingId(null); }
+  function onPointerUp() { draggingId.current = null; }
 
   function addStamp() {
     // Place new stamp in the lower half by default
