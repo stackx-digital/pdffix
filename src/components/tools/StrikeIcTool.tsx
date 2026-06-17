@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { Upload, Download, RefreshCw } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Upload, Download, RefreshCw, ZoomIn, ZoomOut, Move } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
@@ -16,81 +16,60 @@ const PURPOSES = [
   "For medical purposes only",
 ];
 
+interface StampConfig {
+  x: number; // 0–1 relative to image
+  y: number;
+  scale: number; // 1 = default
+  angle: number; // degrees
+  purpose: string;
+  color: "red" | "blue" | "black";
+  date: string;
+}
+
 type FileType = "image" | "pdf";
 
-// Draw a rubber-stamp style overlay on a canvas region
-function drawStamp(
+function renderStamp(
   ctx: CanvasRenderingContext2D,
   W: number,
   H: number,
-  purposeText: string,
-  color: "red" | "blue" | "black",
-  dateStr: string
+  cfg: StampConfig
 ) {
-  const hex = color === "red" ? "#dc2626" : color === "blue" ? "#1d4ed8" : "#111827";
   const rgba = (a: number) =>
-    color === "red" ? `rgba(220,38,38,${a})`
-    : color === "blue" ? `rgba(29,78,216,${a})`
+    cfg.color === "red" ? `rgba(220,38,38,${a})`
+    : cfg.color === "blue" ? `rgba(29,78,216,${a})`
     : `rgba(17,24,39,${a})`;
 
-  // Stamp dimensions — fits nicely across IC width
-  const stampW = W * 0.78;
-  const stampH = stampW * 0.22;
-  const cx = W / 2;
-  const cy = H / 2;
-  const angle = -28 * (Math.PI / 180);
+  const baseFont = Math.round(Math.min(W, H) * 0.09 * cfg.scale);
+  const cx = W * cfg.x;
+  const cy = H * cfg.y;
+  const angle = cfg.angle * (Math.PI / 180);
 
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(angle);
 
-  // Outer border (double-line rubber stamp effect)
-  const bw = 3.5;
-  const gap = 5;
-  const r = stampH * 0.28; // corner radius
-
-  function roundRect(x: number, y: number, w: number, h: number, radius: number) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + w - radius, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-    ctx.lineTo(x + w, y + h - radius);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-    ctx.lineTo(x + radius, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-  }
-
-  const x0 = -stampW / 2;
-  const y0 = -stampH / 2;
-
-  // Outer rect
-  ctx.strokeStyle = rgba(0.85);
-  ctx.lineWidth = bw;
-  roundRect(x0, y0, stampW, stampH, r);
-  ctx.stroke();
-
-  // Inner rect
-  ctx.strokeStyle = rgba(0.70);
-  ctx.lineWidth = bw * 0.6;
-  roundRect(x0 + gap, y0 + gap, stampW - gap * 2, stampH - gap * 2, Math.max(r - gap, 2));
-  ctx.stroke();
-
-  // Purpose line
-  const fontSize1 = Math.round(stampH * 0.34);
-  ctx.font = `900 ${fontSize1}px Arial, sans-serif`;
-  ctx.fillStyle = rgba(0.88);
+  // Main purpose text
+  ctx.font = `900 ${baseFont}px Arial, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(purposeText.toUpperCase(), 0, -stampH * 0.16);
 
-  // Date line
-  const fontSize2 = Math.round(stampH * 0.22);
-  ctx.font = `bold ${fontSize2}px Arial, sans-serif`;
-  ctx.fillStyle = rgba(0.75);
-  ctx.fillText(dateStr, 0, stampH * 0.26);
+  // Outline for legibility
+  ctx.strokeStyle = "rgba(255,255,255,0.6)";
+  ctx.lineWidth = baseFont * 0.12;
+  ctx.lineJoin = "round";
+  ctx.strokeText(cfg.purpose.toUpperCase(), 0, 0);
+
+  ctx.fillStyle = rgba(0.82);
+  ctx.fillText(cfg.purpose.toUpperCase(), 0, 0);
+
+  // Date below
+  const dateFont = Math.round(baseFont * 0.42);
+  ctx.font = `bold ${dateFont}px Arial, sans-serif`;
+  ctx.strokeStyle = "rgba(255,255,255,0.6)";
+  ctx.lineWidth = dateFont * 0.15;
+  ctx.strokeText(cfg.date, 0, baseFont * 0.72);
+  ctx.fillStyle = rgba(0.65);
+  ctx.fillText(cfg.date, 0, baseFont * 0.72);
 
   ctx.restore();
 }
@@ -99,112 +78,165 @@ export default function StrikeIcTool() {
   const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("strike-ic");
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>("image");
-  const [preview, setPreview] = useState<string | null>(null);
+  const [imgSrc, setImgSrc] = useState<string | null>(null); // original clean image
   const [result, setResult] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Stamp config
+  const dateStr = new Date().toLocaleDateString("en-MY", { day: "2-digit", month: "long", year: "numeric" });
   const [purpose, setPurpose] = useState(PURPOSES[0]);
   const [customPurpose, setCustomPurpose] = useState("");
   const [useCustom, setUseCustom] = useState(false);
   const [color, setColor] = useState<"red" | "blue" | "black">("red");
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [scale, setScale] = useState(1);
+  const [angle, setAngle] = useState(-30);
+
+  // Stamp position (relative 0–1 within the display canvas)
+  const [stampPos, setStampPos] = useState({ x: 0.5, y: 0.35 });
+  const [dragging, setDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);     // display / interaction canvas
+  const hiddenRef = useRef<HTMLCanvasElement>(null);     // offscreen full-res rendering
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const finalPurpose = useCustom ? customPurpose.trim() || PURPOSES[0] : purpose;
+
+  // Draw preview whenever config changes
+  useEffect(() => {
+    if (!imgSrc || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d")!;
+    const img = imgRef.current;
+    if (!img) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    renderStamp(ctx, canvas.width, canvas.height, {
+      x: stampPos.x, y: stampPos.y, scale, angle,
+      purpose: finalPurpose, color, date: dateStr,
+    });
+  });
+
+  const loadImage = useCallback((src: string) => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      const canvas = canvasRef.current!;
+      // Fit to container width max 700px
+      const maxW = Math.min(700, window.innerWidth - 64);
+      const ratio = img.naturalHeight / img.naturalWidth;
+      canvas.width = maxW;
+      canvas.height = Math.round(maxW * ratio);
+    };
+    img.src = src;
+    setImgSrc(src);
+  }, []);
 
   const handleFile = useCallback(async (f: File) => {
-    setError(null);
-    setResult(null);
+    setError(null); setResult(null);
+    setFile(f);
     if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
       setFileType("pdf");
-      setFile(f);
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-        const bytes = await f.arrayBuffer();
-        const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+        const bytes = new Uint8Array(await f.arrayBuffer());
+        setPdfBytes(bytes);
+        const doc = await pdfjs.getDocument({ data: bytes }).promise;
+        setTotalPages(doc.numPages);
         const page = await doc.getPage(1);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement("canvas");
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext("2d")!, viewport, canvas } as any).promise;
-        setPreview(canvas.toDataURL("image/jpeg", 0.9));
-      } catch {
-        setError("Could not render PDF preview.");
-      }
+        const vp = page.getViewport({ scale: 2 });
+        const c = document.createElement("canvas");
+        c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext("2d")!, viewport: vp, canvas: c } as any).promise;
+        loadImage(c.toDataURL("image/jpeg", 0.92));
+      } catch { setError("Could not read PDF."); }
     } else if (f.type.startsWith("image/")) {
       setFileType("image");
-      setFile(f);
-      setPreview(URL.createObjectURL(f));
+      setPdfBytes(null);
+      loadImage(URL.createObjectURL(f));
     } else {
-      setError("Unsupported format. Please upload JPG, PNG or PDF.");
+      setError("Please upload JPG, PNG or PDF.");
     }
-  }, []);
+  }, [loadImage]);
+
+  // Drag handlers
+  function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (result) return;
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX / canvas.width;
+    const py = (e.clientY - rect.top) * scaleY / canvas.height;
+    dragOffset.current = { x: px - stampPos.x, y: py - stampPos.y };
+    setDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (!dragging || result) return;
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX / canvas.width;
+    const py = (e.clientY - rect.top) * scaleY / canvas.height;
+    setStampPos({
+      x: Math.max(0.05, Math.min(0.95, px - dragOffset.current.x)),
+      y: Math.max(0.05, Math.min(0.95, py - dragOffset.current.y)),
+    });
+  }
+
+  function onPointerUp() { setDragging(false); }
 
   async function applyStamp() {
-    if (!file || !preview) return;
+    if (!file || !imgSrc) return;
     const allowed = await checkLimit();
     if (!allowed) return;
-
-    setProcessing(true);
-    setError(null);
-
-    const finalPurpose = useCustom ? customPurpose.trim() || PURPOSES[0] : purpose;
-    const dateStr = new Date().toLocaleDateString("en-MY", { day: "2-digit", month: "long", year: "numeric" });
+    setProcessing(true); setError(null);
+    const cfg: StampConfig = { x: stampPos.x, y: stampPos.y, scale, angle, purpose: finalPurpose, color, date: dateStr };
 
     try {
-      if (fileType === "pdf") {
+      if (fileType === "pdf" && pdfBytes) {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
         const { PDFDocument } = await import("pdf-lib");
-
-        const bytes = await file.arrayBuffer();
-        const pdfjsDoc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+        const pdfjsDoc = await pdfjs.getDocument({ data: pdfBytes }).promise;
         const outPdf = await PDFDocument.create();
 
         for (let i = 1; i <= pdfjsDoc.numPages; i++) {
           const page = await pdfjsDoc.getPage(i);
-          const viewport = page.getViewport({ scale: 2 });
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          const ctx = canvas.getContext("2d")!;
-          await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-          drawStamp(ctx, canvas.width, canvas.height, finalPurpose, color, dateStr);
-          const jpegBytes = await fetch(canvas.toDataURL("image/jpeg", 0.92)).then(r => r.arrayBuffer());
-          const img = await outPdf.embedJpg(jpegBytes);
-          const pdfPage = outPdf.addPage([img.width / 2, img.height / 2]);
-          pdfPage.drawImage(img, { x: 0, y: 0, width: img.width / 2, height: img.height / 2 });
+          const vp = page.getViewport({ scale: 2 });
+          const c = document.createElement("canvas");
+          c.width = vp.width; c.height = vp.height;
+          const ctx = c.getContext("2d")!;
+          await page.render({ canvasContext: ctx, viewport: vp, canvas: c } as any).promise;
+          renderStamp(ctx, c.width, c.height, cfg);
+          const jpegBuf = await fetch(c.toDataURL("image/jpeg", 0.92)).then(r => r.arrayBuffer());
+          const img = await outPdf.embedJpg(jpegBuf);
+          const p = outPdf.addPage([img.width / 2, img.height / 2]);
+          p.drawImage(img, { x: 0, y: 0, width: img.width / 2, height: img.height / 2 });
         }
-
-        const pdfOut = await outPdf.save();
-        const blob = new Blob([pdfOut], { type: "application/pdf" });
+        const blob = new Blob([await outPdf.save()], { type: "application/pdf" });
         setResult(URL.createObjectURL(blob));
-
-        // Update preview with stamp
-        const firstPage = await pdfjsDoc.getPage(1);
-        const vp = firstPage.getViewport({ scale: 2 });
-        const c = document.createElement("canvas");
-        c.width = vp.width; c.height = vp.height;
-        const cx = c.getContext("2d")!;
-        await firstPage.render({ canvasContext: cx, viewport: vp, canvas: c } as any).promise;
-        drawStamp(cx, c.width, c.height, finalPurpose, color, dateStr);
-        setPreview(c.toDataURL("image/jpeg", 0.9));
       } else {
-        const img = new Image();
-        img.src = preview;
-        await new Promise<void>((res) => { img.onload = () => res(); });
-        const canvas = canvasRef.current!;
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d")!;
+        const img = imgRef.current!;
+        const hidden = hiddenRef.current!;
+        hidden.width = img.naturalWidth;
+        hidden.height = img.naturalHeight;
+        const ctx = hidden.getContext("2d")!;
         ctx.drawImage(img, 0, 0);
-        drawStamp(ctx, canvas.width, canvas.height, finalPurpose, color, dateStr);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-        setResult(dataUrl);
-        setPreview(dataUrl);
+        renderStamp(ctx, hidden.width, hidden.height, cfg);
+        setResult(hidden.toDataURL("image/jpeg", 0.92));
       }
       await recordUsage();
     } catch (e: any) {
-      setError(e?.message ?? "Failed to process. Please try again.");
+      setError(e?.message ?? "Failed to process.");
     } finally {
       setProcessing(false);
     }
@@ -219,17 +251,16 @@ export default function StrikeIcTool() {
   }
 
   function reset() {
-    setFile(null); setPreview(null); setResult(null); setError(null);
+    setFile(null); setImgSrc(null); setResult(null); setError(null);
+    setPdfBytes(null); setStampPos({ x: 0.5, y: 0.35 }); setScale(1); setAngle(-30);
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Strike IC Photocopy</h1>
-      <p className="text-gray-500 mb-2">
-        Add a purpose stamp to your IC photocopy to prevent misuse when submitting to third parties.
-      </p>
+      <p className="text-gray-500 mb-2">Add a purpose stamp to your IC photocopy to prevent misuse.</p>
       <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-        ⚠️ Your file is processed <strong>100% in your browser</strong> — it is never uploaded to any server.
+        ⚠️ Processed <strong>100% in your browser</strong> — your file is never uploaded.
       </div>
 
       {status && !status.loggedIn && (
@@ -249,74 +280,90 @@ export default function StrikeIcTool() {
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
         </label>
       ) : (
-        <div className="space-y-5">
-          {preview && (
-            <div className="relative rounded-xl overflow-hidden border border-gray-200 shadow bg-gray-50">
-              <img src={preview} alt="IC preview" className="w-full" />
-              {fileType === "pdf" && !result && (
-                <div className="absolute top-2 left-2 bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded-lg">
-                  PDF — page 1 preview
-                </div>
-              )}
-              {result && (
-                <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-lg">
-                  ✓ Stamp applied
-                </div>
-              )}
-            </div>
-          )}
+        <div className="space-y-4">
+          {/* Interactive canvas */}
+          <div ref={containerRef} className="relative rounded-xl overflow-hidden border border-gray-200 shadow bg-gray-100">
+            <canvas
+              ref={canvasRef}
+              className={`w-full block ${!result ? "cursor-grab active:cursor-grabbing" : ""}`}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+            />
+            {!result && (
+              <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-lg">
+                <Move className="w-3 h-3" /> Drag to reposition stamp
+              </div>
+            )}
+            {result && (
+              <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-lg">
+                ✓ Stamp applied
+              </div>
+            )}
+          </div>
 
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>
-          )}
+          {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
 
           {!result && (
             <>
+              {/* Purpose */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Purpose</label>
                 <div className="space-y-2">
                   <select
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                     value={useCustom ? "__custom__" : purpose}
-                    onChange={(e) => {
-                      if (e.target.value === "__custom__") setUseCustom(true);
-                      else { setUseCustom(false); setPurpose(e.target.value); }
-                    }}
+                    onChange={(e) => { if (e.target.value === "__custom__") setUseCustom(true); else { setUseCustom(false); setPurpose(e.target.value); } }}
                   >
                     {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
-                    <option value="__custom__">Custom purpose...</option>
+                    <option value="__custom__">Custom...</option>
                   </select>
                   {useCustom && (
-                    <input
-                      type="text"
-                      placeholder="e.g. For Maybank account opening only"
-                      value={customPurpose}
-                      onChange={(e) => setCustomPurpose(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
+                    <input type="text" placeholder="e.g. For Maybank account opening only"
+                      value={customPurpose} onChange={(e) => setCustomPurpose(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
                   )}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Stamp colour</label>
-                <div className="flex gap-3">
-                  {(["red", "blue", "black"] as const).map((c) => (
-                    <button key={c} onClick={() => setColor(c)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${color === c ? "border-gray-900 bg-gray-100" : "border-gray-200 hover:bg-gray-50"}`}>
-                      <span className={`w-3 h-3 rounded-full ${c === "red" ? "bg-red-600" : c === "blue" ? "bg-blue-700" : "bg-gray-900"}`} />
-                      {c.charAt(0).toUpperCase() + c.slice(1)}
-                    </button>
-                  ))}
+              {/* Colour + controls */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Colour</label>
+                  <div className="flex gap-2">
+                    {(["red", "blue", "black"] as const).map((c) => (
+                      <button key={c} onClick={() => setColor(c)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${color === c ? "border-gray-900 bg-gray-100" : "border-gray-200 hover:bg-gray-50"}`}>
+                        <span className={`w-2.5 h-2.5 rounded-full ${c === "red" ? "bg-red-600" : c === "blue" ? "bg-blue-700" : "bg-gray-900"}`} />
+                        {c.charAt(0).toUpperCase() + c.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Angle: {angle}°
+                  </label>
+                  <input type="range" min="-60" max="60" value={angle}
+                    onChange={(e) => setAngle(Number(e.target.value))}
+                    className="w-full accent-red-600" />
                 </div>
               </div>
 
-              <button
-                onClick={applyStamp}
-                disabled={processing || limitReached}
-                className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors"
-              >
-                {processing ? "Applying stamp..." : "Apply Stamp"}
+              {/* Size */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
+                  <ZoomOut className="w-3.5 h-3.5" /> Size: {Math.round(scale * 100)}%
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </label>
+                <input type="range" min="30" max="200" value={Math.round(scale * 100)}
+                  onChange={(e) => setScale(Number(e.target.value) / 100)}
+                  className="w-full accent-red-600" />
+              </div>
+
+              <button onClick={applyStamp} disabled={processing || limitReached}
+                className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors">
+                {processing ? "Applying..." : "Apply Stamp"}
               </button>
             </>
           )}
@@ -342,7 +389,7 @@ export default function StrikeIcTool() {
         </div>
       )}
 
-      <canvas ref={canvasRef} className="hidden" />
+      <canvas ref={hiddenRef} className="hidden" />
     </div>
   );
 }
