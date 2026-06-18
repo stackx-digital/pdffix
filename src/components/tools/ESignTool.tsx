@@ -25,6 +25,7 @@ export default function ESignTool() {
   const [scale] = useState(1.4);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [signatures, setSignatures] = useState<PlacedSignature[]>([]);
   const [activeSignatureUrl, setActiveSignatureUrl] = useState<string | null>(null);
   const [penColor, setPenColor] = useState("#000000");
@@ -250,15 +251,20 @@ export default function ESignTool() {
   async function savePdf() {
     if (!fileBytes.current) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      const pdfLibDoc = await PDFDocument.load(fileBytes.current);
+      const pdfLibDoc = await PDFDocument.load(fileBytes.current.slice(0));
 
       for (const sig of signatures) {
         const page = pdfLibDoc.getPage(sig.page - 1);
         const { width, height } = page.getSize();
 
         const imgBytes = await fetch(sig.dataUrl).then(r => r.arrayBuffer());
-        const img = await pdfLibDoc.embedPng(imgBytes);
+        // Detect format from data URL prefix to choose the right embed method
+        const isJpeg = sig.dataUrl.startsWith("data:image/jpeg") || sig.dataUrl.startsWith("data:image/jpg");
+        const img = isJpeg
+          ? await pdfLibDoc.embedJpg(imgBytes)
+          : await pdfLibDoc.embedPng(imgBytes);
 
         const sigW = sig.w * width;
         const sigH = sig.h * height;
@@ -273,6 +279,8 @@ export default function ESignTool() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = `signed-${file!.name}`; a.click();
+    } catch (e: any) {
+      setSaveError(e?.message ?? "Failed to save PDF.");
     } finally {
       setSaving(false);
     }
@@ -413,6 +421,9 @@ export default function ESignTool() {
                 </div>
               )}
 
+              {saveError && (
+                <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">{saveError}</div>
+              )}
               {signatures.length > 0 && (
                 <button
                   onClick={savePdf}
