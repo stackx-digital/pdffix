@@ -26,8 +26,8 @@ const FAQS = [
     a: "Absolutely! Use the 'Signature' tool in the editor. Draw your signature on the signature pad, then place it anywhere on the PDF.",
   },
   {
-    q: "What's the difference between the Free and Pro versions?",
-    a: "The Free version includes all core tools with a 10MB file limit. Pro (RM19/month) adds OCR and PDF to Word, with a 100MB file limit.",
+    q: "Is PDFix really free?",
+    a: "Yes — all tools are completely free. No account needed for up to 5 uses per month. Sign up for a free account to get unlimited access.",
   },
   {
     q: "Can I use PDFix on my phone?",

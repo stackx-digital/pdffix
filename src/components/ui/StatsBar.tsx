@@ -2,7 +2,7 @@ const stats = [
   { value: "15+", label: "Free PDF Tools", icon: "🛠️" },
   { value: "100%", label: "Processed In-Browser", icon: "🔒" },
   { value: "0MB", label: "Data Sent to Servers", icon: "🛡️" },
-  { value: "RM19", label: "Pro Price Per Month", icon: "💎" },
+  { value: "Free", label: "No Account Required", icon: "💎" },
 ];
 
 export default function StatsBar() {
