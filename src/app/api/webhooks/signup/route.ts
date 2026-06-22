@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "stackxdigital@gmail.com";
-const WEBHOOK_SECRET = process.env.SIGNUP_WEBHOOK_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-webhook-secret");
-  if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
+  const expected = process.env.SIGNUP_WEBHOOK_SECRET;
+
+  // Secret is required — reject if env var not set or header doesn't match
+  if (!expected || secret !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

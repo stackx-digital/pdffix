@@ -6,7 +6,8 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   // FIXED: validate next param to prevent open redirect — only allow relative paths
   const rawNext = searchParams.get("next") ?? "/dashboard";
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
+  // Only allow simple relative paths — block protocol-relative URLs and encoded tricks
+  const next = /^\/[a-zA-Z0-9\-/_?=&%]*$/.test(rawNext) ? rawNext : "/dashboard";
   const type = searchParams.get("type");
 
   if (code) {

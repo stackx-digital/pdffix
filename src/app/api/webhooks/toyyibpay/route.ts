@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!profile || profile.toyyibpay_bill_code !== billCode) {
-      console.error("ToyyibPay webhook: bill code mismatch", { userId, billCode });
+      console.error("ToyyibPay webhook: bill code mismatch");
       return NextResponse.json({ ok: false, reason: "mismatch" });
     }
 
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", userId);
 
-    console.log(`ToyyibPay: upgraded user ${userId} to Pro (ref: ${refno})`);
+    console.log(`ToyyibPay: plan upgraded (ref: ${refno})`);
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("ToyyibPay webhook error:", e);

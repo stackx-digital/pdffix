@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { TOOLS } from "@/types";
+
+const VALID_TOOLS = new Set(TOOLS.map(t => t.id));
 
 const MONTHLY_LIMIT = 5;
 
@@ -57,7 +60,8 @@ export async function POST(req: NextRequest) {
   // Logged-in: just record, no limit
   if (user) {
     const body = await req.json().catch(() => ({}));
-    const tool = typeof body?.tool === "string" ? body.tool : "unknown";
+    const rawTool = typeof body?.tool === "string" ? body.tool : "";
+    const tool = VALID_TOOLS.has(rawTool) ? rawTool : "unknown";
     await supabase.from("usage").insert({ user_id: user.id, tool, files_processed: 1 });
     return NextResponse.json({ ok: true });
   }
