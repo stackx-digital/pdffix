@@ -2,14 +2,22 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// FIXED: moved to env var to avoid hardcoding in source
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "stackxdigital@gmail.com";
-
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  // RBAC: check is_admin flag from DB (not just email string match)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.is_admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
