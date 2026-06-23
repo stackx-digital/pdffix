@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Users, Crown, Activity, TrendingUp, Search, ChevronUp, ChevronDown, BookOpen, ExternalLink, Tag, Calendar, Upload, Trash2, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Users, Crown, Activity, TrendingUp, Search, ChevronUp, ChevronDown, BookOpen, ExternalLink, Tag, Calendar, Upload, Trash2, Eye, EyeOff, CheckCircle2, AlertCircle, Key, BarChart2, Copy, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import type { PostMeta } from "@/lib/blog";
 
 interface User {
@@ -28,7 +28,7 @@ function fmt(dateStr: string) {
 }
 
 export default function AdminDashboard({ users, stats, topTools, posts }: Props) {
-  const [tab, setTab] = useState<"users" | "blog">("users");
+  const [tab, setTab] = useState<"users" | "blog" | "apikeys" | "seo">("users");
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro">("all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
@@ -102,9 +102,23 @@ export default function AdminDashboard({ users, stats, topTools, posts }: Props)
             <BookOpen className="w-4 h-4" /> Blog Posts
             <span className="ml-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{posts.length}</span>
           </button>
+          <button
+            onClick={() => setTab("apikeys")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "apikeys" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            <Key className="w-4 h-4" /> API Keys
+          </button>
+          <button
+            onClick={() => setTab("seo")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "seo" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            <BarChart2 className="w-4 h-4" /> SEO Rankings
+          </button>
         </div>
 
         {tab === "blog" && <BlogManager initialPosts={posts} />}
+        {tab === "apikeys" && <ApiKeysManager />}
+        {tab === "seo" && <SeoRankings />}
 
         {tab === "users" && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User table */}
@@ -357,6 +371,306 @@ function BlogManager({ initialPosts }: { initialPosts: PostMeta[] }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── API Keys Manager ────────────────────────────────────────────────────────
+
+interface ApiKey {
+  id: string;
+  label: string;
+  key_prefix: string;
+  is_active: boolean;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+function ApiKeysManager() {
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newLabel, setNewLabel] = useState("SEO Agent");
+  const [creating, setCreating] = useState(false);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  function showToast(type: "success" | "error", msg: string) {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 5000);
+  }
+
+  useEffect(() => {
+    fetch("/api/v1/keys").then(r => r.json()).then(d => { setKeys(d.keys ?? []); setLoading(false); });
+  }, []);
+
+  async function createKey() {
+    if (!newLabel.trim()) return;
+    setCreating(true);
+    const res = await fetch("/api/v1/keys", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: newLabel.trim() }),
+    });
+    const json = await res.json();
+    setCreating(false);
+    if (!res.ok) { showToast("error", json.error ?? "Failed"); return; }
+    setRevealedKey(json.key);
+    const r = await fetch("/api/v1/keys");
+    const d = await r.json();
+    setKeys(d.keys ?? []);
+  }
+
+  async function revokeKey(id: string, label: string) {
+    if (!confirm(`Revoke key "${label}"? This cannot be undone.`)) return;
+    const res = await fetch(`/api/v1/keys?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setKeys(prev => prev.filter(k => k.id !== id));
+      showToast("success", "Key revoked");
+    } else {
+      showToast("error", "Revoke failed");
+    }
+  }
+
+  function copyKey(key: string) {
+    navigator.clipboard.writeText(key);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      {toast && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${toast.type === "success" ? "bg-green-50 border border-green-200 text-green-800" : "bg-red-50 border border-red-200 text-red-700"}`}>
+          {toast.type === "success" ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Revealed key banner */}
+      {revealedKey && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1.5">
+            <AlertCircle className="w-4 h-4" /> Save this key — it will not be shown again
+          </p>
+          <div className="flex items-center gap-2 bg-white border border-amber-300 rounded-xl px-4 py-2.5 font-mono text-sm text-gray-800 break-all">
+            <span className="flex-1 select-all">{revealedKey}</span>
+            <button onClick={() => copyKey(revealedKey)} className="flex-shrink-0 text-amber-600 hover:text-amber-800">
+              {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
+          <button onClick={() => setRevealedKey(null)} className="mt-3 text-xs text-amber-600 hover:underline">
+            I've saved the key — dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Create new key */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Plus className="w-4 h-4 text-red-500" /> Generate New API Key
+        </h3>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={newLabel}
+            onChange={e => setNewLabel(e.target.value)}
+            placeholder="Key label (e.g. SEO Agent)"
+            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+          <button
+            onClick={createKey}
+            disabled={creating || !newLabel.trim()}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+          >
+            <Key className="w-4 h-4" /> {creating ? "Generating..." : "Generate Key"}
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Keys start with <code className="bg-gray-100 px-1 rounded">pfx_</code>. Use as <code className="bg-gray-100 px-1 rounded">Authorization: Bearer &lt;key&gt;</code> header.</p>
+      </div>
+
+      {/* Keys list */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h3 className="font-semibold text-gray-900">Active Keys <span className="text-gray-400 font-normal text-sm">({keys.length})</span></h3>
+        </div>
+        {loading && <p className="text-sm text-gray-400 py-8 text-center">Loading...</p>}
+        {!loading && keys.length === 0 && <p className="text-sm text-gray-400 py-8 text-center">No API keys yet.</p>}
+        <div className="divide-y divide-gray-50">
+          {keys.map((k) => (
+            <div key={k.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50">
+              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
+                <Key className="w-4 h-4 text-red-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-medium text-sm text-gray-900">{k.label}</span>
+                  <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${k.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                    {k.is_active ? "Active" : "Revoked"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{k.key_prefix}…</span>
+                  <span>Created {fmt(k.created_at)}</span>
+                  {k.last_used_at && <span>Last used {fmt(k.last_used_at)}</span>}
+                </div>
+              </div>
+              <button
+                onClick={() => revokeKey(k.id, k.label)}
+                className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                title="Revoke key"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* API reference */}
+      <div className="bg-gray-900 rounded-2xl p-5 text-sm text-gray-300 space-y-3">
+        <p className="text-white font-semibold text-xs uppercase tracking-widest mb-4">API Reference</p>
+        {[
+          ["GET",    "/api/v1/blog",              "List all posts (?published=true|false)"],
+          ["POST",   "/api/v1/blog",              "Create / upsert post (JSON body)"],
+          ["GET",    "/api/v1/blog/:slug",         "Get single post"],
+          ["PUT",    "/api/v1/blog/:slug",         "Full update"],
+          ["PATCH",  "/api/v1/blog/:slug",         "Partial update (e.g. {published:true})"],
+          ["DELETE", "/api/v1/blog/:slug",         "Delete post"],
+          ["GET",    "/api/v1/seo/rankings",       "Get rankings (?keyword=...&summary=true)"],
+          ["POST",   "/api/v1/seo/rankings",       "Submit ranking(s) — single obj or array"],
+        ].map(([method, path, desc]) => (
+          <div key={path + method} className="flex gap-3 items-start">
+            <span className={`font-mono text-xs px-1.5 py-0.5 rounded font-bold flex-shrink-0 mt-0.5 ${
+              method === "GET" ? "bg-blue-900 text-blue-300" :
+              method === "POST" ? "bg-green-900 text-green-300" :
+              method === "PUT" || method === "PATCH" ? "bg-yellow-900 text-yellow-300" :
+              "bg-red-900 text-red-300"
+            }`}>{method}</span>
+            <span className="font-mono text-xs text-gray-400 flex-shrink-0 min-w-[200px]">{path}</span>
+            <span className="text-xs text-gray-500">{desc}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SEO Rankings Dashboard ──────────────────────────────────────────────────
+
+interface RankingRow {
+  id: string;
+  keyword: string;
+  position: number | null;
+  url: string;
+  search_engine: string;
+  location: string;
+  checked_at: string;
+}
+
+function SeoRankings() {
+  const [summary, setSummary] = useState<RankingRow[]>([]);
+  const [history, setHistory] = useState<RankingRow[]>([]);
+  const [selectedKw, setSelectedKw] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/v1/seo/rankings?summary=true").then(r => r.json()).then(d => {
+      setSummary(d.rankings ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  async function loadHistory(keyword: string) {
+    if (selectedKw === keyword) { setSelectedKw(null); setHistory([]); return; }
+    setSelectedKw(keyword);
+    const r = await fetch(`/api/v1/seo/rankings?keyword=${encodeURIComponent(keyword)}&limit=30`);
+    const d = await r.json();
+    setHistory(d.rankings ?? []);
+  }
+
+  function rankBadge(pos: number | null) {
+    if (pos === null) return <span className="text-gray-400 text-xs">—</span>;
+    const color = pos <= 3 ? "text-green-600 bg-green-50" : pos <= 10 ? "text-blue-600 bg-blue-50" : pos <= 20 ? "text-yellow-600 bg-yellow-50" : "text-red-600 bg-red-50";
+    return <span className={`px-2 py-0.5 rounded-full font-bold text-sm ${color}`}>#{pos}</span>;
+  }
+
+  function trendIcon(curr: number | null, prev: number | null) {
+    if (curr === null || prev === null) return <Minus className="w-3 h-3 text-gray-300" />;
+    if (curr < prev) return <ArrowUp className="w-3 h-3 text-green-500" />;
+    if (curr > prev) return <ArrowDown className="w-3 h-3 text-red-500" />;
+    return <Minus className="w-3 h-3 text-gray-300" />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">Keyword Rankings — Latest</h3>
+          <span className="text-xs text-gray-400">{summary.length} keywords tracked</span>
+        </div>
+
+        {loading && <p className="text-sm text-gray-400 py-8 text-center">Loading...</p>}
+        {!loading && summary.length === 0 && (
+          <div className="py-12 text-center">
+            <BarChart2 className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">No rankings yet. The SEO agent will submit rankings via <code className="bg-gray-100 px-1 rounded">POST /api/v1/seo/rankings</code>.</p>
+          </div>
+        )}
+
+        {summary.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/60">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Keyword</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Position</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">URL</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Last Checked</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Engine</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.map((row) => (
+                  <>
+                    <tr
+                      key={row.id}
+                      className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => loadHistory(row.keyword)}
+                    >
+                      <td className="px-4 py-3 font-medium text-gray-900">{row.keyword}</td>
+                      <td className="px-4 py-3">{rankBadge(row.position)}</td>
+                      <td className="px-4 py-3 text-xs text-gray-400 truncate max-w-[200px]">
+                        <a href={row.url} target="_blank" rel="noopener noreferrer" className="hover:text-red-600 hover:underline" onClick={e => e.stopPropagation()}>
+                          {row.url.replace("https://pdfix.my", "")}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{fmt(row.checked_at)}</td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{row.search_engine} · {row.location}</td>
+                    </tr>
+                    {selectedKw === row.keyword && history.length > 0 && (
+                      <tr key={row.id + "_history"}>
+                        <td colSpan={5} className="bg-blue-50 px-6 py-4">
+                          <p className="text-xs font-semibold text-blue-700 mb-2">History for "{row.keyword}"</p>
+                          <div className="flex flex-wrap gap-2">
+                            {history.map((h, i) => (
+                              <div key={h.id} className="flex items-center gap-1 bg-white border border-blue-200 rounded-lg px-2 py-1 text-xs">
+                                <span className="text-gray-500 whitespace-nowrap">{fmt(h.checked_at)}</span>
+                                {trendIcon(h.position, history[i + 1]?.position ?? null)}
+                                {rankBadge(h.position)}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
