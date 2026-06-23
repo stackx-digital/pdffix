@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ToolCard from "@/components/ui/ToolCard";
-import { TOOLS, FREE_LIMITS } from "@/types";
+import { TOOLS } from "@/types";
 import { formatBytes } from "@/lib/utils";
-import { Clock, FileText } from "lucide-react";
+import { Clock, FileText, Star } from "lucide-react";
 
 interface UsageRow {
   id: string;
@@ -31,6 +31,10 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("ms-MY", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -39,25 +43,12 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("full_name, plan, plan_expires_at")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   const isPro = profile?.plan === "pro";
-
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const { count: usageThisMonth } = await supabase
-    .from("usage")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .gte("created_at", startOfMonth.toISOString());
-
-  const editsUsed = usageThisMonth ?? 0;
-  const editsLimit = FREE_LIMITS.editsPerMonth;
-  const usagePct = isPro ? 0 : Math.min((editsUsed / editsLimit) * 100, 100);
+  const expiresAt = profile?.plan_expires_at;
 
   const { data: recentUsage } = await supabase
     .from("usage")
@@ -71,52 +62,34 @@ export default async function DashboardPage() {
       <Navbar user={user} />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 py-10 w-full">
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Header */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Selamat datang, {profile?.full_name ?? user.email}!
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Plan: <span className={`font-medium ${isPro ? "text-amber-600" : "text-gray-700"}`}>
-                {isPro ? "Pro" : "Percuma"}
-              </span>
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              {isPro ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Pro
+                </span>
+              ) : (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Percuma</span>
+              )}
+              {isPro && expiresAt && (
+                <span className="text-xs text-gray-400">Aktif sehingga {formatDate(expiresAt)}</span>
+              )}
+            </div>
           </div>
-
           {!isPro && (
             <Link
               href="/pricing"
-              className="inline-block px-5 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 text-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600"
             >
-              Naik Taraf ke Pro →
+              <Star className="w-4 h-4" /> Naik taraf ke Pro
             </Link>
           )}
         </div>
-
-        {/* Usage bar */}
-        {!isPro && (
-          <div className="mb-8 p-4 bg-white border border-gray-200 rounded-xl">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Edit bulan ini</span>
-              <span className="font-medium text-gray-900">{editsUsed} / {editsLimit} edit</span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-red-500 rounded-full transition-all"
-                style={{ width: `${usagePct}%` }}
-              />
-            </div>
-            {editsUsed >= editsLimit ? (
-              <p className="mt-2 text-xs text-red-600">
-                Had bulanan dicapai. <Link href="/pricing" className="underline">Naik taraf ke Pro</Link> untuk akses tanpa had.
-              </p>
-            ) : (
-              <p className="mt-2 text-xs text-gray-400">
-                Baki {editsLimit - editsUsed} edit lagi bulan ini. Had reset pada 1 haribulan.
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Recent Activity */}
         {recentUsage && recentUsage.length > 0 && (
@@ -128,9 +101,7 @@ export default async function DashboardPage() {
             <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 overflow-hidden">
               {(recentUsage as UsageRow[]).map((row) => (
                 <div key={row.id} className="flex items-center gap-4 px-4 py-3">
-                  <div className="flex-shrink-0">
-                    <FileText className="w-4 h-4 text-gray-400" />
-                  </div>
+                  <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium text-gray-800">{toolLabel(row.tool)}</span>
@@ -142,9 +113,9 @@ export default async function DashboardPage() {
                       <p className="text-xs text-gray-400">{formatBytes(row.file_size)}</p>
                     )}
                   </div>
-                  <div className="flex-shrink-0 text-xs text-gray-400 whitespace-nowrap">
+                  <span className="flex-shrink-0 text-xs text-gray-400 whitespace-nowrap">
                     {timeAgo(row.created_at)}
-                  </div>
+                  </span>
                 </div>
               ))}
             </div>
@@ -152,7 +123,7 @@ export default async function DashboardPage() {
         )}
 
         {/* Tools */}
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Tools PDF</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">PDF Tools</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {TOOLS.map((tool) => (
             <ToolCard key={tool.id} tool={tool} isPro={isPro} />

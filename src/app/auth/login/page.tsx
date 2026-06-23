@@ -13,7 +13,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
     searchParams.get("error") === "link_expired"
-      ? "Pautan telah tamat tempoh. Sila minta pautan baru."
+      ? "The link has expired. Please request a new link."
       : ""
   );
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setError("E-mel atau kata laluan tidak betul.");
+      setError("Incorrect email or password.");
       setLoading(false);
       return;
     }
@@ -45,7 +45,7 @@ function LoginForm() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">E-mel</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <input
             type="email"
             value={email}
@@ -58,9 +58,9 @@ function LoginForm() {
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">Kata Laluan</label>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
             <Link href="/auth/forgot-password" className="text-xs text-red-600 hover:underline">
-              Terlupa kata laluan?
+              Forgot password?
             </Link>
           </div>
           <input
@@ -78,14 +78,14 @@ function LoginForm() {
           disabled={loading}
           className="w-full py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
         >
-          {loading ? "Sedang log masuk..." : "Log Masuk"}
+          {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
       <p className="mt-4 text-center text-sm text-gray-500">
-        Belum ada akaun?{" "}
+        Don't have an account?{" "}
         <Link href="/auth/register" className="text-red-600 hover:underline">
-          Daftar percuma
+          Sign up for free
         </Link>
       </p>
     </div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="font-bold text-2xl text-red-600">PDFix</Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">Log Masuk</h1>
+          <h1 className="mt-4 text-xl font-semibold text-gray-900">Sign In</h1>
         </div>
         <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 p-6 h-64 animate-pulse" />}>
           <LoginForm />
