@@ -94,7 +94,7 @@ export default function PdfFormsTool() {
       });
 
       const out = await pdf.save();
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } finally {
       setProcessing(false);

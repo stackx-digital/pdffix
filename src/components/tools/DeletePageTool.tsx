@@ -97,7 +97,7 @@ export default function DeletePageTool() {
       a.href = url;
       a.download = `deleted-pages-${file!.name}`;
       a.click();
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setDone(true);
     } finally {
       setProcessing(false);

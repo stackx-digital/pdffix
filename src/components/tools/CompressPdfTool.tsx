@@ -30,7 +30,7 @@ export default function CompressPdfTool() {
       const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const compressed = await pdf.save({ useObjectStreams: true });
       const blob = new Blob([compressed], { type: "application/pdf" });
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setResult({ url: URL.createObjectURL(blob), size: blob.size });
     } finally {
       setCompressing(false);

@@ -67,7 +67,7 @@ export default function DocToMarkdownTool() {
         }
         md = parts.join("\n\n---\n\n");
       }
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setMarkdown(md);
     } catch (e: any) {
       setError(e?.message ?? "Failed to process file. Please try another file.");

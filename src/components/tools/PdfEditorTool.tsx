@@ -700,7 +700,7 @@ export default function PdfEditorTool() {
       }
 
       const blob = new Blob([await pdfLibDoc.save()], { type: "application/pdf" });
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `edited-${file!.name}` });
       a.click();
     } finally {

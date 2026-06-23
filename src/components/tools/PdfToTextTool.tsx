@@ -68,7 +68,7 @@ export default function PdfToTextTool() {
         throw new Error("This PDF contains no extractable text (it may be a scanned/image PDF). Try using OCR PDF.");
       }
 
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setText(lines.join("\n"));
     } catch (e: any) {
       setError(e?.message ?? "Failed to process file. Please try another file.");

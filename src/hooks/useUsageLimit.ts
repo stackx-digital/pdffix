@@ -20,7 +20,9 @@ export function useUsageLimit(tool: string) {
         setStatus(data);
         if (!data.canProceed) setLimitReached(true);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") console.error("useUsageLimit fetch error:", err);
+      });
   }, []);
 
   async function checkLimit(): Promise<boolean> {
@@ -38,12 +40,12 @@ export function useUsageLimit(tool: string) {
     }
   }
 
-  async function recordUsage() {
+  async function recordUsage(fileName?: string, fileSize?: number) {
     try {
       const res = await fetch("/api/usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tool }),
+        body: JSON.stringify({ tool, file_name: fileName, file_size: fileSize }),
       });
       const data = await res.json();
       if (data.limitReached) {

@@ -302,7 +302,7 @@ export default function StrikeIcTool() {
         for (const s of stamps) renderStamp(ctx, hidden.width, hidden.height, s);
         setResult(hidden.toDataURL("image/jpeg", 0.92));
       }
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
     } catch (e: any) {
       setError(e?.message ?? "Failed to process.");
     } finally {
