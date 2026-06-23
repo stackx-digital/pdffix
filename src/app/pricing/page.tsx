@@ -116,7 +116,7 @@ export default async function PricingPage() {
         </div>
 
         <p className="text-center text-sm text-gray-400 mt-6">
-          Bayaran selamat melalui Stripe · Boleh batalkan bila-bila masa · Tiada kontrak
+          Bayaran selamat melalui ToyyibPay · Boleh batalkan bila-bila masa · Tiada kontrak
         </p>
       </main>
 

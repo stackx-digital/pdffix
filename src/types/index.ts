@@ -6,7 +6,8 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   plan: Plan;
-  stripe_customer_id: string | null;
+  toyyibpay_bill_code: string | null;
+  plan_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
