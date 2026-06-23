@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Users, Crown, Activity, TrendingUp, Search, ChevronUp, ChevronDown, BookOpen, ExternalLink, Tag, Calendar } from "lucide-react";
+import { useState, useRef } from "react";
+import { Users, Crown, Activity, TrendingUp, Search, ChevronUp, ChevronDown, BookOpen, ExternalLink, Tag, Calendar, Upload, Trash2, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import type { PostMeta } from "@/lib/blog";
 
 interface User {
@@ -104,48 +104,7 @@ export default function AdminDashboard({ users, stats, topTools, posts }: Props)
           </button>
         </div>
 
-        {tab === "blog" && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Blog Posts</h2>
-              <a href="/blog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-red-600 hover:underline">
-                View Blog <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-            <div className="p-5">
-              <p className="text-xs text-gray-400 mb-4">Posts are stored as MDX files in <code className="bg-gray-100 px-1 rounded">src/content/blog/</code>. Add a new <code className="bg-gray-100 px-1 rounded">.mdx</code> file to publish a new post.</p>
-              {posts.length === 0 ? (
-                <p className="text-gray-400 text-sm py-6 text-center">No blog posts yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {posts.map((post) => (
-                    <div key={post.slug} className="flex items-start justify-between gap-4 p-4 border border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:text-red-600 transition-colors text-sm flex items-center gap-1.5">
-                          {post.title} <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50" />
-                        </a>
-                        <p className="text-xs text-gray-400 mt-1 truncate">{post.description}</p>
-                        <div className="flex flex-wrap items-center gap-3 mt-2">
-                          <span className="flex items-center gap-1 text-xs text-gray-400">
-                            <Calendar className="w-3 h-3" />{fmt(post.date)}
-                          </span>
-                          <div className="flex gap-1 flex-wrap">
-                            {post.tags.slice(0, 3).map((tag) => (
-                              <span key={tag} className="flex items-center gap-0.5 px-1.5 py-0.5 bg-red-50 text-red-600 text-xs rounded-full">
-                                <Tag className="w-2.5 h-2.5" />{tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-400 font-mono whitespace-nowrap shrink-0">{post.slug}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {tab === "blog" && <BlogManager initialPosts={posts} />}
 
         {tab === "users" && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User table */}
@@ -260,6 +219,144 @@ export default function AdminDashboard({ users, stats, topTools, posts }: Props)
             </div>
           </div>
         </div>}
+      </div>
+    </div>
+  );
+}
+
+function BlogManager({ initialPosts }: { initialPosts: PostMeta[] }) {
+  const [posts, setPosts] = useState<PostMeta[]>(initialPosts);
+  const [uploading, setUploading] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function showToast(type: "success" | "error", msg: string) {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    for (const file of Array.from(files)) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/blog", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) {
+        showToast("error", json.error ?? "Upload failed");
+      } else {
+        showToast("success", `"${json.title}" published successfully`);
+      }
+    }
+    setUploading(false);
+    // Refresh list
+    const r = await fetch("/api/admin/blog/list");
+    if (r.ok) setPosts(await r.json());
+    else window.location.reload();
+  }
+
+  async function togglePublished(slug: string, current: boolean) {
+    const res = await fetch("/api/admin/blog", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, published: !current }),
+    });
+    if (res.ok) {
+      setPosts(prev => prev.map(p => p.slug === slug ? { ...p, published: !current } : p));
+    }
+  }
+
+  async function deletePost(slug: string, title: string) {
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    const res = await fetch("/api/admin/blog", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug }),
+    });
+    if (res.ok) {
+      setPosts(prev => prev.filter(p => p.slug !== slug));
+      showToast("success", "Post deleted");
+    } else {
+      showToast("error", "Delete failed");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Toast */}
+      {toast && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${toast.type === "success" ? "bg-green-50 border border-green-200 text-green-800" : "bg-red-50 border border-red-200 text-red-700"}`}>
+          {toast.type === "success" ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Upload area */}
+      <div
+        className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-red-400 hover:bg-red-50 transition-colors cursor-pointer"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); handleUpload(e.dataTransfer.files); }}
+      >
+        <input ref={inputRef} type="file" accept=".md,.mdx" multiple className="hidden" onChange={(e) => handleUpload(e.target.files)} />
+        <Upload className={`w-8 h-8 mx-auto mb-3 ${uploading ? "text-red-500 animate-pulse" : "text-gray-400"}`} />
+        <p className="font-medium text-gray-700">{uploading ? "Uploading..." : "Click or drag .md / .mdx files here"}</p>
+        <p className="text-xs text-gray-400 mt-1">Frontmatter fields supported: title, description, date, author, tags, slug</p>
+      </div>
+
+      {/* Post list */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900">All Posts <span className="text-gray-400 font-normal text-sm">({posts.length})</span></h2>
+          <a href="/blog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-red-600 hover:underline">
+            View Blog <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {posts.length === 0 && (
+            <p className="text-gray-400 text-sm py-10 text-center">No blog posts yet. Upload your first article above.</p>
+          )}
+          {posts.map((post) => (
+            <div key={post.slug} className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50/50 transition-colors">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${post.published ? "bg-green-500" : "bg-gray-300"}`} />
+                  <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:text-red-600 transition-colors text-sm flex items-center gap-1">
+                    {post.title} <ExternalLink className="w-3 h-3 opacity-40" />
+                  </a>
+                </div>
+                <p className="text-xs text-gray-400 truncate mb-1.5">{post.description}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex items-center gap-1 text-xs text-gray-400">
+                    <Calendar className="w-3 h-3" />{fmt(post.date)}
+                  </span>
+                  {post.tags.slice(0, 3).map((tag) => (
+                    <span key={tag} className="flex items-center gap-0.5 px-1.5 py-0.5 bg-red-50 text-red-600 text-xs rounded-full">
+                      <Tag className="w-2.5 h-2.5" />{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => togglePublished(post.slug, post.published)}
+                  title={post.published ? "Unpublish" : "Publish"}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {post.published ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => deletePost(post.slug, post.title)}
+                  title="Delete"
+                  className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

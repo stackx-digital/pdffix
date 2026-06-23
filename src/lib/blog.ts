@@ -1,8 +1,5 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-
-const BLOG_DIR = path.join(process.cwd(), "src/content/blog");
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface PostMeta {
   slug: string;
@@ -11,52 +8,78 @@ export interface PostMeta {
   date: string;
   author: string;
   tags: string[];
-  coverImage?: string;
+  published: boolean;
 }
 
 export interface Post extends PostMeta {
   content: string;
 }
 
-export function getAllPosts(): PostMeta[] {
-  const files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith(".mdx"));
-  return files
-    .map((file) => {
-      const raw = fs.readFileSync(path.join(BLOG_DIR, file), "utf8");
-      const { data } = matter(raw);
-      return {
-        slug: file.replace(/\.mdx$/, ""),
-        title: data.title ?? "",
-        description: data.description ?? "",
-        date: data.date ?? "",
-        author: data.author ?? "PDFix Team",
-        tags: data.tags ?? [],
-        coverImage: data.coverImage,
-      } as PostMeta;
-    })
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+export async function getAllPosts(): Promise<PostMeta[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("blog_posts")
+    .select("slug, title, description, date, author, tags, published")
+    .eq("published", true)
+    .order("date", { ascending: false });
+
+  return (data ?? []).map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    description: p.description,
+    date: p.date,
+    author: p.author,
+    tags: p.tags ?? [],
+    published: p.published,
+  }));
 }
 
-export function getPost(slug: string): Post | null {
-  const filePath = path.join(BLOG_DIR, `${slug}.mdx`);
-  if (!fs.existsSync(filePath)) return null;
-  const raw = fs.readFileSync(filePath, "utf8");
-  const { data, content } = matter(raw);
+export async function getAllPostsAdmin(): Promise<PostMeta[]> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("blog_posts")
+    .select("slug, title, description, date, author, tags, published")
+    .order("date", { ascending: false });
+
+  return (data ?? []).map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    description: p.description,
+    date: p.date,
+    author: p.author,
+    tags: p.tags ?? [],
+    published: p.published,
+  }));
+}
+
+export async function getPost(slug: string): Promise<Post | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("blog_posts")
+    .select("*")
+    .eq("slug", slug)
+    .eq("published", true)
+    .maybeSingle();
+
+  if (!data) return null;
   return {
-    slug,
-    title: data.title ?? "",
-    description: data.description ?? "",
-    date: data.date ?? "",
-    author: data.author ?? "PDFix Team",
+    slug: data.slug,
+    title: data.title,
+    description: data.description,
+    date: data.date,
+    author: data.author,
     tags: data.tags ?? [],
-    coverImage: data.coverImage,
-    content,
+    published: data.published,
+    content: data.content,
   };
 }
 
-export function getAllSlugs(): string[] {
-  return fs
-    .readdirSync(BLOG_DIR)
-    .filter((f) => f.endsWith(".mdx"))
-    .map((f) => f.replace(/\.mdx$/, ""));
+export async function getAllSlugs(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("blog_posts")
+    .select("slug")
+    .eq("published", true);
+
+  return (data ?? []).map((p) => p.slug);
 }

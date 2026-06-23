@@ -6,6 +6,8 @@ import Footer from "@/components/layout/Footer";
 import { getAllPosts } from "@/lib/blog";
 import { Calendar, Tag, ArrowRight } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Blog — PDF Tips & Guides | PDFix",
   description: "Free PDF tutorials, tips, and guides. Learn how to compress, merge, sign, and edit PDF files online without installing software.",
@@ -24,7 +26,7 @@ function formatDate(dateStr: string) {
 export default async function BlogPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const posts = getAllPosts();
+  const posts = await getAllPosts();
 
   return (
     <div className="min-h-screen flex flex-col">

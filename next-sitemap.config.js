@@ -1,12 +1,3 @@
-const fs = require("fs");
-const path = require("path");
-
-function getBlogSlugs() {
-  const dir = path.join(__dirname, "src/content/blog");
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((f) => f.endsWith(".mdx")).map((f) => f.replace(/\.mdx$/, ""));
-}
-
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
   siteUrl: "https://pdfix.my",
@@ -45,11 +36,6 @@ module.exports = {
     { loc: "/tools/doc-to-markdown", changefreq: "weekly", priority: 0.7 },
     { loc: "/pricing", changefreq: "monthly", priority: 0.8 },
     { loc: "/blog", changefreq: "weekly", priority: 0.8 },
-    ...getBlogSlugs().map((slug) => ({
-      loc: `/blog/${slug}`,
-      changefreq: "monthly",
-      priority: 0.7,
-    })),
     { loc: "/privacy-policy", changefreq: "monthly", priority: 0.4 },
   ],
 };

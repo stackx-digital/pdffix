@@ -12,12 +12,14 @@ interface Props {
   params: { slug: string };
 }
 
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
-  return getAllSlugs().map((slug) => ({ slug }));
+  return [];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = getPost(params.slug);
+  const post = await getPost(params.slug);
   if (!post) return {};
   return {
     title: post.title,
@@ -65,7 +67,7 @@ const mdxComponents = {
 };
 
 export default async function BlogPostPage({ params }: Props) {
-  const post = getPost(params.slug);
+  const post = await getPost(params.slug);
   if (!post) notFound();
 
   const supabase = await createClient();

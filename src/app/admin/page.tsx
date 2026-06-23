@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import { getAllPosts } from "@/lib/blog";
+import { getAllPostsAdmin } from "@/lib/blog";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Admin — PDFix", robots: { index: false, follow: false } };
@@ -64,7 +64,7 @@ export default async function AdminPage() {
     usage_total: usageTotal[p.id] ?? 0,
   }));
 
-  const posts = getAllPosts();
+  const posts = await getAllPostsAdmin();
 
   return (
     <AdminDashboard
