@@ -6,9 +6,21 @@ import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = { title: "Payment Failed — PDFix" };
 
-export default async function FailedPage() {
+const REASON_MAP: Record<string, string> = {
+  bill_error: "Gagal mencipta bil pembayaran. Sila cuba lagi.",
+  network: "Ralat sambungan ke ToyyibPay. Sila cuba lagi.",
+  cancelled: "Pembayaran dibatalkan.",
+};
+
+export default async function FailedPage({
+  searchParams,
+}: {
+  searchParams: { reason?: string };
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const reason = searchParams.reason ?? "";
+  const message = REASON_MAP[reason] ?? "Pembayaran tidak berjaya diproses.";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -20,23 +32,26 @@ export default async function FailedPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Unsuccessful</h1>
-          <p className="text-gray-500 mb-8">
-            Your payment could not be processed. Please try again or contact us
-            at <a href="mailto:stackxdigital@gmail.com" className="text-red-600 hover:underline">stackxdigital@gmail.com</a>.
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Pembayaran Tidak Berjaya</h1>
+          <p className="text-gray-500 mb-2">{message}</p>
+          <p className="text-sm text-gray-400 mb-8">
+            Ada masalah? Hubungi kami di{" "}
+            <a href="mailto:stackxdigital@gmail.com" className="text-red-600 hover:underline">
+              stackxdigital@gmail.com
+            </a>.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/pricing"
               className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
-              Try Again
+              Cuba Lagi
             </Link>
             <Link
               href="/"
               className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              Homepage
+              Laman Utama
             </Link>
           </div>
         </div>
