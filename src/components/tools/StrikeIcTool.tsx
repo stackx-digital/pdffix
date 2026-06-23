@@ -144,13 +144,21 @@ export default function StrikeIcTool() {
     setStamps(prev => prev.map(s => s.id === activeId ? { ...s, ...patch } : s));
   }
 
-  // Redraw on every render
+  // Size canvas then redraw — combined so sizing always happens before drawing
   useEffect(() => {
-    if (!imgSrc || !canvasRef.current || !imgRef.current) return;
+    if (!imgLoaded || !imgSrc || !canvasRef.current || !imgRef.current) return;
+    const img = imgRef.current;
     const canvas = canvasRef.current;
+    // Resize whenever image changes
+    if (canvas.dataset.src !== imgSrc) {
+      const maxW = Math.min(700, window.innerWidth - 64);
+      canvas.width = maxW;
+      canvas.height = Math.round(maxW * (img.naturalHeight / img.naturalWidth));
+      canvas.dataset.src = imgSrc;
+    }
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(imgRef.current, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     for (const s of stamps) {
       renderStamp(ctx, canvas.width, canvas.height, s, s.id === activeId && !result);
     }
@@ -161,21 +169,11 @@ export default function StrikeIcTool() {
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
-      setImgLoaded(true); // trigger sizing effect after image is ready
+      setImgLoaded(true);
     };
     img.src = src;
     setImgSrc(src);
   }, []);
-
-  // Size the canvas once both the image is loaded AND canvas is in the DOM
-  useEffect(() => {
-    if (!imgLoaded || !imgSrc || !canvasRef.current || !imgRef.current) return;
-    const img = imgRef.current;
-    const canvas = canvasRef.current;
-    const maxW = Math.min(700, window.innerWidth - 64);
-    canvas.width = maxW;
-    canvas.height = Math.round(maxW * (img.naturalHeight / img.naturalWidth));
-  }, [imgLoaded, imgSrc]);
 
   const handleFile = useCallback(async (f: File) => {
     setError(null); setResult(null); setImgLoaded(false);
@@ -284,7 +282,10 @@ export default function StrikeIcTool() {
           const ctx = c.getContext("2d")!;
           await page.render({ canvasContext: ctx, viewport: vp, canvas: c } as any).promise;
           for (const s of stamps) renderStamp(ctx, c.width, c.height, s);
-          const jpegBuf = await fetch(c.toDataURL("image/jpeg", 0.92)).then(r => r.arrayBuffer());
+          // Use toBlob instead of fetch(dataUrl) to avoid CSP connect-src restriction
+          const jpegBuf = await new Promise<ArrayBuffer>((res, rej) =>
+            c.toBlob(b => b ? b.arrayBuffer().then(res).catch(rej) : rej(new Error("toBlob failed")), "image/jpeg", 0.92)
+          );
           const img = await outPdf.embedJpg(jpegBuf);
           const p = outPdf.addPage([img.width / 2, img.height / 2]);
           p.drawImage(img, { x: 0, y: 0, width: img.width / 2, height: img.height / 2 });
