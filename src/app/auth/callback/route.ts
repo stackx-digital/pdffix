@@ -31,6 +31,7 @@ export async function GET(request: Request) {
           id: data.user.id,
           email: data.user.email,
           full_name: data.user.user_metadata?.full_name ?? null,
+          phone: data.user.user_metadata?.phone ?? null,
           plan: "free",
         });
       }

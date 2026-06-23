@@ -6,6 +6,7 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   plan: Plan;
+  phone: string | null;
   toyyibpay_bill_code: string | null;
   plan_expires_at: string | null;
   created_at: string;
