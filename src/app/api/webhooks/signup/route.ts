@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail } from "@/lib/email";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "stackxdigital@gmail.com";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://pdfix.my";
@@ -23,35 +24,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No record" }, { status: 400 });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Resend not configured" }, { status: 500 });
-  }
-
-  const { Resend } = await import("resend");
-  const resend = new Resend(apiKey);
-
   const email = record.email ?? "";
   const name = record.full_name ?? "";
   const signedUpAt = record.created_at
     ? new Date(record.created_at).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })
     : new Date().toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" });
 
-  // Send both emails in parallel
   await Promise.allSettled([
-    // 1. Welcome email to the new user
     email
-      ? resend.emails.send({
-          from: "PDFix <noreply@pdfix.my>",
+      ? sendEmail({
           to: email,
           subject: "Selamat datang ke PDFix! 🎉",
           html: welcomeEmail(name || email, APP_URL),
         })
       : Promise.resolve(),
 
-    // 2. Admin notification
-    resend.emails.send({
-      from: "PDFix <noreply@pdfix.my>",
+    sendEmail({
       to: ADMIN_EMAIL,
       subject: `🎉 New signup: ${email}`,
       html: `
@@ -92,24 +80,18 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
-
-          <!-- Header -->
           <tr>
             <td style="background:#dc2626;padding:32px 40px;text-align:center">
               <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:-0.5px">PDF<span style="color:#fca5a5">ix</span></h1>
               <p style="margin:6px 0 0;color:#fca5a5;font-size:13px">Alat PDF Percuma Untuk Semua</p>
             </td>
           </tr>
-
-          <!-- Body -->
           <tr>
             <td style="padding:36px 40px">
               <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700">Selamat datang, ${firstName}! 👋</h2>
               <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.6">
                 Akaun PDFix anda dah berjaya didaftarkan. Semua tools PDF tersedia percuma — tiada had, tiada kad kredit diperlukan.
               </p>
-
-              <!-- Feature list -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:28px">
                 <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;Edit, gabung, pisah &amp; mampat PDF</td></tr>
                 <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;E-Sign, watermark &amp; isi borang PDF</td></tr>
@@ -117,8 +99,6 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
                 <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;Log aktiviti — rekod semua fail diproses</td></tr>
                 <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;100% dalam pelayar — fail tidak dihantar ke pelayan</td></tr>
               </table>
-
-              <!-- CTA -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
@@ -129,15 +109,12 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
                   </td>
                 </tr>
               </table>
-
               <p style="margin:28px 0 0;color:#9ca3af;font-size:13px;text-align:center;line-height:1.5">
                 Ada soalan? Hubungi kami di
                 <a href="mailto:stackxdigital@gmail.com" style="color:#dc2626;text-decoration:none">stackxdigital@gmail.com</a>
               </p>
             </td>
           </tr>
-
-          <!-- Footer -->
           <tr>
             <td style="background:#f3f4f6;padding:20px 40px;text-align:center">
               <p style="margin:0;color:#9ca3af;font-size:12px">
@@ -148,7 +125,6 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
               </p>
             </td>
           </tr>
-
         </table>
       </td>
     </tr>
