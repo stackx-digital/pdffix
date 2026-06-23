@@ -101,6 +101,7 @@ export default function Navbar({ user }: NavbarProps) {
           </div>
 
           <Link href="/pricing" className="px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Pricing</Link>
+          <Link href="/blog" className="px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Blog</Link>
         </nav>
 
         <div className="flex items-center gap-2">

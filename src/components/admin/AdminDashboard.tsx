@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Crown, Activity, TrendingUp, Search, ChevronUp, ChevronDown } from "lucide-react";
+import { Users, Crown, Activity, TrendingUp, Search, ChevronUp, ChevronDown, BookOpen, ExternalLink, Tag, Calendar } from "lucide-react";
+import type { PostMeta } from "@/lib/blog";
 
 interface User {
   id: string;
@@ -17,6 +18,7 @@ interface Props {
   users: User[];
   stats: { total: number; pro: number; free: number; usage_this_month: number };
   topTools: { tool: string; count: number }[];
+  posts: PostMeta[];
 }
 
 type SortKey = "created_at" | "email" | "plan" | "usage_this_month" | "usage_total";
@@ -25,7 +27,8 @@ function fmt(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-MY", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export default function AdminDashboard({ users, stats, topTools }: Props) {
+export default function AdminDashboard({ users, stats, topTools, posts }: Props) {
+  const [tab, setTab] = useState<"users" | "blog">("users");
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro">("all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
@@ -84,7 +87,67 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
           <StatCard icon={<Activity className="w-5 h-5 text-red-600" />} bg="bg-red-50" label="Usage This Month" value={stats.usage_this_month} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Tab nav */}
+        <div className="flex gap-1 border-b border-gray-200">
+          <button
+            onClick={() => setTab("users")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "users" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            <Users className="w-4 h-4" /> Users
+          </button>
+          <button
+            onClick={() => setTab("blog")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === "blog" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            <BookOpen className="w-4 h-4" /> Blog Posts
+            <span className="ml-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{posts.length}</span>
+          </button>
+        </div>
+
+        {tab === "blog" && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Blog Posts</h2>
+              <a href="/blog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-red-600 hover:underline">
+                View Blog <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <div className="p-5">
+              <p className="text-xs text-gray-400 mb-4">Posts are stored as MDX files in <code className="bg-gray-100 px-1 rounded">src/content/blog/</code>. Add a new <code className="bg-gray-100 px-1 rounded">.mdx</code> file to publish a new post.</p>
+              {posts.length === 0 ? (
+                <p className="text-gray-400 text-sm py-6 text-center">No blog posts yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {posts.map((post) => (
+                    <div key={post.slug} className="flex items-start justify-between gap-4 p-4 border border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:text-red-600 transition-colors text-sm flex items-center gap-1.5">
+                          {post.title} <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50" />
+                        </a>
+                        <p className="text-xs text-gray-400 mt-1 truncate">{post.description}</p>
+                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                          <span className="flex items-center gap-1 text-xs text-gray-400">
+                            <Calendar className="w-3 h-3" />{fmt(post.date)}
+                          </span>
+                          <div className="flex gap-1 flex-wrap">
+                            {post.tags.slice(0, 3).map((tag) => (
+                              <span key={tag} className="flex items-center gap-0.5 px-1.5 py-0.5 bg-red-50 text-red-600 text-xs rounded-full">
+                                <Tag className="w-2.5 h-2.5" />{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 font-mono whitespace-nowrap shrink-0">{post.slug}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === "users" && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User table */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
@@ -196,7 +259,7 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );
