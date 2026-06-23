@@ -29,20 +29,20 @@ export async function GET(req: NextRequest) {
     userSecretKey: SECRET_KEY,
     categoryCode: CATEGORY_CODE,
     billName: "PDFix Pro",
-    billDescription: "Langganan PDFix Pro — 1 Bulan",
+    billDescription: "Langganan PDFix Pro 1 Bulan",
     billPriceSetting: "1",
     billPayorInfo: "1",
     billAmount: PRICE_SEN,
     billReturnUrl: `${APP_URL}/subscribe/success`,
     billCallbackUrl: `${APP_URL}/api/webhooks/toyyibpay`,
-    billExternalReferenceNo: user.id,
+    billExternalReferenceNo: user.id.replace(/-/g, ""),
     billTo: profile?.full_name ?? user.email ?? "",
     billEmail: profile?.email ?? user.email ?? "",
     billPhone: "",
     billSplitPayment: "0",
     billSplitPaymentArgs: "",
-    billPaymentChannel: "2",
-    billContentEmail: "Terima kasih kerana melanggan PDFix Pro! Akaun anda telah dinaik taraf.",
+    billPaymentChannel: "0",
+    billContentEmail: "Terima kasih kerana melanggan PDFix Pro!",
     billChargeToCustomer: "1",
   });
 
@@ -52,11 +52,14 @@ export async function GET(req: NextRequest) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
     });
-    const json = await res.json();
-    const billCode = json?.[0]?.BillCode;
+    const text = await res.text();
+    let json: any;
+    try { json = JSON.parse(text); } catch { json = text; }
+    const billCode = Array.isArray(json) ? json?.[0]?.BillCode : null;
     if (!billCode) {
+      const detail = encodeURIComponent(typeof json === "string" ? json.slice(0, 100) : JSON.stringify(json).slice(0, 100));
       console.error("ToyyibPay createBill failed:", json);
-      return NextResponse.redirect(new URL("/subscribe/failed?reason=bill_error", req.url));
+      return NextResponse.redirect(new URL(`/subscribe/failed?reason=bill_error&detail=${detail}`, req.url));
     }
 
     // Save bill code to profile

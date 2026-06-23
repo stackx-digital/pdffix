@@ -15,11 +15,12 @@ const REASON_MAP: Record<string, string> = {
 export default async function FailedPage({
   searchParams,
 }: {
-  searchParams: { reason?: string };
+  searchParams: { reason?: string; detail?: string };
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const reason = searchParams.reason ?? "";
+  const detail = searchParams.detail ?? "";
   const message = REASON_MAP[reason] ?? "Pembayaran tidak berjaya diproses.";
 
   return (
@@ -34,6 +35,9 @@ export default async function FailedPage({
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Pembayaran Tidak Berjaya</h1>
           <p className="text-gray-500 mb-2">{message}</p>
+          {detail && (
+            <p className="text-xs text-gray-400 bg-gray-50 rounded px-3 py-2 mb-4 font-mono break-all">{detail}</p>
+          )}
           <p className="text-sm text-gray-400 mb-8">
             Ada masalah? Hubungi kami di{" "}
             <a href="mailto:stackxdigital@gmail.com" className="text-red-600 hover:underline">
