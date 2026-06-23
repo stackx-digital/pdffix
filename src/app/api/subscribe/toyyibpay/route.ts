@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     billExternalReferenceNo: user.id.replace(/-/g, ""),
     billTo: profile?.full_name ?? user.email ?? "",
     billEmail: profile?.email ?? user.email ?? "",
-    billPhone: "",
+    billPhone: "0000000000",
     billSplitPayment: "0",
     billSplitPaymentArgs: "",
     billPaymentChannel: "0",
