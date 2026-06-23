@@ -20,6 +20,7 @@ const FREE_FEATURES = [
   { label: "Isi Borang PDF", included: true },
   { label: "Buang Sekatan PDF", included: true },
   { label: "Potong PDF (crop margin)", included: true },
+  { label: "Log aktiviti (nama & saiz fail)", included: true },
   { label: "Saiz fail maksimum 10MB", included: true },
   { label: "Had 5 edit sebulan", included: true },
   { label: "OCR PDF (4 bahasa)", included: false },
