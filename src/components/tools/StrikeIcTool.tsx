@@ -118,6 +118,7 @@ export default function StrikeIcTool() {
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>("image");
   const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,31 +152,28 @@ export default function StrikeIcTool() {
   });
 
   const loadImage = useCallback((src: string) => {
+    setImgLoaded(false);
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
-      // Canvas may not be in DOM yet if React hasn't re-rendered; resize happens in
-      // the useEffect below once imgSrc state is set and canvas is mounted.
+      setImgLoaded(true); // trigger sizing effect after image is ready
     };
     img.src = src;
     setImgSrc(src);
   }, []);
 
-  // Size the canvas once the image is loaded and canvas is in the DOM
+  // Size the canvas once both the image is loaded AND canvas is in the DOM
   useEffect(() => {
-    if (!imgSrc || !canvasRef.current || !imgRef.current) return;
+    if (!imgLoaded || !imgSrc || !canvasRef.current || !imgRef.current) return;
     const img = imgRef.current;
     const canvas = canvasRef.current;
-    if (canvas.width === 0 || canvas.dataset.src !== imgSrc) {
-      const maxW = Math.min(700, window.innerWidth - 64);
-      canvas.width = maxW;
-      canvas.height = Math.round(maxW * (img.naturalHeight / img.naturalWidth));
-      canvas.dataset.src = imgSrc;
-    }
-  }, [imgSrc]);
+    const maxW = Math.min(700, window.innerWidth - 64);
+    canvas.width = maxW;
+    canvas.height = Math.round(maxW * (img.naturalHeight / img.naturalWidth));
+  }, [imgLoaded, imgSrc]);
 
   const handleFile = useCallback(async (f: File) => {
-    setError(null); setResult(null);
+    setError(null); setResult(null); setImgLoaded(false);
     setFile(f);
     if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
       setFileType("pdf");
