@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getPost, getAllSlugs } from "@/lib/blog";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
 
 interface Props {
@@ -126,7 +127,7 @@ export default async function BlogPostPage({ params }: Props) {
 
         {/* Content */}
         <article className="prose-custom">
-          <MDXRemote source={post.content} components={mdxComponents} />
+          <MDXRemote source={post.content} components={mdxComponents} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
         </article>
 
         {/* CTA */}
