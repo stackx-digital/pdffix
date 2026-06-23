@@ -16,3 +16,4 @@ public/robots.txt
 # Misc
 .DS_Store
 *.pem
+tsconfig.tsbuildinfo

@@ -6,11 +6,11 @@ import OrganizePdfTool from "@/components/tools/OrganizePdfTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Susun Halaman PDF Percuma — Atur Semula PDF",
-  description: "Susun, atur semula dan seret halaman PDF mengikut urutan yang dikehendaki. Percuma dalam pelayar.",
+  title: "Organize PDF Pages — Free Online Tool | PDFix",
+  description: "Reorder, rearrange, and drag PDF pages into any order you want. Free, right in your browser.",
 };
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Susun PDF"><OrganizePdfTool /></ToolErrorBoundary></main><Footer /></div>;
+  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Organize PDF"><OrganizePdfTool /></ToolErrorBoundary></main><Footer /></div>;
 }

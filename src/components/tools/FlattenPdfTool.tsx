@@ -16,6 +16,7 @@ export default function FlattenPdfTool() {
   const [pageCount, setPageCount] = useState(0);
   const [quality, setQuality] = useState(90);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
 
@@ -32,6 +33,7 @@ export default function FlattenPdfTool() {
     if (!file) return;
     const allowed = await checkLimit();
     if (!allowed) return;
+    setError(null);
     setProcessing(true);
     setProgress(0);
     try {
@@ -64,7 +66,8 @@ export default function FlattenPdfTool() {
       const out = await outPdf.save();
       await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    } catch {
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong. Please try again.");
       // error is swallowed — UI returns to idle state via finally
     } finally {
       setProcessing(false);
@@ -74,15 +77,15 @@ export default function FlattenPdfTool() {
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Flatten PDF</h1>
-      <p className="text-gray-500 mb-8">Tukar PDF interaktif (annotation, borang, layer) kepada PDF statik yang tidak boleh diedit. Sesuai untuk penghantaran rasmi.</p>
-      {status && !status.isPro && status.loggedIn && (
+      <p className="text-gray-500 mb-8">Convert interactive PDFs (annotations, forms, layers) to a static PDF that cannot be edited. Ideal for official submissions.</p>
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+          <span className="font-medium text-gray-700">Click or drag a PDF file here</span>
           <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
         </label>
       ) : (
@@ -90,28 +93,28 @@ export default function FlattenPdfTool() {
           <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900">{file.name}</p>
-              <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pageCount} halaman</p>
+              <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pageCount} page(s)</p>
             </div>
-            <button onClick={() => { setFile(null); setResultUrl(null); }} className="text-sm text-gray-400 hover:text-gray-600">Tukar</button>
+            <button onClick={() => { setFile(null); setResultUrl(null); }} className="text-sm text-gray-400 hover:text-gray-600">Change</button>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kualiti imej: {quality}%</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Image quality: {quality}%</label>
             <input type="range" min={60} max={100} value={quality} onChange={(e) => { setQuality(Number(e.target.value)); setResultUrl(null); }} className="w-full accent-red-600" />
             <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>Fail lebih kecil</span>
-              <span>Kualiti lebih tinggi</span>
+              <span>Smaller file</span>
+              <span>Higher quality</span>
             </div>
           </div>
 
           <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
-            <p className="text-xs text-amber-700">⚠️ Flatten akan tukar semua halaman kepada imej. Teks tidak boleh di-copy selepas flatten.</p>
+            <p className="text-xs text-amber-700">⚠️ Flatten will convert all pages to images. Text cannot be copied after flattening.</p>
           </div>
 
           {processing && (
             <div className="space-y-1.5">
               <div className="flex justify-between text-sm text-gray-600">
-                <span>Memproses...</span><span>{progress}%</span>
+                <span>Processing...</span><span>{progress}%</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
@@ -121,13 +124,16 @@ export default function FlattenPdfTool() {
 
           {resultUrl ? (
             <a href={resultUrl} download={`flattened_${file.name}`} className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700">
-              <Download className="w-5 h-5" /> Muat Turun PDF Statik
+              <Download className="w-5 h-5" /> Download Static PDF
             </a>
           ) : (
-            <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <>
+              {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+              <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               <Layers className="w-4 h-4" />
-              {processing ? "Memproses..." : "Flatten PDF"}
+              {processing ? "Processing..." : "Flatten PDF"}
             </button>
+            </>
           )}
         </div>
       )}

@@ -1,17 +1,17 @@
 import { Check, X, Minus } from "lucide-react";
 
 const rows = [
-  { feature: "Percuma guna asas", pdfix: true, ilovepdf: true, smallpdf: "partial", adobe: "partial" },
-  { feature: "Tiada upload ke pelayan", pdfix: true, ilovepdf: false, smallpdf: false, adobe: false },
-  { feature: "Edit PDF (teks, lukis, highlight)", pdfix: true, ilovepdf: false, smallpdf: false, adobe: true },
-  { feature: "E-Sign & tandatangan", pdfix: true, ilovepdf: true, smallpdf: true, adobe: true },
-  { feature: "Isi borang PDF", pdfix: true, ilovepdf: true, smallpdf: false, adobe: true },
-  { feature: "OCR (baca teks dari imej)", pdfix: true, ilovepdf: true, smallpdf: true, adobe: true },
+  { feature: "Free basic use", pdfix: true, ilovepdf: true, smallpdf: "partial", adobe: "partial" },
+  { feature: "No server upload", pdfix: true, ilovepdf: false, smallpdf: false, adobe: false },
+  { feature: "Edit PDF (text, draw, highlight)", pdfix: true, ilovepdf: false, smallpdf: false, adobe: true },
+  { feature: "E-Sign & signatures", pdfix: true, ilovepdf: true, smallpdf: true, adobe: true },
+  { feature: "Fill PDF forms", pdfix: true, ilovepdf: true, smallpdf: false, adobe: true },
+  { feature: "OCR (extract text from images)", pdfix: true, ilovepdf: true, smallpdf: true, adobe: true },
   { feature: "Watermark PDF", pdfix: true, ilovepdf: true, smallpdf: "partial", adobe: true },
-  { feature: "Buang sekatan PDF", pdfix: true, ilovepdf: true, smallpdf: true, adobe: false },
-  { feature: "Potong PDF (crop)", pdfix: true, ilovepdf: false, smallpdf: false, adobe: true },
-  { feature: "Privasi — fail tidak keluar dari peranti", pdfix: true, ilovepdf: false, smallpdf: false, adobe: false },
-  { feature: "Harga bermula", pdfix: "RM19/bln", ilovepdf: "RM45/bln", smallpdf: "RM52/bln", adobe: "RM85/bln" },
+  { feature: "Remove PDF restrictions", pdfix: true, ilovepdf: true, smallpdf: true, adobe: false },
+  { feature: "Crop PDF", pdfix: true, ilovepdf: false, smallpdf: false, adobe: true },
+  { feature: "Privacy — files never leave your device", pdfix: true, ilovepdf: false, smallpdf: false, adobe: false },
+  { feature: "Starting price", pdfix: "Free", ilovepdf: "RM45/mo", smallpdf: "RM52/mo", adobe: "RM85/mo" },
 ];
 
 type CellValue = boolean | "partial" | string;
@@ -27,16 +27,16 @@ export default function ComparisonTable() {
   return (
     <section className="max-w-5xl mx-auto px-4 py-24">
       <div className="text-center mb-12">
-        <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Perbandingan</p>
-        <h2 className="text-3xl font-bold text-gray-900">PDFix vs Pesaing</h2>
-        <p className="text-gray-500 mt-2">Kenapa pilih PDFix berbanding alat lain?</p>
+        <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Comparison</p>
+        <h2 className="text-3xl font-bold text-gray-900">PDFix vs Competitors</h2>
+        <p className="text-gray-500 mt-2">Why choose PDFix over other tools?</p>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left px-5 py-4 text-gray-500 font-medium w-1/3">Ciri</th>
+              <th className="text-left px-5 py-4 text-gray-500 font-medium w-1/3">Feature</th>
               <th className="px-4 py-4 text-center">
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-bold text-red-600 text-base">PDFix</span>
@@ -89,7 +89,7 @@ export default function ComparisonTable() {
       </div>
 
       <p className="text-center text-xs text-gray-400 mt-4">
-        * Perbandingan berdasarkan maklumat umum. Harga pesaing mungkin berbeza mengikut kadar semasa.
+        * Comparison based on publicly available information. Competitor pricing may vary.
       </p>
     </section>
   );

@@ -17,6 +17,7 @@ export default function OrganizePdfTool() {
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const dragItem = useRef<number | null>(null);
   const dragOver = useRef<number | null>(null);
@@ -60,6 +61,7 @@ export default function OrganizePdfTool() {
     if (!file || pages.length === 0) return;
     const allowed = await checkLimit();
     if (!allowed) return;
+    setError(null);
     setProcessing(true);
     try {
       const bytes = await file.arrayBuffer();
@@ -71,7 +73,8 @@ export default function OrganizePdfTool() {
       const out = await outPdf.save();
       await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    } catch {
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong. Please try again.");
       // error is swallowed — UI returns to idle state via finally
     } finally {
       setProcessing(false);
@@ -83,7 +86,7 @@ export default function OrganizePdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Susun Halaman PDF</h1>
       <p className="text-gray-500 mb-8">Susun semula, buang atau ekstrak halaman PDF.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (
@@ -139,9 +142,12 @@ export default function OrganizePdfTool() {
               <Download className="w-5 h-5" /> Muat Turun PDF
             </a>
           ) : (
-            <button onClick={process} disabled={processing || pages.length === 0 || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <>
+              {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+              <button onClick={process} disabled={processing || pages.length === 0 || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               {processing ? "Memproses..." : "Simpan PDF"}
             </button>
+            </>
           )}
 
           <button onClick={() => { setFile(null); setResultUrl(null); }} className="mt-3 w-full py-2 text-sm text-gray-500 hover:text-gray-700">

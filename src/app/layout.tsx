@@ -11,45 +11,45 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "PDFix — Alat PDF Percuma Untuk Semua | Edit, Compress, Gabung PDF",
+    default: "PDFix — Free PDF Tools for Everyone | Edit, Compress, Merge PDF",
     template: "%s | PDFix",
   },
   description:
-    "Alat PDF percuma online untuk semua. Edit PDF, compress PDF, gabung PDF, tukar PDF ke Word, tanda tangan PDF — terus dalam pelayar. Fail anda tidak pernah keluar dari peranti anda.",
+    "Free online PDF tools for everyone. Edit PDF, compress PDF, merge PDF, convert PDF to Word, sign PDF — directly in your browser. Your files never leave your device.",
   keywords: [
-    "alat pdf percuma",
-    "edit pdf online percuma",
-    "compress pdf percuma",
-    "gabung pdf",
-    "pisah pdf",
-    "pdf ke word percuma",
-    "tanda tangan pdf online",
-    "watermark pdf percuma",
-    "alat pdf malaysia",
-    "edit pdf tanpa upload",
+    "free pdf tools",
+    "edit pdf online free",
+    "compress pdf free",
+    "merge pdf",
+    "split pdf",
+    "pdf to word free",
+    "sign pdf online",
+    "watermark pdf free",
+    "pdf tools",
+    "edit pdf without upload",
     "pdf tools privacy",
-    "cara edit pdf bahasa melayu",
-    "tukar pdf ke word percuma tanpa daftar",
-    "alternatif ilovepdf malaysia",
-    "alat pdf selamat",
+    "free pdf editor",
+    "pdf converter online",
+    "ilovepdf alternative",
+    "secure pdf tools",
   ],
   authors: [{ name: "PDFix", url: "https://pdfix.my" }],
   creator: "PDFix",
   metadataBase: new URL("https://pdfix.my"),
   openGraph: {
     type: "website",
-    locale: "ms_MY",
+    locale: "en_US",
     url: "https://pdfix.my",
     siteName: "PDFix",
-    title: "PDFix — Alat PDF Percuma Untuk Semua",
+    title: "PDFix — Free PDF Tools for Everyone",
     description:
-      "Edit, compress, gabung, pisah dan tukar PDF percuma. Fail anda tidak pernah keluar dari peranti anda.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PDFix — Alat PDF Percuma" }],
+      "Edit, compress, merge, split and convert PDF for free. Your files never leave your device.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PDFix — Free PDF Tools" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PDFix — Alat PDF Percuma Untuk Semua",
-    description: "Edit, compress, gabung dan tukar PDF percuma. 100% dalam pelayar, selamat dan privat.",
+    title: "PDFix — Free PDF Tools for Everyone",
+    description: "Edit, compress, merge and convert PDF for free. 100% in-browser, secure and private.",
     images: ["/og-image.png"],
   },
   icons: { icon: "/logo.svg" },
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ms">
+    <html lang="en">
       <body className={jakarta.className}>
         {children}
         <Script id="microsoft-clarity" strategy="afterInteractive">
@@ -72,4 +72,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

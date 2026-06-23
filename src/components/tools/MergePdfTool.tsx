@@ -71,14 +71,14 @@ export default function MergePdfTool() {
 
   return (
     <div className="space-y-6">
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {/* Drop zone */}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <FilePlus2 className="w-10 h-10 text-gray-300 mb-3" />
-        <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
-        <span className="text-sm text-gray-400 mt-1">Boleh pilih beberapa fail sekaligus</span>
+        <span className="font-medium text-gray-700">Click or drag PDF files here</span>
+        <span className="text-sm text-gray-400 mt-1">You can select multiple files at once</span>
         <input
           type="file"
           accept="application/pdf"
@@ -91,7 +91,7 @@ export default function MergePdfTool() {
       {/* File list */}
       {files.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">{files.length} fail dipilih — susun ikut urutan yang dikehendaki:</p>
+          <p className="text-sm font-medium text-gray-700">{files.length} file(s) selected — arrange in the desired order:</p>
           {files.map((f, i) => (
             <div key={f.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
               <div className="flex flex-col gap-0.5">
@@ -105,7 +105,7 @@ export default function MergePdfTool() {
               <span className="text-sm font-mono text-gray-400 w-5 text-center">{i + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{f.file.name}</p>
-                <p className="text-xs text-gray-400">{f.pageCount} halaman · {formatBytes(f.file.size)}</p>
+                <p className="text-xs text-gray-400">{f.pageCount} page(s) · {formatBytes(f.file.size)}</p>
               </div>
               <button onClick={() => removeFile(f.id)} className="p-1 hover:text-red-600">
                 <X className="w-4 h-4" />
@@ -122,7 +122,7 @@ export default function MergePdfTool() {
           disabled={files.length < 2 || merging || limitReached}
           className="flex-1 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
         >
-          {merging ? "Sedang menggabungkan..." : `Gabung ${files.length} Fail PDF`}
+          {merging ? "Merging..." : `Merge ${files.length} PDF File(s)`}
         </button>
 
         {resultUrl && (
@@ -132,14 +132,14 @@ export default function MergePdfTool() {
             className="flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
           >
             <Download className="w-4 h-4" />
-            Muat Turun
+            Download
           </a>
         )}
       </div>
 
       {resultUrl && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-          ✅ PDF berjaya digabungkan! Klik butang "Muat Turun" untuk simpan.
+          ✅ PDF merged successfully! Click the "Download" button to save.
         </div>
       )}
     </div>

@@ -6,11 +6,11 @@ import AddPageNumbersTool from "@/components/tools/AddPageNumbersTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Tambah Nombor Halaman PDF Percuma",
-  description: "Tambah nombor halaman pada PDF anda secara automatik. Percuma, selamat dan terus dalam pelayar.",
+  title: "Add Page Numbers to PDF — Free Online Tool | PDFix",
+  description: "Automatically add page numbers to your PDF for free. Fast, secure, and processed entirely in your browser.",
 };
 export default async function Page() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Tambah Nombor Halaman"><AddPageNumbersTool /></ToolErrorBoundary></main><Footer /></div>;
+  return <div className="min-h-screen flex flex-col"><Navbar user={user} /><main className="flex-1"><ToolErrorBoundary toolName="Add Page Numbers"><AddPageNumbersTool /></ToolErrorBoundary></main><Footer /></div>;
 }

@@ -6,8 +6,8 @@ import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Delete Halaman PDF — PDFix",
-  description: "Buang halaman tertentu dari fail PDF anda secara percuma.",
+  title: "Delete PDF Pages — Free Online Tool | PDFix",
+  description: "Remove specific pages from your PDF file for free.",
 };
 
 export default async function DeletePagePage() {
@@ -19,12 +19,12 @@ export default async function DeletePagePage() {
       <Navbar user={user} />
       <main className="flex-1 max-w-5xl mx-auto px-4 py-8 w-full">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Delete Halaman PDF</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Delete PDF Pages</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Pilih halaman yang ingin dibuang, kemudian muat turun PDF baharu.
+            Select the pages you want to remove, then download the updated PDF.
           </p>
         </div>
-        <ToolErrorBoundary toolName="Delete Halaman PDF"><DeletePageTool /></ToolErrorBoundary>
+        <ToolErrorBoundary toolName="Delete PDF Pages"><DeletePageTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>

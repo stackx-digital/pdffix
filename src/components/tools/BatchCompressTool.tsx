@@ -80,7 +80,7 @@ export default function BatchCompressTool() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Mampat PDF Berganda</h1>
       <p className="text-gray-500 mb-8">Mampat banyak fail PDF sekaligus.</p>
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 

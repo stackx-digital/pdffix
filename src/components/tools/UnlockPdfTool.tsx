@@ -44,7 +44,7 @@ export default function UnlockPdfTool() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Buang Sekatan PDF</h1>
       <p className="text-gray-500 mb-8">Buang sekatan cetak, salin dan edit dari PDF yang terhad.</p>
 
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (

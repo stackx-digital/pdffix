@@ -41,12 +41,12 @@ export default function CompressPdfTool() {
 
   return (
     <div className="space-y-6">
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <FileArchive className="w-10 h-10 text-gray-300 mb-3" />
-        <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+        <span className="font-medium text-gray-700">Click or drag a PDF file here</span>
         <input
           type="file"
           accept="application/pdf"
@@ -58,7 +58,7 @@ export default function CompressPdfTool() {
       {file && (
         <div className="p-3 bg-white border border-gray-200 rounded-lg text-sm">
           <p className="font-medium text-gray-900">{file.name}</p>
-          <p className="text-gray-400">Saiz asal: {formatBytes(file.size)}</p>
+          <p className="text-gray-400">Original size: {formatBytes(file.size)}</p>
         </div>
       )}
 
@@ -67,37 +67,37 @@ export default function CompressPdfTool() {
         disabled={!file || compressing || limitReached}
         className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
       >
-        {compressing ? "Sedang memampatkan..." : "Mampat PDF"}
+        {compressing ? "Compressing..." : "Compress PDF"}
       </button>
 
       {result && file && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-xl space-y-3">
-          <p className="text-sm font-medium text-green-800">✅ PDF berjaya dimampatkan!</p>
+          <p className="text-sm font-medium text-green-800">✅ PDF compressed successfully!</p>
           <div className="flex gap-6 text-sm">
             <div>
-              <p className="text-gray-500">Asal</p>
+              <p className="text-gray-500">Original</p>
               <p className="font-semibold text-gray-900">{formatBytes(file.size)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Selepas</p>
+              <p className="text-gray-500">After</p>
               <p className="font-semibold text-green-700">{formatBytes(result.size)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Jimat</p>
+              <p className="text-gray-500">Saved</p>
               <p className="font-semibold text-green-700">{saving > 0 ? `${saving}%` : "—"}</p>
             </div>
           </div>
           <a
             href={result.url}
-            download={`dimampat-${file.name}`}
+            download={`compressed-${file.name}`}
             className="flex items-center justify-center gap-2 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
           >
             <Download className="w-4 h-4" />
-            Muat Turun
+            Download
           </a>
           {saving <= 0 && (
             <p className="text-xs text-gray-500">
-              PDF ini sudah optimum — tiada pengurangan ketara dapat dicapai dalam browser.
+              This PDF is already optimized — no significant reduction could be achieved in the browser.
             </p>
           )}
         </div>

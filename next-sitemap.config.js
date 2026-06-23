@@ -32,6 +32,9 @@ module.exports = {
     { loc: "/tools/flatten-pdf", changefreq: "weekly", priority: 0.6 },
     { loc: "/tools/batch-compress", changefreq: "weekly", priority: 0.6 },
     { loc: "/tools/add-page-numbers", changefreq: "weekly", priority: 0.6 },
+    { loc: "/tools/pdf-to-text", changefreq: "weekly", priority: 0.8 },
+    { loc: "/tools/doc-to-markdown", changefreq: "weekly", priority: 0.7 },
     { loc: "/pricing", changefreq: "monthly", priority: 0.8 },
+    { loc: "/privacy-policy", changefreq: "monthly", priority: 0.4 },
   ],
 };

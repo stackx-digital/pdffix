@@ -101,7 +101,7 @@ export default async function PricingPage() {
               ))}
             </ul>
             <Link
-              href={user ? "/api/stripe/checkout" : "/auth/register?next=/pricing"}
+              href={user ? "/api/subscribe/toyyibpay" : "/auth/register?next=/pricing"}
               className="block text-center py-2.5 bg-white text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50"
             >
               Langgan Sekarang
@@ -109,7 +109,6 @@ export default async function PricingPage() {
           </div>
         </div>
 
-        {/* Comparison note */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
           <p className="text-sm text-gray-600">
             💡 Semua pemprosesan dilakukan <strong>100% dalam pelayar anda</strong> — fail tidak dihantar ke mana-mana pelayan.

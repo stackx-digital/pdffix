@@ -60,12 +60,12 @@ export default function PdfToImageTool() {
 
   return (
     <div className="space-y-6">
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-10 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
         <ImageIcon className="w-10 h-10 text-gray-300 mb-3" />
-        <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+        <span className="font-medium text-gray-700">Click or drag a PDF file here</span>
         <input
           type="file"
           accept="application/pdf"
@@ -82,7 +82,7 @@ export default function PdfToImageTool() {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Format output</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Output format</label>
         <div className="flex gap-3">
           {(["image/jpeg", "image/png"] as const).map((f) => (
             <button
@@ -105,24 +105,24 @@ export default function PdfToImageTool() {
         disabled={!file || converting || limitReached}
         className="w-full py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
       >
-        {converting ? `Menukar... ${progress}%` : "Tukar ke Imej"}
+        {converting ? `Converting... ${progress}%` : "Convert to Image"}
       </button>
 
       {images.length > 0 && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-green-700">✅ {images.length} halaman berjaya ditukar:</p>
+          <p className="text-sm font-medium text-green-700">✅ {images.length} page(s) converted successfully:</p>
           {images.map((src, i) => (
             <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
-              <img src={src} alt={`Halaman ${i + 1}`} className="w-full" />
+              <img src={src} alt={`Page ${i + 1}`} className="w-full" />
               <div className="p-3 flex items-center justify-between bg-gray-50">
-                <span className="text-sm text-gray-600">Halaman {i + 1}</span>
+                <span className="text-sm text-gray-600">Page {i + 1}</span>
                 <a
                   href={src}
-                  download={`halaman-${i + 1}.${ext}`}
+                  download={`page-${i + 1}.${ext}`}
                   className="flex items-center gap-1.5 text-sm text-red-600 hover:underline font-medium"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Muat Turun
+                  Download
                 </a>
               </div>
             </div>

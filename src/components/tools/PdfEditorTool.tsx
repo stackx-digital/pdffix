@@ -27,8 +27,17 @@ type ToolType =
 
 const STAMPS = ["APPROVED", "REJECTED", "DRAFT", "CONFIDENTIAL", "REVIEWED", "VOID"];
 
+interface TextEditState {
+  item: any;
+  x: number; y: number;
+  w: number; h: number;
+  fontSize: number;
+  value: string;
+}
+
 export default function PdfEditorTool() {
-  const { checkLimit, recordUsage } = useUsageLimit("edit-pdf");
+  const { checkLimit, recordUsage, status } = useUsageLimit("edit-pdf");
+
   const [file, setFile] = useState<File | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,6 +76,11 @@ export default function PdfEditorTool() {
   const [linkUrl, setLinkUrl] = useState("https://");
   const [linkText, setLinkText] = useState("Klik di sini");
   const [pendingLinkPos, setPendingLinkPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Pro text editing
+  const [pageTextItems, setPageTextItems] = useState<any[]>([]);
+  const [pageViewport, setPageViewport] = useState<any>(null);
+  const [editingText, setEditingText] = useState<TextEditState | null>(null);
 
   // Undo/Redo stacks
   const undoStack = useRef<string[]>([]);
@@ -122,9 +136,10 @@ export default function PdfEditorTool() {
       const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
 
       const thumbs: string[] = [];
+      const thumbDpr = window.devicePixelRatio || 1;
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const vp = page.getViewport({ scale: 0.18 });
+        const vp = page.getViewport({ scale: 0.18 * thumbDpr });
         const c = document.createElement("canvas");
         c.width = vp.width; c.height = vp.height;
         await page.render({ canvasContext: c.getContext("2d")! as any, viewport: vp, canvas: c }).promise;
@@ -161,14 +176,28 @@ export default function PdfEditorTool() {
         const viewport = page.getViewport({ scale });
         if (cancelled) return;
 
-        pdfCanvas.width = viewport.width;
-        pdfCanvas.height = viewport.height;
+        const dpr = window.devicePixelRatio || 1;
+        pdfCanvas.width = viewport.width * dpr;
+        pdfCanvas.height = viewport.height * dpr;
+        pdfCanvas.style.width = `${viewport.width}px`;
+        pdfCanvas.style.height = `${viewport.height}px`;
+
+        const ctx = pdfCanvas.getContext("2d")!;
+        ctx.scale(dpr, dpr);
         await page.render({
-          canvasContext: pdfCanvas.getContext("2d")! as any,
+          canvasContext: ctx as any,
           viewport,
           canvas: pdfCanvas,
         }).promise;
         if (cancelled) return;
+
+        // Extract text positions for Pro text editing
+        try {
+          const textContent = await page.getTextContent();
+          setPageViewport(viewport);
+          setPageTextItems(textContent.items.filter((i: any) => "str" in i && i.str.trim()));
+        } catch { setPageTextItems([]); }
+        setEditingText(null);
 
         if (fabricRef.current) {
           try {
@@ -188,6 +217,7 @@ export default function PdfEditorTool() {
         const fc = new fabric.Canvas(newCanvas, {
           width: viewport.width,
           height: viewport.height,
+          enableRetinaScaling: true,
           isDrawingMode: false,
           selection: true,
           backgroundColor: "transparent",
@@ -220,6 +250,14 @@ export default function PdfEditorTool() {
             t.enterEditing();
             t.selectAll();
             fc.renderAll();
+          } else if (tool === "edittext") {
+            const target = opt.target;
+            if (target && (target.type === "i-text" || target.type === "textbox" || target.type === "text")) {
+              fc.setActiveObject(target);
+              target.enterEditing?.();
+              target.selectAll?.();
+              fc.renderAll();
+            }
           } else if (tool === "stamp" && pendingStampRef.current) {
             const stamp = pendingStampRef.current;
             const { fabric: f2 } = await import("fabric");
@@ -280,6 +318,15 @@ export default function PdfEditorTool() {
           } else if (tool === "link") {
             setPendingLinkPos({ x: pointer.x, y: pointer.y });
             setShowLinkModal(true);
+          }
+        });
+
+        fc.on("mouse:dblclick", (opt: any) => {
+          const target = opt.target;
+          if (target && (target.type === "i-text" || target.type === "textbox" || target.type === "text")) {
+            fc.setActiveObject(target);
+            target.enterEditing?.();
+            fc.renderAll();
           }
         });
 
@@ -585,6 +632,36 @@ export default function PdfEditorTool() {
     setActiveTool("select");
   }
 
+  async function confirmTextEdit() {
+    if (!editingText || !fabricRef.current) return;
+    const { fabric } = await import("fabric");
+    const fc = fabricRef.current;
+    pushUndo();
+    // White rect to cover original text
+    fc.add(new fabric.Rect({
+      left: editingText.x,
+      top: editingText.y,
+      width: Math.max(editingText.w + 20, editingText.value.length * editingText.fontSize * 0.65),
+      height: editingText.h + 6,
+      fill: "white",
+      selectable: false,
+      evented: false,
+    }));
+    // New editable text on top
+    const t = new fabric.IText(editingText.value, {
+      left: editingText.x,
+      top: editingText.y + 1,
+      fontSize: editingText.fontSize,
+      fill: colorRef.current,
+      fontFamily: fontFamilyRef.current,
+    });
+    fc.add(t);
+    fc.setActiveObject(t);
+    fc.renderAll();
+    setEditingText(null);
+    setActiveTool("select");
+  }
+
   function changePage(newPage: number) {
     const p = Math.max(1, Math.min(totalPages, newPage));
     if (p === currentPage) return;
@@ -714,6 +791,7 @@ export default function PdfEditorTool() {
 
         <TB id="addtext" icon={<Type className="w-5 h-5" />} label="Add text" />
         <TB id="edittext" icon={<PenLine className="w-5 h-5" />} label="Edit text" />
+        <TB id="select" icon={<MousePointer className="w-5 h-5" />} label="Select" />
 
         {/* Sign */}
         <TB id="sign" icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 17c3-4 5-7 7-7s2 4 4 4 3-3 5-5"/><path d="M19 17h2"/></svg>} label="Sign" onClick={() => { setShowSignModal(true); setActiveTool("sign"); }} />
@@ -852,8 +930,9 @@ export default function PdfEditorTool() {
 
         {/* Tool hint */}
         <span className="ml-auto text-[11px] text-gray-400 hidden md:block">
-          {activeTool === "addtext" && "Klik pada PDF untuk tambah teks"}
-          {activeTool === "edittext" && "Klik objek teks untuk edit"}
+          {activeTool === "addtext" && "Klik pada PDF untuk tambah teks baru"}
+          {activeTool === "edittext" && "Klik pada teks asal PDF untuk mengeditnya"}
+          {activeTool === "select" && "Klik objek untuk pilih — double-click teks untuk edit"}
           {activeTool === "draw" && "Tahan & seret untuk melukis"}
           {activeTool === "highlight" && "Seret untuk highlight kawasan"}
           {activeTool === "texthighlight" && "Seret untuk highlight teks"}
@@ -866,6 +945,14 @@ export default function PdfEditorTool() {
           {activeTool === "sign" && "Tandatangan diletakkan pada PDF"}
         </span>
       </div>
+
+      {/* ── Info banner ── */}
+      {activeTool === "edittext" ? (
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700">
+          <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd"/></svg>
+          Hover over text to highlight, click to edit. Press <kbd className="bg-amber-100 px-1 rounded">Enter</kbd> to save or <kbd className="bg-amber-100 px-1 rounded">Esc</kbd> to cancel.
+        </div>
+      ) : null}
 
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
@@ -897,6 +984,64 @@ export default function PdfEditorTool() {
           <div className="relative shadow-2xl inline-block" style={{ cursor: toolCursor(activeTool) }}>
             <canvas ref={pdfCanvasRef} className="block" />
             <div ref={fabricContainerRef} className="absolute top-0 left-0" />
+
+            {/* Pro text editing layer */}
+            {activeTool === "edittext" && pageViewport && pageTextItems.map((item: any, i: number) => {
+              if (!("str" in item) || !item.str.trim()) return null;
+              const tx = item.transform;
+              const [x, rawY] = pageViewport.convertToViewportPoint(tx[4], tx[5]);
+              const fsize = Math.abs(tx[3]) * pageViewport.scale;
+              const h = fsize + 4;
+              const w = (item.width ?? 0) * pageViewport.scale;
+              const y = rawY - h;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setEditingText({ item, x, y, w: Math.max(w, 20), h, fontSize: Math.max(fsize, 8), value: item.str })}
+                  className="absolute hover:bg-blue-200/40 hover:border hover:border-blue-400 rounded cursor-text transition-colors"
+                  style={{ left: x, top: y, width: Math.max(w, 10), height: h }}
+                  title={item.str}
+                />
+              );
+            })}
+
+            {/* Inline text editor */}
+            {editingText && activeTool === "edittext" && (
+              <div className="absolute z-50" style={{ left: editingText.x, top: editingText.y }}>
+                <input
+                  autoFocus
+                  value={editingText.value}
+                  onChange={e => setEditingText(prev => prev ? { ...prev, value: e.target.value } : null)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") { e.preventDefault(); confirmTextEdit(); }
+                    if (e.key === "Escape") setEditingText(null);
+                  }}
+                  style={{
+                    fontSize: editingText.fontSize,
+                    fontFamily: fontFamily,
+                    color: color,
+                    minWidth: Math.max(editingText.w, 60),
+                    height: editingText.h + 4,
+                    padding: "0 3px",
+                    background: "white",
+                    border: "2px solid #3b82f6",
+                    borderRadius: 3,
+                    outline: "none",
+                    boxShadow: "0 2px 8px rgba(59,130,246,0.3)",
+                  }}
+                />
+                <div className="flex gap-1 mt-1">
+                  <button onClick={confirmTextEdit}
+                    className="px-2 py-0.5 text-xs bg-blue-600 text-white rounded font-medium hover:bg-blue-700">
+                    <Check className="w-3 h-3 inline" /> OK
+                  </button>
+                  <button onClick={() => setEditingText(null)}
+                    className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
+                    Batal
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

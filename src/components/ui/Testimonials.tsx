@@ -1,21 +1,21 @@
 const testimonials = [
   {
     name: "Nurul Ain",
-    role: "Pelajar Universiti",
+    role: "University Student",
     avatar: "NA",
-    quote: "Saya guna PDFix setiap minggu untuk gabungkan nota kuliah. Senang sangat, tak perlu install software pun. Yang paling best, fail saya tak dihantar ke mana-mana!",
+    quote: "I use PDFix every week to merge my lecture notes. It's so easy — no software to install. Best of all, my files never leave my device!",
   },
   {
     name: "Ahmad Faris",
-    role: "Eksekutif HR",
+    role: "HR Executive",
     avatar: "AF",
-    quote: "Sebelum ni saya guna iLovePDF tapi ada had free. PDFix lebih berpatutan dan fungsinya lengkap — boleh sign dokumen, watermark, compress semua dalam satu tempat.",
+    quote: "I used to use iLovePDF but kept hitting the free limit. PDFix is more affordable and fully featured — sign, watermark, compress, all in one place.",
   },
   {
     name: "Siti Hajar",
-    role: "Guru Sekolah",
+    role: "School Teacher",
     avatar: "SH",
-    quote: "Mudah digunakan walaupun saya bukan orang IT. Saya selalu guna untuk potong dan gabung soalan peperiksaan sebelum hantar ke pelajar.",
+    quote: "Easy to use even for someone who's not tech-savvy. I always use it to crop and merge exam questions before sending them to students.",
   },
 ];
 
@@ -24,9 +24,9 @@ export default function Testimonials() {
     <section className="bg-gray-50/80 border-y border-gray-100 py-24 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Testimoni</p>
-          <h2 className="text-3xl font-bold text-gray-900">Apa Kata Pengguna Kami</h2>
-          <p className="text-gray-500 mt-2">Dipercayai oleh pelajar, guru dan profesional Malaysia</p>
+          <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Testimonials</p>
+          <h2 className="text-3xl font-bold text-gray-900">What Our Users Say</h2>
+          <p className="text-gray-500 mt-2">Trusted by students, teachers, and professionals</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-5">

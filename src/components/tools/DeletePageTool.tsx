@@ -124,7 +124,7 @@ export default function DeletePageTool() {
 
   return (
     <div className="space-y-5">
-      {status && !status.isPro && status.loggedIn && (
+      {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {/* File bar */}

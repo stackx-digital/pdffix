@@ -6,8 +6,8 @@ import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "PDF ke Imej Percuma — PDFix",
-  description: "Tukar setiap halaman PDF kepada imej JPG atau PNG berkualiti tinggi.",
+  title: "PDF to Image — Free Online Converter | PDFix",
+  description: "Convert every PDF page to a high-quality JPG or PNG image.",
 };
 
 export default async function PdfToImagePage() {
@@ -19,12 +19,12 @@ export default async function PdfToImagePage() {
       <Navbar user={user} />
       <main className="flex-1 max-w-2xl mx-auto px-4 py-12 w-full">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">PDF ke Imej</h1>
+          <h1 className="text-2xl font-bold text-gray-900">PDF to Image</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Setiap halaman PDF akan ditukar kepada imej berasingan dalam format JPG atau PNG.
+            Each PDF page will be converted to a separate image in JPG or PNG format.
           </p>
         </div>
-        <ToolErrorBoundary toolName="PDF ke Imej"><PdfToImageTool /></ToolErrorBoundary>
+        <ToolErrorBoundary toolName="PDF to Image"><PdfToImageTool /></ToolErrorBoundary>
       </main>
       <Footer />
     </div>
