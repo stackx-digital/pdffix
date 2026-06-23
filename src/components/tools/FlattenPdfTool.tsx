@@ -16,6 +16,7 @@ export default function FlattenPdfTool() {
   const [pageCount, setPageCount] = useState(0);
   const [quality, setQuality] = useState(90);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
 
@@ -32,6 +33,7 @@ export default function FlattenPdfTool() {
     if (!file) return;
     const allowed = await checkLimit();
     if (!allowed) return;
+    setError(null);
     setProcessing(true);
     setProgress(0);
     try {
@@ -64,7 +66,8 @@ export default function FlattenPdfTool() {
       const out = await outPdf.save();
       await recordUsage();
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    } catch {
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong. Please try again.");
       // error is swallowed — UI returns to idle state via finally
     } finally {
       setProcessing(false);
@@ -124,10 +127,13 @@ export default function FlattenPdfTool() {
               <Download className="w-5 h-5" /> Download Static PDF
             </a>
           ) : (
-            <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
+            <>
+              {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+              <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               <Layers className="w-4 h-4" />
               {processing ? "Processing..." : "Flatten PDF"}
             </button>
+            </>
           )}
         </div>
       )}

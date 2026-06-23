@@ -73,29 +73,32 @@ export default function PdfFormsTool() {
     const allowed = await checkLimit();
     if (!allowed) return;
     setProcessing(true);
-    const bytes = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
-    const form = pdf.getForm();
+    try {
+      const bytes = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const form = pdf.getForm();
 
-    fields.forEach((field) => {
-      try {
-        if (field.type === "text") {
-          form.getTextField(field.name).setText(field.value);
-        } else if (field.type === "checkbox") {
-          const cb = form.getCheckBox(field.name);
-          field.checked ? cb.check() : cb.uncheck();
-        } else if (field.type === "radio" && field.value) {
-          form.getRadioGroup(field.name).select(field.value);
-        } else if (field.type === "dropdown" && field.value) {
-          form.getDropdown(field.name).select(field.value);
-        }
-      } catch { /* skip unreadable fields */ }
-    });
+      fields.forEach((field) => {
+        try {
+          if (field.type === "text") {
+            form.getTextField(field.name).setText(field.value);
+          } else if (field.type === "checkbox") {
+            const cb = form.getCheckBox(field.name);
+            field.checked ? cb.check() : cb.uncheck();
+          } else if (field.type === "radio" && field.value) {
+            form.getRadioGroup(field.name).select(field.value);
+          } else if (field.type === "dropdown" && field.value) {
+            form.getDropdown(field.name).select(field.value);
+          }
+        } catch { /* skip unreadable fields */ }
+      });
 
-    const out = await pdf.save();
-    await recordUsage();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+      const out = await pdf.save();
+      await recordUsage();
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (
