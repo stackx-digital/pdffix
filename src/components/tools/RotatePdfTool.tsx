@@ -54,7 +54,7 @@ export default function RotatePdfTool() {
         if (rotations[i]) page.setRotation(degrees(rotations[i]));
       });
       const out = await pdf.save();
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       // error is swallowed — UI returns to idle state via finally

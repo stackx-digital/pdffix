@@ -69,7 +69,7 @@ export default function OrganizePdfTool() {
       const copied = await outPdf.copyPages(srcPdf, indices);
       copied.forEach((page) => outPdf.addPage(page));
       const out = await outPdf.save();
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       // error is swallowed — UI returns to idle state via finally

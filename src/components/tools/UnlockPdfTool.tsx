@@ -31,7 +31,7 @@ export default function UnlockPdfTool() {
       const bytes = await file.arrayBuffer();
       const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const out = await pdf.save();
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
       setError("PDF tidak dapat dibuka. Fail mungkin rosak atau dilindungi kata laluan penuh.");

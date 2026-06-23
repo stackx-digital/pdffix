@@ -57,7 +57,7 @@ export default function SplitPdfTool() {
         const blob = new Blob([b], { type: "application/pdf" });
         out.push({ name: `bahagian-${i + 1}.pdf`, url: URL.createObjectURL(blob) });
       }
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setResults(out);
     } catch {
       setError("Format julat halaman tidak sah. Contoh: 1-3, 4-6");

@@ -49,7 +49,7 @@ export default function PdfToImageTool() {
         setProgress(Math.round((i / pdf.numPages) * 100));
       }
 
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setImages(results);
     } finally {
       setConverting(false);

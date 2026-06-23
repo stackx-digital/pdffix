@@ -80,7 +80,7 @@ export default function OcrTool() {
       }
 
       await worker.terminate();
-      await recordUsage();
+      await recordUsage(file?.name, file?.size);
       setText(results.join("\n\n"));
       setOcrStatus("");
     } catch (e) {

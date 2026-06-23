@@ -48,14 +48,17 @@ export async function POST(req: Request) {
 
   if (!user) return NextResponse.json({ ok: false, error: "not logged in" }, { status: 401 });
 
-  // FIXED: parse body with fallback — malformed JSON defaults to "unknown" tool
   const body = await req.json().catch(() => ({}));
   const tool = typeof body?.tool === "string" ? body.tool : "unknown";
+  const fileName = typeof body?.file_name === "string" ? body.file_name.slice(0, 255) : null;
+  const fileSize = typeof body?.file_size === "number" && body.file_size > 0 ? Math.round(body.file_size) : null;
 
   const { error } = await supabase.from("usage").insert({
     user_id: user.id,
     tool,
     files_processed: 1,
+    file_name: fileName,
+    file_size: fileSize,
   });
 
   return NextResponse.json({ ok: !error }, { status: error ? 500 : 200 });

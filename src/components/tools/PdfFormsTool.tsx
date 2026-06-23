@@ -92,10 +92,13 @@ export default function PdfFormsTool() {
       } catch { /* skip unreadable fields */ }
     });
 
-    const out = await pdf.save();
-    await recordUsage();
-    setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
-    setProcessing(false);
+    try {
+      const out = await pdf.save();
+      await recordUsage(file?.name, file?.size);
+      setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (
