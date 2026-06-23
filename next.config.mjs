@@ -9,11 +9,11 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://js.stripe.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://js.stripe.com https://www.clarity.ms https://c.bing.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://unpkg.com https://api.resend.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://unpkg.com https://api.resend.com https://www.clarity.ms https://*.clarity.ms",
       "worker-src 'self' blob:",
       "frame-src 'none'",
       "object-src 'none'",
