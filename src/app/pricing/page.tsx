@@ -101,7 +101,7 @@ export default async function PricingPage() {
               ))}
             </ul>
             <Link
-              href={user ? "/api/stripe/checkout" : "/auth/register?next=/pricing"}
+              href={user ? "/api/subscribe/toyyibpay" : "/auth/register?next=/pricing"}
               className="block text-center py-2.5 bg-white text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50"
             >
               Langgan Sekarang

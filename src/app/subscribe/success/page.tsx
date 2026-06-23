@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-export const metadata: Metadata = { title: "Payment Successful — PDFix" };
+export const metadata: Metadata = { title: "Bayaran Berjaya — PDFix" };
 
 export default async function SuccessPage() {
   const supabase = await createClient();
@@ -20,24 +20,24 @@ export default async function SuccessPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-          <p className="text-gray-500 mb-2">Thank you for subscribing to PDFix Pro.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bayaran Berjaya! 🎉</h1>
+          <p className="text-gray-600 mb-2">Terima kasih kerana melanggan PDFix Pro.</p>
           <p className="text-sm text-gray-400 mb-8">
-            Your account will be upgraded within a few minutes after confirmation from ToyyibPay.
-            Please refresh the dashboard if your status has not changed yet.
+            Akaun anda akan dinaik taraf dalam beberapa minit selepas pengesahan dari ToyyibPay.
+            Sila refresh dashboard jika status anda belum berubah.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/dashboard"
               className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
-              Go to Dashboard
+              Pergi ke Dashboard
             </Link>
             <Link
               href="/"
               className="px-6 py-2.5 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              Homepage
+              Laman Utama
             </Link>
           </div>
         </div>

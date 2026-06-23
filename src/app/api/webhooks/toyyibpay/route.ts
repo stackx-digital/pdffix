@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // ToyyibPay sends POST callback after payment
 // Params: refno, status, reason, billcode, order_id (=user_id), amount
@@ -16,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, reason: "not_success" });
     }
 
-    const supabase = await createClient();
+    const supabase = adminClient();
 
     // Verify bill code matches user to prevent spoofing
     const { data: profile } = await supabase
@@ -26,7 +33,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!profile || profile.toyyibpay_bill_code !== billCode) {
-      console.error("ToyyibPay webhook: bill code mismatch");
+      console.error("ToyyibPay webhook: bill code mismatch", { userId, billCode, stored: profile?.toyyibpay_bill_code });
       return NextResponse.json({ ok: false, reason: "mismatch" });
     }
 
@@ -43,7 +50,7 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", userId);
 
-    console.log(`ToyyibPay: plan upgraded (ref: ${refno})`);
+    console.log(`ToyyibPay: plan upgraded user=${userId} ref=${refno}`);
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("ToyyibPay webhook error:", e);
