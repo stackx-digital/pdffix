@@ -58,7 +58,6 @@ export default function ExtractPagesTool() {
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong. Please try again.");
-      // error is swallowed — UI returns to idle state via finally
     } finally {
       setProcessing(false);
     }
@@ -66,8 +65,8 @@ export default function ExtractPagesTool() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Ekstrak Halaman PDF</h1>
-      <p className="text-gray-500 mb-8">Pilih halaman yang anda mahu ekstrak dan simpan sebagai PDF baru.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Extract PDF Pages</h1>
+      <p className="text-gray-500 mb-8">Select the pages you want to extract and save as a new PDF.</p>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
@@ -75,7 +74,7 @@ export default function ExtractPagesTool() {
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+          <span className="font-medium text-gray-700">Click or drag PDF file here</span>
           <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
         </label>
       ) : (
@@ -83,14 +82,14 @@ export default function ExtractPagesTool() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="font-medium text-gray-900">{file.name}</p>
-              <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pageCount} halaman</p>
+              <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pageCount} pages</p>
             </div>
             <button onClick={selectAll} className="text-sm text-red-600 hover:underline">
-              Pilih Semua
+              Select All
             </button>
           </div>
 
-          <p className="text-xs text-gray-400 mb-3">Klik halaman untuk pilih/nyahpilih. {selected.size} halaman dipilih.</p>
+          <p className="text-xs text-gray-400 mb-3">Click a page to select/deselect. {selected.size} page(s) selected.</p>
 
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 mb-6">
             {Array.from({ length: pageCount }, (_, i) => (
@@ -110,19 +109,19 @@ export default function ExtractPagesTool() {
 
           {resultUrl ? (
             <a href={resultUrl} download="extracted.pdf" className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700">
-              <Download className="w-5 h-5" /> Muat Turun PDF ({selected.size} halaman)
+              <Download className="w-5 h-5" /> Download PDF ({selected.size} pages)
             </a>
           ) : (
             <>
               {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
               <button onClick={process} disabled={processing || selected.size === 0 || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
-                {processing ? "Memproses..." : `Ekstrak ${selected.size} Halaman`}
+                {processing ? "Processing..." : `Extract ${selected.size} Pages`}
               </button>
             </>
           )}
 
           <button onClick={() => { setFile(null); setResultUrl(null); }} className="mt-3 w-full py-2 text-sm text-gray-500 hover:text-gray-700">
-            Tukar fail
+            Change file
           </button>
         </div>
       )}

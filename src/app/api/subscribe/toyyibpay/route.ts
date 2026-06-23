@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     userSecretKey: SECRET_KEY,
     categoryCode: CATEGORY_CODE,
     billName: "PDFix Pro",
-    billDescription: "Langganan PDFix Pro 1 Bulan",
+    billDescription: "PDFix Pro 1 Month Subscription",
     billPriceSetting: "1",
     billPayorInfo: "1",
     billAmount: PRICE_SEN,
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     billSplitPayment: "0",
     billSplitPaymentArgs: "",
     billPaymentChannel: "0",
-    billContentEmail: "Terima kasih kerana melanggan PDFix Pro!",
+    billContentEmail: "Thank you for subscribing to PDFix Pro!",
     billChargeToCustomer: "1",
   });
 

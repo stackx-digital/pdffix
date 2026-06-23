@@ -22,7 +22,7 @@ interface Props {
 type SortKey = "created_at" | "email" | "plan" | "usage_this_month" | "usage_total";
 
 function fmt(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("ms-MY", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(dateStr).toLocaleDateString("en-MY", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export default function AdminDashboard({ users, stats, topTools }: Props) {
@@ -70,7 +70,7 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
             <span className="text-gray-400 mx-2">·</span>
             <span className="text-gray-600 font-medium">Admin Dashboard</span>
           </div>
-          <a href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">← Kembali</a>
+          <a href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">← Back</a>
         </div>
       </div>
 
@@ -78,36 +78,34 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
 
         {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={<Users className="w-5 h-5 text-blue-600" />} bg="bg-blue-50" label="Jumlah Pengguna" value={stats.total} />
-          <StatCard icon={<Crown className="w-5 h-5 text-amber-500" />} bg="bg-amber-50" label="Pengguna Pro" value={stats.pro} />
-          <StatCard icon={<Users className="w-5 h-5 text-green-600" />} bg="bg-green-50" label="Pengguna Free" value={stats.free} />
-          <StatCard icon={<Activity className="w-5 h-5 text-red-600" />} bg="bg-red-50" label="Penggunaan Bulan Ini" value={stats.usage_this_month} />
+          <StatCard icon={<Users className="w-5 h-5 text-blue-600" />} bg="bg-blue-50" label="Total Users" value={stats.total} />
+          <StatCard icon={<Crown className="w-5 h-5 text-amber-500" />} bg="bg-amber-50" label="Pro Users" value={stats.pro} />
+          <StatCard icon={<Users className="w-5 h-5 text-green-600" />} bg="bg-green-50" label="Free Users" value={stats.free} />
+          <StatCard icon={<Activity className="w-5 h-5 text-red-600" />} bg="bg-red-50" label="Usage This Month" value={stats.usage_this_month} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User table */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Senarai Pengguna</h2>
+              <h2 className="font-semibold text-gray-900">Users</h2>
               <div className="flex gap-2">
-                {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Cari email / nama..."
+                    placeholder="Search email / name..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 w-44"
                   />
                 </div>
-                {/* Plan filter */}
                 <select
                   value={planFilter}
                   onChange={e => setPlanFilter(e.target.value as any)}
                   className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-400"
                 >
-                  <option value="all">Semua Plan</option>
+                  <option value="all">All Plans</option>
                   <option value="free">Free</option>
                   <option value="pro">Pro</option>
                 </select>
@@ -118,16 +116,16 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <Th label="Pengguna" k="email" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
+                    <Th label="User" k="email" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
                     <Th label="Plan" k="plan" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
-                    <Th label="Daftar" k="created_at" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
-                    <Th label="Bulan Ini" k="usage_this_month" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
+                    <Th label="Joined" k="created_at" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
+                    <Th label="This Month" k="usage_this_month" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
                     <Th label="Total" k="usage_total" sortKey={sortKey} sortAsc={sortAsc} toggle={toggleSort} />
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 && (
-                    <tr><td colSpan={5} className="text-center py-10 text-gray-400 text-sm">Tiada pengguna dijumpai</td></tr>
+                    <tr><td colSpan={5} className="text-center py-10 text-gray-400 text-sm">No users found</td></tr>
                   )}
                   {filtered.map(u => (
                     <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
@@ -155,16 +153,16 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
             </div>
 
             <div className="px-5 py-3 border-t border-gray-100 text-xs text-gray-400">
-              {filtered.length} daripada {users.length} pengguna
+              {filtered.length} of {users.length} users
             </div>
           </div>
 
           {/* Top tools */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-red-500" /> Alat Popular Bulan Ini
+              <TrendingUp className="w-4 h-4 text-red-500" /> Top Tools This Month
             </h2>
-            {topTools.length === 0 && <p className="text-sm text-gray-400">Tiada data lagi</p>}
+            {topTools.length === 0 && <p className="text-sm text-gray-400">No data yet</p>}
             <div className="space-y-3">
               {topTools.map(({ tool, count }) => (
                 <div key={tool}>
@@ -182,17 +180,16 @@ export default function AdminDashboard({ users, stats, topTools }: Props) {
               ))}
             </div>
 
-            {/* Quick stats */}
             <div className="mt-6 pt-5 border-t border-gray-100 space-y-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Ringkasan</h3>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Summary</h3>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Kadar Pro</span>
+                <span className="text-gray-500">Pro rate</span>
                 <span className="font-semibold text-amber-600">
                   {stats.total > 0 ? Math.round((stats.pro / stats.total) * 100) : 0}%
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Purata penggunaan/user</span>
+                <span className="text-gray-500">Avg usage/user</span>
                 <span className="font-semibold text-gray-700">
                   {stats.total > 0 ? (stats.usage_this_month / stats.total).toFixed(1) : 0}
                 </span>

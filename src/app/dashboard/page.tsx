@@ -32,7 +32,7 @@ function timeAgo(iso: string): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ms-MY", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export default async function DashboardPage() {
@@ -47,7 +47,8 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const isPro = profile?.plan === "pro";
+  const planExpired = profile?.plan_expires_at ? new Date(profile.plan_expires_at) < new Date() : false;
+  const isPro = profile?.plan === "pro" && !planExpired;
   const expiresAt = profile?.plan_expires_at;
 
   const { data: recentUsage } = await supabase
@@ -66,7 +67,7 @@ export default async function DashboardPage() {
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Selamat datang, {profile?.full_name ?? user.email}!
+              Welcome, {profile?.full_name ?? user.email}!
             </h1>
             <div className="flex items-center gap-2 mt-1">
               {isPro ? (
@@ -74,10 +75,10 @@ export default async function DashboardPage() {
                   <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Pro
                 </span>
               ) : (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Percuma</span>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Free</span>
               )}
               {isPro && expiresAt && (
-                <span className="text-xs text-gray-400">Aktif sehingga {formatDate(expiresAt)}</span>
+                <span className="text-xs text-gray-400">Active until {formatDate(expiresAt)}</span>
               )}
             </div>
           </div>
@@ -86,7 +87,7 @@ export default async function DashboardPage() {
               href="/pricing"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600"
             >
-              <Star className="w-4 h-4" /> Naik taraf ke Pro
+              <Star className="w-4 h-4" /> Upgrade to Pro
             </Link>
           )}
         </div>
@@ -96,7 +97,7 @@ export default async function DashboardPage() {
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900">Aktiviti Terbaru</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 overflow-hidden">
               {(recentUsage as UsageRow[]).map((row) => (

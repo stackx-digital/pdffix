@@ -28,7 +28,7 @@ export default function OrganizePdfTool() {
     const pdf = await PDFDocument.load(bytes);
     const count = pdf.getPageCount();
     setFile(f);
-    setPages(Array.from({ length: count }, (_, i) => ({ index: i, label: `Halaman ${i + 1}` })));
+    setPages(Array.from({ length: count }, (_, i) => ({ index: i, label: `Page ${i + 1}` })));
     setResultUrl(null);
   }
 
@@ -75,7 +75,6 @@ export default function OrganizePdfTool() {
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong. Please try again.");
-      // error is swallowed — UI returns to idle state via finally
     } finally {
       setProcessing(false);
     }
@@ -83,8 +82,8 @@ export default function OrganizePdfTool() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Susun Halaman PDF</h1>
-      <p className="text-gray-500 mb-8">Susun semula, buang atau ekstrak halaman PDF.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Organize PDF Pages</h1>
+      <p className="text-gray-500 mb-8">Reorder or remove pages from your PDF.</p>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
@@ -92,7 +91,7 @@ export default function OrganizePdfTool() {
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+          <span className="font-medium text-gray-700">Click or drag PDF file here</span>
           <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
         </label>
       ) : (
@@ -100,11 +99,11 @@ export default function OrganizePdfTool() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="font-medium text-gray-900">{file.name}</p>
-              <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pages.length} halaman dipilih</p>
+              <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pages.length} pages</p>
             </div>
           </div>
 
-          <p className="text-xs text-gray-400 mb-3">Seret untuk susun semula · Klik X untuk buang halaman</p>
+          <p className="text-xs text-gray-400 mb-3">Drag to reorder · Click X to remove a page</p>
 
           <div className="space-y-2 mb-6">
             {pages.map((page, pos) => (
@@ -139,19 +138,19 @@ export default function OrganizePdfTool() {
 
           {resultUrl ? (
             <a href={resultUrl} download="organized.pdf" className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700">
-              <Download className="w-5 h-5" /> Muat Turun PDF
+              <Download className="w-5 h-5" /> Download PDF
             </a>
           ) : (
             <>
               {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
               <button onClick={process} disabled={processing || pages.length === 0 || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
-              {processing ? "Memproses..." : "Simpan PDF"}
-            </button>
+                {processing ? "Processing..." : "Save PDF"}
+              </button>
             </>
           )}
 
           <button onClick={() => { setFile(null); setResultUrl(null); }} className="mt-3 w-full py-2 text-sm text-gray-500 hover:text-gray-700">
-            Tukar fail
+            Change file
           </button>
         </div>
       )}

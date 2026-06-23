@@ -13,7 +13,7 @@ export default function WatermarkTool() {
   const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("watermark");
   const [file, setFile] = useState<File | null>(null);
   const [type, setType] = useState<WatermarkType>("text");
-  const [text, setText] = useState("SULIT");
+  const [text, setText] = useState("CONFIDENTIAL");
   const [fontSize, setFontSize] = useState(60);
   const [opacity, setOpacity] = useState(0.25);
   const [rotation, setRotation] = useState(45);
@@ -140,14 +140,14 @@ export default function WatermarkTool() {
     }
   }
 
-  const PRESETS = ["SULIT", "DRAFT", "CONFIDENTIAL", "TIDAK SAH", "CONTOH", "SAMPLE"];
+  const PRESETS = ["CONFIDENTIAL", "DRAFT", "SAMPLE", "VOID", "TOP SECRET", "APPROVED"];
   const POSITIONS = [
-    { id: "center", label: "Tengah" },
-    { id: "top-left", label: "Atas Kiri" },
-    { id: "top-right", label: "Atas Kanan" },
-    { id: "bottom-left", label: "Bawah Kiri" },
-    { id: "bottom-right", label: "Bawah Kanan" },
-    { id: "tile", label: "Tile (Semua)" },
+    { id: "center", label: "Center" },
+    { id: "top-left", label: "Top Left" },
+    { id: "top-right", label: "Top Right" },
+    { id: "bottom-left", label: "Bottom Left" },
+    { id: "bottom-right", label: "Bottom Right" },
+    { id: "tile", label: "Tile (All)" },
   ] as const;
 
   return (
@@ -161,8 +161,8 @@ export default function WatermarkTool() {
           <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center mb-4">
             <Droplets className="w-7 h-7 text-red-600" />
           </div>
-          <span className="font-semibold text-gray-800 text-lg">Buka fail PDF</span>
-          <span className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</span>
+          <span className="font-semibold text-gray-800 text-lg">Open PDF file</span>
+          <span className="text-sm text-gray-400 mt-1">Click or drag PDF file here</span>
           <input type="file" accept="application/pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
         </label>
       ) : (
@@ -171,7 +171,7 @@ export default function WatermarkTool() {
             <p className="text-sm font-medium text-gray-900">{file.name}</p>
             <p className="text-xs text-gray-400">{formatBytes(file.size)}</p>
           </div>
-          <button onClick={() => { setFile(null); fileBytes.current = null; setDone(false); }} className="text-xs text-red-500 hover:underline">Tukar fail</button>
+          <button onClick={() => { setFile(null); fileBytes.current = null; setDone(false); }} className="text-xs text-red-500 hover:underline">Change file</button>
         </div>
       )}
 
@@ -181,11 +181,11 @@ export default function WatermarkTool() {
           <div className="space-y-4">
             {/* Type toggle */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Watermark</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Watermark Type</label>
               <div className="flex gap-2">
                 {(["text", "image"] as const).map(t => (
                   <button key={t} onClick={() => setType(t)} className={cn("flex-1 py-2 rounded-lg border text-sm font-medium transition-colors", type === t ? "bg-red-600 text-white border-red-600" : "border-gray-200 text-gray-700 hover:bg-gray-50")}>
-                    {t === "text" ? "Teks" : "Imej/Logo"}
+                    {t === "text" ? "Text" : "Image/Logo"}
                   </button>
                 ))}
               </div>
@@ -194,13 +194,13 @@ export default function WatermarkTool() {
             {type === "text" ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Teks Watermark</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Watermark Text</label>
                   <input
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Contoh: SULIT, DRAFT..."
+                    placeholder="e.g. CONFIDENTIAL, DRAFT..."
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {PRESETS.map(p => (
@@ -211,20 +211,20 @@ export default function WatermarkTool() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Saiz Fon: {fontSize}pt</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Font Size: {fontSize}pt</label>
                     <input type="range" min={20} max={120} value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="w-full accent-red-600" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Warna</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
                     <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-full h-9 rounded-lg border border-gray-200 cursor-pointer" />
                   </div>
                 </div>
               </>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Imej/Logo (PNG atau JPG)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Image/Logo (PNG or JPG)</label>
                 <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
-                  {imageFile ? imageFile.name : "Pilih fail imej..."}
+                  {imageFile ? imageFile.name : "Choose image file..."}
                   <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
                 </label>
               </div>
@@ -232,17 +232,17 @@ export default function WatermarkTool() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kelegapan: {Math.round(opacity * 100)}%</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Opacity: {Math.round(opacity * 100)}%</label>
                 <input type="range" min={5} max={100} value={opacity * 100} onChange={(e) => setOpacity(Number(e.target.value) / 100)} className="w-full accent-red-600" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Putaran: {rotation}°</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rotation: {rotation}°</label>
                 <input type="range" min={-90} max={90} value={rotation} onChange={(e) => setRotation(Number(e.target.value))} className="w-full accent-red-600" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Kedudukan</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
               <div className="grid grid-cols-3 gap-2">
                 {POSITIONS.map(p => (
                   <button key={p.id} onClick={() => setPosition(p.id)} className={cn("py-1.5 rounded-lg border text-xs font-medium transition-colors", position === p.id ? "bg-red-600 text-white border-red-600" : "border-gray-200 text-gray-700 hover:bg-gray-50")}>
@@ -257,7 +257,7 @@ export default function WatermarkTool() {
           <div className="space-y-4">
             {/* Live preview box */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5"><Eye className="w-4 h-4" />Pratonton</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5"><Eye className="w-4 h-4" />Preview</label>
               <div className="relative h-52 bg-white border-2 border-gray-200 rounded-xl overflow-hidden flex items-center justify-center">
                 {/* Mock PDF lines */}
                 <div className="absolute inset-0 p-4 space-y-2 opacity-20">
@@ -298,20 +298,20 @@ export default function WatermarkTool() {
               className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               <Download className="w-5 h-5" />
-              {processing ? "Sedang memproses..." : "Guna Watermark & Muat Turun"}
+              {processing ? "Processing..." : "Apply Watermark & Download"}
             </button>
 
             {done && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800 text-center">
-                ✅ Watermark berjaya ditambah! Fail telah dimuat turun.
+                ✅ Watermark added successfully! File has been downloaded.
               </div>
             )}
 
             <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700 space-y-1">
-              <p className="font-medium">Nota:</p>
-              <p>• Watermark akan digunakan pada semua halaman PDF</p>
-              <p>• Fail asal anda tidak diubah</p>
-              <p>• Proses berlaku sepenuhnya dalam browser anda</p>
+              <p className="font-medium">Note:</p>
+              <p>• Watermark will be applied to all PDF pages</p>
+              <p>• Your original file is not modified</p>
+              <p>• Processing happens entirely in your browser</p>
             </div>
           </div>
         </div>

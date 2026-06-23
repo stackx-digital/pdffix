@@ -74,7 +74,7 @@ export default function PdfEditorTool() {
   // Link modal
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("https://");
-  const [linkText, setLinkText] = useState("Klik di sini");
+  const [linkText, setLinkText] = useState("Click here");
   const [pendingLinkPos, setPendingLinkPos] = useState<{ x: number; y: number } | null>(null);
 
   // Pro text editing
@@ -152,7 +152,7 @@ export default function PdfEditorTool() {
       setPdfDoc(pdf);
     } catch (e) {
       if (process.env.NODE_ENV === "development") console.error("PDF load error:", e); // FIXED: dev-only log
-      setError("Gagal memuatkan PDF. Sila cuba fail lain.");
+      setError("Failed to load PDF. Please try another file.");
       setFile(null);
       setLoadingPdf(false);
     }
@@ -628,7 +628,7 @@ export default function PdfEditorTool() {
     fabricRef.current.renderAll();
     setShowLinkModal(false);
     setLinkUrl("https://");
-    setLinkText("Klik di sini");
+    setLinkText("Click here");
     setActiveTool("select");
   }
 
@@ -729,8 +729,8 @@ export default function PdfEditorTool() {
         <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
           <Upload className="w-8 h-8 text-red-500" />
         </div>
-        <p className="font-semibold text-gray-800 text-lg">Buka fail PDF untuk diedit</p>
-        <p className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</p>
+        <p className="font-semibold text-gray-800 text-lg">Open PDF file to edit</p>
+        <p className="text-sm text-gray-400 mt-1">Click or drag PDF file here</p>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         <input type="file" accept="application/pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
       </label>
@@ -778,7 +778,7 @@ export default function PdfEditorTool() {
           className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 min-w-[48px]">
           <Redo className="w-5 h-5" /><span className="text-[10px] font-medium">Redo</span>
         </button>
-        <button onClick={deleteSelected} title="Padam objek dipilih (Delete)"
+        <button onClick={deleteSelected} title="Delete selected object (Delete)"
           className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-red-500 hover:bg-red-50 min-w-[48px]">
           <X className="w-5 h-5" /><span className="text-[10px] font-medium">Delete</span>
         </button>
@@ -886,7 +886,7 @@ export default function PdfEditorTool() {
         <div className="flex items-center gap-1.5">
           <label className="flex items-center gap-1.5 cursor-pointer group">
             <div className="w-5 h-5 rounded border-2 border-gray-300 group-hover:border-gray-400 transition-colors" style={{ backgroundColor: color }} />
-            <span className="text-xs text-gray-500">Warna</span>
+            <span className="text-xs text-gray-500">Color</span>
             <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="sr-only" />
           </label>
         </div>
@@ -960,12 +960,12 @@ export default function PdfEditorTool() {
         {sidebarOpen && (
           <div className="w-28 flex-shrink-0 bg-gray-200 border-r border-gray-300 overflow-y-auto py-3 px-2 space-y-2">
             {loadingPdf
-              ? <p className="text-xs text-center text-gray-500 pt-8">Memuatkan...</p>
+              ? <p className="text-xs text-center text-gray-500 pt-8">Loading...</p>
               : thumbnails.map((thumb, i) => (
                 <button key={i} onClick={() => changePage(i + 1)}
                   className={cn("w-full rounded-lg overflow-hidden border-2 transition-all bg-white shadow-sm",
                     currentPage === i + 1 ? "border-red-500 shadow-md" : "border-transparent hover:border-gray-400")}>
-                  <img src={thumb} alt={`Halaman ${i + 1}`} className="w-full block" />
+                  <img src={thumb} alt={`Page ${i + 1}`} className="w-full block" />
                   <p className={cn("text-center text-[10px] py-1 font-medium", currentPage === i + 1 ? "text-red-600" : "text-gray-500")}>{i + 1}</p>
                 </button>
               ))
@@ -978,7 +978,7 @@ export default function PdfEditorTool() {
           {loadingPdf && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 bg-gray-300/80">
               <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-gray-500">Memuatkan PDF...</p>
+              <p className="text-sm text-gray-500">Loading PDF...</p>
             </div>
           )}
           <div className="relative shadow-2xl inline-block" style={{ cursor: toolCursor(activeTool) }}>
@@ -1149,7 +1149,7 @@ export default function PdfEditorTool() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Teks pautan</label>
-                <input type="text" value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Klik di sini"
+                <input type="text" value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Click here"
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
               </div>
             </div>

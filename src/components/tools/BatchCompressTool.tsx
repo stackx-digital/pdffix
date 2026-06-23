@@ -78,16 +78,16 @@ export default function BatchCompressTool() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Mampat PDF Berganda</h1>
-      <p className="text-gray-500 mb-8">Mampat banyak fail PDF sekaligus.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Batch Compress PDF</h1>
+      <p className="text-gray-500 mb-8">Compress multiple PDF files at once.</p>
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 
       <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-10 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors mb-6">
         <Upload className="w-8 h-8 text-gray-400 mb-2" />
-        <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
-        <span className="text-sm text-gray-400 mt-1">Boleh pilih beberapa fail sekaligus</span>
+        <span className="font-medium text-gray-700">Click or drag PDF files here</span>
+        <span className="text-sm text-gray-400 mt-1">You can select multiple files at once</span>
         <input type="file" accept=".pdf" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
       </label>
 
@@ -96,7 +96,7 @@ export default function BatchCompressTool() {
           {allDone && totalCompressed > 0 && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
               <p className="font-medium text-green-800">
-                Jimat {formatBytes(totalOriginal - totalCompressed)} ({Math.round((1 - totalCompressed / totalOriginal) * 100)}%)
+                Saved {formatBytes(totalOriginal - totalCompressed)} ({Math.round((1 - totalCompressed / totalOriginal) * 100)}%)
               </p>
               <p className="text-sm text-green-600">{formatBytes(totalOriginal)} → {formatBytes(totalCompressed)}</p>
             </div>
@@ -113,8 +113,8 @@ export default function BatchCompressTool() {
                     <p className="text-sm font-medium text-gray-900 truncate">{entry.file.name}</p>
                     <p className="text-xs text-gray-400">
                       {formatBytes(entry.originalSize)}
-                      {entry.compressedSize && <span className="text-green-600"> → {formatBytes(entry.compressedSize)} ({pct}% jimat)</span>}
-                      {entry.status === "error" && <span className="text-red-500"> · Ralat</span>}
+                      {entry.compressedSize && <span className="text-green-600"> → {formatBytes(entry.compressedSize)} ({pct}% saved)</span>}
+                      {entry.status === "error" && <span className="text-red-500"> · Error</span>}
                     </p>
                   </div>
                   {entry.status === "processing" && <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />}
@@ -137,12 +137,12 @@ export default function BatchCompressTool() {
           <div className="flex gap-3">
             {hasPending && (
               <button onClick={processAll} disabled={processing || limitReached} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
-                {processing ? "Memproses..." : `Mampat ${entries.filter((e) => e.status === "pending").length} Fail`}
+                {processing ? "Processing..." : `Compress ${entries.filter((e) => e.status === "pending").length} File(s)`}
               </button>
             )}
             {allDone && (
               <button onClick={downloadAll} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700">
-                Muat Turun Semua
+                Download All
               </button>
             )}
           </div>

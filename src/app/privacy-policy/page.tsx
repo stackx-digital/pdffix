@@ -107,7 +107,7 @@ export default async function PrivacyPolicyPage() {
                   {[
                     { name: "Supabase", purpose: "Database & authentication", url: "https://supabase.com/privacy" },
                     { name: "Microsoft Clarity", purpose: "Behaviour analytics", url: "https://privacy.microsoft.com" },
-                    { name: "Stripe", purpose: "Payment processing (Pro)", url: "https://stripe.com/privacy" },
+                    { name: "ToyyibPay", purpose: "Payment processing (Pro)", url: "https://toyyibpay.com/privacy-policy" },
                     { name: "Resend", purpose: "Email delivery", url: "https://resend.com/privacy" },
                   ].map((s) => (
                     <tr key={s.name}>

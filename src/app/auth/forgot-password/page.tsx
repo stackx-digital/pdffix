@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     });
 
     if (error) {
-      setError("Gagal menghantar email. Sila cuba lagi.");
+      setError("Failed to send email. Please try again.");
       setLoading(false);
       return;
     }
@@ -35,8 +35,8 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="font-bold text-2xl text-red-600">PDFix</Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">Terlupa Kata Laluan</h1>
-          <p className="text-sm text-gray-500 mt-1">Kami akan hantar pautan reset ke email anda</p>
+          <h1 className="mt-4 text-xl font-semibold text-gray-900">Forgot Password</h1>
+          <p className="text-sm text-gray-500 mt-1">We'll send a reset link to your email</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -45,16 +45,16 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                 <span className="text-3xl">✉️</span>
               </div>
-              <h2 className="font-semibold text-gray-900">Email Dihantar!</h2>
+              <h2 className="font-semibold text-gray-900">Email Sent!</h2>
               <p className="text-sm text-gray-500">
-                Kami telah menghantar pautan reset kata laluan ke <strong>{email}</strong>. Sila semak inbox anda.
+                We've sent a password reset link to <strong>{email}</strong>. Please check your inbox.
               </p>
-              <p className="text-xs text-gray-400">Tidak dapat email? Semak folder spam atau cuba lagi.</p>
+              <p className="text-xs text-gray-400">Didn't receive it? Check your spam folder or try again.</p>
               <button
                 onClick={() => { setSent(false); setEmail(""); }}
                 className="text-sm text-red-600 hover:underline"
               >
-                Cuba email lain
+                Try a different email
               </button>
             </div>
           ) : (
@@ -66,14 +66,14 @@ export default function ForgotPasswordPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Alamat E-mel</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="nama@email.com"
+                  placeholder="name@email.com"
                 />
               </div>
 
@@ -82,15 +82,15 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
                 className="w-full py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
-                {loading ? "Menghantar..." : "Hantar Pautan Reset"}
+                {loading ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
           )}
 
           <p className="mt-4 text-center text-sm text-gray-500">
-            Ingat kata laluan?{" "}
+            Remember your password?{" "}
             <Link href="/auth/login" className="text-red-600 hover:underline">
-              Log Masuk
+              Sign In
             </Link>
           </p>
         </div>

@@ -49,7 +49,7 @@ export default function DeletePageTool() {
       }
       setThumbnails(thumbs);
     } catch {
-      setError("Gagal memuatkan PDF. Sila cuba fail lain.");
+      setError("Failed to load PDF. Please try another file.");
       setFile(null);
     } finally {
       setLoading(false);
@@ -78,7 +78,7 @@ export default function DeletePageTool() {
     const allowed = await checkLimit();
     if (!allowed) return;
     if (selected.size === totalPages) {
-      setError("Tidak boleh delete semua halaman. Sekurang-kurangnya satu halaman mesti dikekalkan.");
+      setError("Cannot delete all pages. At least one page must remain.");
       return;
     }
     setError("");
@@ -114,8 +114,8 @@ export default function DeletePageTool() {
         <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
           <Trash2 className="w-8 h-8 text-red-500" />
         </div>
-        <p className="font-semibold text-gray-800 text-lg">Buka fail PDF</p>
-        <p className="text-sm text-gray-400 mt-1">Klik atau seret fail PDF ke sini</p>
+        <p className="font-semibold text-gray-800 text-lg">Open PDF file</p>
+        <p className="text-sm text-gray-400 mt-1">Click or drag PDF file here</p>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         <input type="file" accept="application/pdf" className="hidden" onChange={(e) => loadFile(e.target.files?.[0] ?? null)} />
       </label>
@@ -131,15 +131,15 @@ export default function DeletePageTool() {
       <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
         <div>
           <p className="text-sm font-medium text-gray-900">{file.name}</p>
-          <p className="text-xs text-gray-400">{formatBytes(file.size)} · {totalPages} halaman</p>
+          <p className="text-xs text-gray-400">{formatBytes(file.size)} · {totalPages} pages</p>
         </div>
-        <button onClick={() => { setFile(null); setThumbnails([]); }} className="text-xs text-red-500 hover:underline">Tukar fail</button>
+        <button onClick={() => { setFile(null); setThumbnails([]); }} className="text-xs text-red-500 hover:underline">Change file</button>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center h-48 gap-3">
           <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Memuatkan halaman...</p>
+          <p className="text-sm text-gray-500">Loading pages...</p>
         </div>
       ) : (
         <>
@@ -148,13 +148,13 @@ export default function DeletePageTool() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">
                 {selected.size > 0
-                  ? `${selected.size} halaman dipilih untuk didelete`
-                  : "Pilih halaman yang ingin didelete"}
+                  ? `${selected.size} page(s) selected to delete`
+                  : "Select pages to delete"}
               </span>
             </div>
             <div className="flex gap-2">
-              <button onClick={selectAll} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">Pilih Semua</button>
-              <button onClick={clearAll} disabled={selected.size === 0} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 disabled:opacity-40">Nyahpilih</button>
+              <button onClick={selectAll} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">Select All</button>
+              <button onClick={clearAll} disabled={selected.size === 0} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 disabled:opacity-40">Deselect</button>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export default function DeletePageTool() {
                       : "border-gray-200 hover:border-gray-400"
                   )}
                 >
-                  <img src={thumb} alt={`Halaman ${pageNum}`} className="w-full block" />
+                  <img src={thumb} alt={`Page ${pageNum}`} className="w-full block" />
 
                   {/* Overlay when selected */}
                   {isSelected && (
@@ -199,7 +199,7 @@ export default function DeletePageTool() {
                     "text-center text-[11px] py-1 font-medium",
                     isSelected ? "bg-red-600 text-white" : "bg-gray-50 text-gray-500"
                   )}>
-                    {isSelected ? "✕ Delete" : `Halaman ${pageNum}`}
+                    {isSelected ? "✕ Delete" : `Page ${pageNum}`}
                   </div>
                 </button>
               );
@@ -216,27 +216,27 @@ export default function DeletePageTool() {
               className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               <Trash2 className="w-5 h-5" />
-              {processing ? "Memproses..." : `Buang ${selected.size > 0 ? selected.size + " halaman & " : ""}Muat Turun`}
+              {processing ? "Processing..." : `Delete ${selected.size > 0 ? selected.size + " page(s) & " : ""}Download`}
             </button>
 
             {selected.size > 0 && (
               <button onClick={clearAll} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
-                <RotateCcw className="w-4 h-4" /> Reset pilihan
+                <RotateCcw className="w-4 h-4" /> Reset selection
               </button>
             )}
           </div>
 
           {done && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
-              ✅ Berjaya! PDF baharu dengan {totalPages - selected.size} halaman telah dimuat turun.
+              ✅ Done! New PDF with {totalPages - selected.size} page(s) has been downloaded.
             </div>
           )}
 
           <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700 space-y-1">
-            <p className="font-medium">Nota:</p>
-            <p>• Klik thumbnail untuk pilih/nyahpilih halaman yang ingin didelete</p>
-            <p>• Halaman yang ditanda merah akan dibuang dari PDF</p>
-            <p>• Fail asal anda tidak akan terjejas</p>
+            <p className="font-medium">Note:</p>
+            <p>• Click a thumbnail to select/deselect pages to delete</p>
+            <p>• Pages marked in red will be removed from the PDF</p>
+            <p>• Your original file will not be affected</p>
           </div>
         </>
       )}

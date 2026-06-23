@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     email
       ? sendEmail({
           to: email,
-          subject: "Selamat datang ke PDFix! 🎉",
+          subject: "Welcome to PDFix! 🎉",
           html: welcomeEmail(name || email, APP_URL),
         })
       : Promise.resolve(),
@@ -73,7 +73,7 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
   const firstName = nameOrEmail.includes("@") ? nameOrEmail.split("@")[0] : nameOrEmail.split(" ")[0];
 
   return `<!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px">
@@ -83,34 +83,34 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
           <tr>
             <td style="background:#dc2626;padding:32px 40px;text-align:center">
               <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:-0.5px">PDF<span style="color:#fca5a5">ix</span></h1>
-              <p style="margin:6px 0 0;color:#fca5a5;font-size:13px">Alat PDF Percuma Untuk Semua</p>
+              <p style="margin:6px 0 0;color:#fca5a5;font-size:13px">Free PDF Tools For Everyone</p>
             </td>
           </tr>
           <tr>
             <td style="padding:36px 40px">
-              <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700">Selamat datang, ${firstName}! 👋</h2>
+              <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700">Welcome, ${firstName}! 👋</h2>
               <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.6">
-                Akaun PDFix anda dah berjaya didaftarkan. Semua tools PDF tersedia percuma — tiada had, tiada kad kredit diperlukan.
+                Your PDFix account has been successfully created. All PDF tools are available for free — no limits, no credit card required.
               </p>
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:28px">
-                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;Edit, gabung, pisah &amp; mampat PDF</td></tr>
-                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;E-Sign, watermark &amp; isi borang PDF</td></tr>
-                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;OCR PDF — ekstrak teks dari PDF imbasan</td></tr>
-                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;Log aktiviti — rekod semua fail diproses</td></tr>
-                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;100% dalam pelayar — fail tidak dihantar ke pelayan</td></tr>
+                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;Edit, merge, split &amp; compress PDF</td></tr>
+                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;E-Sign, watermark &amp; fill PDF forms</td></tr>
+                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;OCR PDF — extract text from scanned PDFs</td></tr>
+                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;Activity log — record of all processed files</td></tr>
+                <tr><td style="padding:6px 0;color:#374151;font-size:14px">✅ &nbsp;100% in-browser — files never sent to servers</td></tr>
               </table>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
                     <a href="${appUrl}/dashboard"
                        style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-size:15px;font-weight:600">
-                      Mula Guna PDFix →
+                      Get Started with PDFix →
                     </a>
                   </td>
                 </tr>
               </table>
               <p style="margin:28px 0 0;color:#9ca3af;font-size:13px;text-align:center;line-height:1.5">
-                Ada soalan? Hubungi kami di
+                Questions? Contact us at
                 <a href="mailto:stackxdigital@gmail.com" style="color:#dc2626;text-decoration:none">stackxdigital@gmail.com</a>
               </p>
             </td>
@@ -121,7 +121,7 @@ function welcomeEmail(nameOrEmail: string, appUrl: string): string {
                 © ${new Date().getFullYear()} PDFix · <a href="${appUrl}" style="color:#9ca3af">${appUrl.replace("https://", "")}</a>
               </p>
               <p style="margin:6px 0 0;color:#d1d5db;font-size:11px">
-                Anda menerima emel ini kerana baru mendaftar di PDFix.
+                You received this email because you recently signed up for PDFix.
               </p>
             </td>
           </tr>

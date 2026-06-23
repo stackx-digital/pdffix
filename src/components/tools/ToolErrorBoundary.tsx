@@ -42,10 +42,10 @@ export default class ToolErrorBoundary extends Component<Props, State> {
           </div>
           <div className="text-center space-y-1">
             <h3 className="font-semibold text-gray-900">
-              {this.props.toolName ? `${this.props.toolName} tidak dapat dimuatkan` : "Alat tidak dapat dimuatkan"}
+              {this.props.toolName ? `${this.props.toolName} could not be loaded` : "Tool could not be loaded"}
             </h3>
             <p className="text-sm text-gray-500">
-              Sila muat semula halaman atau cuba fail PDF yang lain.
+              Please reload the page or try a different PDF file.
             </p>
             {process.env.NODE_ENV === "development" && this.state.message && (
               <p className="text-xs text-red-400 font-mono mt-2 max-w-sm break-all">{this.state.message}</p>
@@ -55,7 +55,7 @@ export default class ToolErrorBoundary extends Component<Props, State> {
             onClick={() => this.reset()}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
           >
-            <RefreshCw className="w-4 h-4" /> Cuba Semula
+            <RefreshCw className="w-4 h-4" /> Try Again
           </button>
         </div>
       );

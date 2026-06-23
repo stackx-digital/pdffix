@@ -34,15 +34,15 @@ export default function UnlockPdfTool() {
       await recordUsage(file?.name, file?.size);
       setResultUrl(URL.createObjectURL(new Blob([out], { type: "application/pdf" })));
     } catch {
-      setError("PDF tidak dapat dibuka. Fail mungkin rosak atau dilindungi kata laluan penuh.");
+      setError("PDF could not be opened. The file may be corrupted or fully password-protected.");
     }
     setProcessing(false);
   }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Buang Sekatan PDF</h1>
-      <p className="text-gray-500 mb-8">Buang sekatan cetak, salin dan edit dari PDF yang terhad.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Remove PDF Restrictions</h1>
+      <p className="text-gray-500 mb-8">Remove print, copy, and edit restrictions from a restricted PDF.</p>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
@@ -50,7 +50,7 @@ export default function UnlockPdfTool() {
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+          <span className="font-medium text-gray-700">Click or drag PDF file here</span>
           <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
         </label>
       ) : (
@@ -61,24 +61,24 @@ export default function UnlockPdfTool() {
           </div>
 
           <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-            <p className="text-xs text-blue-700">ℹ️ Tool ini membuang sekatan pemilik (cetak, salin, edit). Tidak dapat buang kata laluan pengguna.</p>
+            <p className="text-xs text-blue-700">ℹ️ This tool removes owner restrictions (print, copy, edit). It cannot remove user passwords.</p>
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
           {resultUrl ? (
             <a href={resultUrl} download={`unlocked_${file.name}`} className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700">
-              <Download className="w-5 h-5" /> Muat Turun PDF Tanpa Sekatan
+              <Download className="w-5 h-5" /> Download Unrestricted PDF
             </a>
           ) : (
             <button onClick={process} disabled={processing || limitReached} className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
               <Unlock className="w-4 h-4" />
-              {processing ? "Memproses..." : "Buka Kunci PDF"}
+              {processing ? "Processing..." : "Unlock PDF"}
             </button>
           )}
 
           <button onClick={() => { setFile(null); setResultUrl(null); setError(""); }} className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">
-            Tukar fail
+            Change file
           </button>
         </div>
       )}

@@ -70,18 +70,18 @@ export default function AddPageNumbersTool() {
   }
 
   const POSITIONS: { value: Position; label: string }[] = [
-    { value: "bottom-left", label: "Bawah Kiri" },
-    { value: "bottom-center", label: "Bawah Tengah" },
-    { value: "bottom-right", label: "Bawah Kanan" },
-    { value: "top-left", label: "Atas Kiri" },
-    { value: "top-center", label: "Atas Tengah" },
-    { value: "top-right", label: "Atas Kanan" },
+    { value: "bottom-left", label: "Bottom Left" },
+    { value: "bottom-center", label: "Bottom Center" },
+    { value: "bottom-right", label: "Bottom Right" },
+    { value: "top-left", label: "Top Left" },
+    { value: "top-center", label: "Top Center" },
+    { value: "top-right", label: "Top Right" },
   ];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Nombor Halaman PDF</h1>
-      <p className="text-gray-500 mb-8">Tambah nombor halaman pada PDF anda.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Add Page Numbers</h1>
+      <p className="text-gray-500 mb-8">Add page numbers to your PDF.</p>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
@@ -89,18 +89,18 @@ export default function AddPageNumbersTool() {
       {!file ? (
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
           <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Klik atau seret fail PDF ke sini</span>
+          <span className="font-medium text-gray-700">Click or drag PDF file here</span>
           <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
         </label>
       ) : (
         <div className="space-y-5">
           <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
             <p className="font-medium text-gray-900">{file.name}</p>
-            <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pageCount} halaman</p>
+            <p className="text-sm text-gray-500">{formatBytes(file.size)} · {pageCount} pages</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kedudukan</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
             <div className="grid grid-cols-3 gap-2">
               {POSITIONS.map((p) => (
                 <button
@@ -116,7 +116,7 @@ export default function AddPageNumbersTool() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mula dari nombor</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start from number</label>
               <input
                 type="number" min={1} value={startFrom}
                 onChange={(e) => setStartFrom(Math.max(1, Number(e.target.value)))}
@@ -124,7 +124,7 @@ export default function AddPageNumbersTool() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Saiz fon</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Font size</label>
               <input
                 type="number" min={8} max={24} value={fontSize}
                 onChange={(e) => setFontSize(Math.max(8, Math.min(24, Number(e.target.value))))}
@@ -135,19 +135,19 @@ export default function AddPageNumbersTool() {
 
           {resultUrl ? (
             <a href={resultUrl} download="numbered.pdf" className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700">
-              <Download className="w-5 h-5" /> Muat Turun PDF
+              <Download className="w-5 h-5" /> Download PDF
             </a>
           ) : (
             <>
               {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
               <button onClick={process} disabled={processing || limitReached} className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-60">
-              {processing ? "Memproses..." : "Tambah Nombor Halaman"}
+              {processing ? "Processing..." : "Add Page Numbers"}
             </button>
             </>
           )}
 
           <button onClick={() => { setFile(null); setResultUrl(null); }} className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">
-            Tukar fail
+            Change file
           </button>
         </div>
       )}
