@@ -46,7 +46,9 @@ export default function PdfToTextTool() {
         const byY = new Map<number, string[]>();
         for (const item of content.items) {
           if (!("str" in item) || !item.str) continue;
-          const y = Math.round((item.transform as number[])[5]);
+          const tx = (item as any).transform as number[] | undefined;
+          if (!tx || tx.length < 6) continue;
+          const y = Math.round(tx[5]);
           if (!byY.has(y)) byY.set(y, []);
           byY.get(y)!.push(item.str);
         }

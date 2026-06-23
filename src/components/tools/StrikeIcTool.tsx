@@ -97,10 +97,10 @@ function renderStamp(ctx: CanvasRenderingContext2D, W: number, H: number, cfg: S
   ctx.restore();
 }
 
-let nextId = 1;
+let _nextId = 1;
 function makeStamp(x = 0.5, y = 0.3): StampConfig {
   return {
-    id: nextId++,
+    id: _nextId++,
     x, y,
     scale: 1,
     angle: -30,
@@ -123,11 +123,16 @@ export default function StrikeIcTool() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
-  const [stamps, setStamps] = useState<StampConfig[]>([makeStamp(0.5, 0.3)]);
+  const [stamps, setStamps] = useState<StampConfig[]>(() => [makeStamp(0.5, 0.3)]);
   const [activeId, setActiveId] = useState<number>(stamps[0].id);
 
+  const stampIdRef = useRef(1);
   const draggingId = useRef<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+
+  function newStamp(x = 0.5, y = 0.3): StampConfig {
+    return { ...makeStamp(x, y), id: stampIdRef.current++ };
+  }
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hiddenRef = useRef<HTMLCanvasElement>(null);
@@ -244,7 +249,7 @@ export default function StrikeIcTool() {
     // Place new stamp in the lower half by default
     const lastY = stamps[stamps.length - 1]?.y ?? 0.3;
     const newY = lastY > 0.5 ? 0.3 : 0.7;
-    const s = makeStamp(0.5, newY);
+    const s = newStamp(0.5, newY);
     setStamps(prev => [...prev, s]);
     setActiveId(s.id);
   }
@@ -314,7 +319,7 @@ export default function StrikeIcTool() {
 
   function reset() {
     setFile(null); setImgSrc(null); setResult(null); setError(null); setPdfBytes(null);
-    const s = makeStamp(0.5, 0.3);
+    const s = newStamp(0.5, 0.3);
     setStamps([s]); setActiveId(s.id);
   }
 

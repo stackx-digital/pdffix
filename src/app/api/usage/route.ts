@@ -8,8 +8,7 @@ const VALID_TOOLS = new Set(TOOLS.map(t => t.id));
 const MONTHLY_LIMIT = 5;
 
 function currentMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return new Date().toISOString().slice(0, 7); // UTC YYYY-MM, consistent across servers
 }
 
 function getIp(req: NextRequest): string {

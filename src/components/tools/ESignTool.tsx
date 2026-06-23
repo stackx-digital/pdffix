@@ -130,6 +130,9 @@ export default function ESignTool() {
     if (!f || f.type !== "application/pdf") return;
     setFile(f);
     setLoading(true);
+    setSignatures([]);
+    setStep("draw");
+    setActiveSignatureUrl(null);
     try {
       const bytes = await f.arrayBuffer();
       fileBytes.current = bytes;
