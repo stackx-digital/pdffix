@@ -19,10 +19,10 @@ export default function UsageLimitBanner({ used, limit, loggedIn }: Props) {
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-red-800 text-sm">You've used your 5 free uses this month</p>
+            <p className="font-medium text-red-800 text-sm">You've used your 5 guest uses this month</p>
             <p className="text-sm text-red-600 mt-0.5">
               <Link href="/auth/register" className="underline font-medium">Create a free account</Link>{" "}
-              to get unlimited access — no credit card required.
+              for unlimited access, larger file sizes & activity history — no credit card required.
             </p>
           </div>
         </div>
@@ -37,7 +37,7 @@ export default function UsageLimitBanner({ used, limit, loggedIn }: Props) {
         <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
           <p className="text-sm text-amber-700">
-            <strong>{remaining} free use{remaining !== 1 ? "s" : ""}</strong> left this month.{" "}
+            <strong>{remaining} guest use{remaining !== 1 ? "s" : ""}</strong> left before sign-in required.{" "}
             <Link href="/auth/register" className="underline font-medium">Sign up free</Link> for unlimited access.
           </p>
         </div>

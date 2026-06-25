@@ -20,9 +20,9 @@ const FREE_FEATURES = [
   { label: "Fill PDF Forms", included: true },
   { label: "Unlock PDF", included: true },
   { label: "Crop PDF (trim margins)", included: true },
+  { label: "Unlimited usage — no monthly limit", included: true },
   { label: "Activity log (filename & size)", included: true },
   { label: "Max file size 10MB", included: true },
-  { label: "5 edits per month", included: true },
   { label: "OCR PDF (4 languages)", included: false },
   { label: "Flatten PDF (static PDF)", included: false },
   { label: "Batch Compress (multiple files)", included: false },
@@ -34,7 +34,6 @@ const PRO_FEATURES = [
   { label: "OCR PDF — 4 languages (MS, EN, ZH, AR)", included: true },
   { label: "Flatten PDF — convert to static PDF", included: true },
   { label: "Batch Compress — compress multiple files", included: true },
-  { label: "Unlimited edits per month", included: true },
   { label: "File size up to 100MB", included: true },
   { label: "Priority support", included: true },
 ];
