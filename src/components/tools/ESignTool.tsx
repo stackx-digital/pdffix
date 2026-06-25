@@ -258,12 +258,19 @@ export default function ESignTool() {
     try {
       const pdfLibDoc = await PDFDocument.load(fileBytes.current.slice(0));
 
+      function dataUrlToBytes(dataUrl: string): Uint8Array {
+        const base64 = dataUrl.split(",")[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
+
       for (const sig of signatures) {
         const page = pdfLibDoc.getPage(sig.page - 1);
         const { width, height } = page.getSize();
 
-        const imgBytes = await fetch(sig.dataUrl).then(r => r.arrayBuffer());
-        // Detect format from data URL prefix to choose the right embed method
+        const imgBytes = dataUrlToBytes(sig.dataUrl);
         const isJpeg = sig.dataUrl.startsWith("data:image/jpeg") || sig.dataUrl.startsWith("data:image/jpg");
         const img = isJpeg
           ? await pdfLibDoc.embedJpg(imgBytes)
