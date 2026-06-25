@@ -930,19 +930,18 @@ export default function PdfEditorTool() {
 
         {/* Tool hint */}
         <span className="ml-auto text-[11px] text-gray-400 hidden md:block">
-          {activeTool === "addtext" && "Klik pada PDF untuk tambah teks baru"}
-          {activeTool === "edittext" && "Klik pada teks asal PDF untuk mengeditnya"}
-          {activeTool === "select" && "Klik objek untuk pilih — double-click teks untuk edit"}
-          {activeTool === "draw" && "Tahan & seret untuk melukis"}
-          {activeTool === "highlight" && "Seret untuk highlight kawasan"}
-          {activeTool === "texthighlight" && "Seret untuk highlight teks"}
-          {activeTool === "eraser" && "Seret untuk padam annotation"}
-          {activeTool === "select" && "Klik objek untuk pilih & alih"}
-          {activeTool === "move" && "Klik & seret objek untuk susun semula kedudukannya"}
-          {activeTool === "stamp" && `Klik untuk letak stamp: ${pendingStamp}`}
-          {activeTool === "note" && "Klik untuk letak nota"}
-          {activeTool === "link" && "Klik untuk letak pautan"}
-          {activeTool === "sign" && "Tandatangan diletakkan pada PDF"}
+          {activeTool === "addtext" && "Click on the PDF to add new text"}
+          {activeTool === "edittext" && "Click on existing PDF text to edit it"}
+          {activeTool === "select" && "Click object to select — double-click text to edit"}
+          {activeTool === "draw" && "Hold & drag to draw"}
+          {activeTool === "highlight" && "Drag to highlight area"}
+          {activeTool === "texthighlight" && "Drag to highlight text"}
+          {activeTool === "eraser" && "Drag to erase annotation"}
+          {activeTool === "move" && "Click & drag object to reposition"}
+          {activeTool === "stamp" && `Click to place stamp: ${pendingStamp}`}
+          {activeTool === "note" && "Click to place a note"}
+          {activeTool === "link" && "Click to place a link"}
+          {activeTool === "sign" && "Signature placed on PDF"}
         </span>
       </div>
 
@@ -1051,16 +1050,16 @@ export default function PdfEditorTool() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Tandatangan</h3>
+              <h3 className="font-semibold text-gray-900">Signature</h3>
               <button onClick={() => { setShowSignModal(false); setActiveTool("select"); setUploadedSignature(null); setSignTab("draw"); }} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             {/* Tabs */}
             <div className="flex border-b border-gray-200">
               <button onClick={() => setSignTab("draw")} className={cn("flex-1 py-3 text-sm font-medium transition-colors", signTab === "draw" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700")}>
-                Lukis
+                Draw
               </button>
               <button onClick={() => setSignTab("upload")} className={cn("flex-1 py-3 text-sm font-medium transition-colors", signTab === "upload" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700")}>
-                Upload Imej
+                Upload Image
               </button>
             </div>
             <div className="p-5">
@@ -1072,24 +1071,24 @@ export default function PdfEditorTool() {
                     onMouseDown={signStart} onMouseMove={signMove} onMouseUp={signEnd} onMouseLeave={signEnd}
                     onTouchStart={signStart} onTouchMove={signMove} onTouchEnd={signEnd}
                   />
-                  <p className="text-xs text-gray-400 text-center mt-2">Lukis tandatangan anda di atas</p>
+                  <p className="text-xs text-gray-400 text-center mt-2">Draw your signature above</p>
                 </>
               ) : (
                 <>
                   {uploadedSignature ? (
                     <div className="space-y-3">
                       <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 flex items-center justify-center h-40">
-                        <img src={uploadedSignature} alt="Tandatangan" className="max-h-full max-w-full object-contain" />
+                        <img src={uploadedSignature} alt="Signature" className="max-h-full max-w-full object-contain" />
                       </div>
                       <label className="block w-full py-2 text-center text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 cursor-pointer">
-                        Tukar imej
+                        Change image
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSignUpload(e.target.files?.[0] ?? null)} />
                       </label>
                     </div>
                   ) : (
                     <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl h-40 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-colors">
                       <svg className="w-8 h-8 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      <span className="text-sm text-gray-500">Klik untuk upload imej tandatangan</span>
+                      <span className="text-sm text-gray-500">Click to upload signature image</span>
                       <span className="text-xs text-gray-400 mt-1">PNG, JPG, SVG</span>
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSignUpload(e.target.files?.[0] ?? null)} />
                     </label>
@@ -1122,7 +1121,7 @@ export default function PdfEditorTool() {
               <button onClick={() => setShowNoteModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5">
-              <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={4} placeholder="Tulis nota anda..."
+              <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={4} placeholder="Write your note..."
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 resize-none" />
             </div>
             <div className="flex gap-2 px-5 pb-5">
