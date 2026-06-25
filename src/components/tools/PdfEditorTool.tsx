@@ -691,7 +691,11 @@ export default function PdfEditorTool() {
         const tempFc = new fabric.StaticCanvas(tempEl, { width: viewport.width, height: viewport.height });
         await new Promise<void>((res) => { tempFc.loadFromJSON(state, () => { tempFc.renderAll(); res(); }); });
 
-        const imgBytes = await fetch(tempEl.toDataURL("image/png")).then(r => r.arrayBuffer());
+        const dataUrl = tempEl.toDataURL("image/png");
+        const base64 = dataUrl.split(",")[1];
+        const binary = atob(base64);
+        const imgBytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) imgBytes[i] = binary.charCodeAt(i);
         const embImg = await pdfLibDoc.embedPng(imgBytes);
         const libPage = pdfLibDoc.getPage(pageNum - 1);
         const { width, height } = libPage.getSize();
