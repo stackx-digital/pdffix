@@ -43,7 +43,7 @@ export default function ESignTool() {
   const isDrawing = useRef(false);
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const fileBytes = useRef<ArrayBuffer | null>(null);
+  const fileRef = useRef<File | null>(null);
 
   // Init signature pad
   useEffect(() => {
@@ -134,9 +134,9 @@ export default function ESignTool() {
     setStep("draw");
     setActiveSignatureUrl(null);
     try {
+      fileRef.current = f;
       const bytes = await f.arrayBuffer();
-      fileBytes.current = bytes;
-      const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
       setPdfDoc(pdf);
       setTotalPages(pdf.numPages);
       setCurrentPage(1);
@@ -252,11 +252,12 @@ export default function ESignTool() {
 
   // Save PDF
   async function savePdf() {
-    if (!fileBytes.current) return;
+    if (!fileRef.current) return;
     setSaving(true);
     setSaveError(null);
     try {
-      const pdfLibDoc = await PDFDocument.load(fileBytes.current.slice(0));
+      const freshBytes = await fileRef.current.arrayBuffer();
+      const pdfLibDoc = await PDFDocument.load(freshBytes);
 
       function dataUrlToBytes(dataUrl: string): Uint8Array {
         const base64 = dataUrl.split(",")[1];
