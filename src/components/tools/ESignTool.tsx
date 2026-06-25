@@ -252,7 +252,7 @@ export default function ESignTool() {
 
   // Save PDF
   async function savePdf() {
-    if (!fileRef.current) return;
+    if (!fileRef.current) { setSaveError("No file loaded. Please reopen the PDF."); return; }
     setSaving(true);
     setSaveError(null);
     try {

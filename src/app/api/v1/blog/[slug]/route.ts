@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
 
-interface Props { params: { slug: string } }
+interface Props { params: Promise<{ slug: string }> }
 
 function unauth() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,10 +12,11 @@ export async function GET(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
   if (!token || !(await verifyApiKey(token))) return unauth();
 
+  const { slug } = await params;
   const { data, error } = await adminClient
     .from("blog_posts")
     .select("*")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -29,6 +30,7 @@ export async function PUT(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
   if (!token || !(await verifyApiKey(token))) return unauth();
 
+  const { slug } = await params;
   let body: any;
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -48,7 +50,7 @@ export async function PUT(req: Request, { params }: Props) {
   const { data, error } = await adminClient
     .from("blog_posts")
     .update(updates)
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .select()
     .single();
 
@@ -63,6 +65,7 @@ export async function PATCH(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
   if (!token || !(await verifyApiKey(token))) return unauth();
 
+  const { slug } = await params;
   let body: any;
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -76,7 +79,7 @@ export async function PATCH(req: Request, { params }: Props) {
   const { data, error } = await adminClient
     .from("blog_posts")
     .update(updates)
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .select()
     .single();
 
@@ -91,10 +94,11 @@ export async function DELETE(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
   if (!token || !(await verifyApiKey(token))) return unauth();
 
+  const { slug } = await params;
   const { error } = await adminClient
     .from("blog_posts")
     .delete()
-    .eq("slug", params.slug);
+    .eq("slug", slug);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
