@@ -28,7 +28,7 @@ export default async function HomePage() {
       <main className="flex-1">
 
         {/* Hero */}
-        <section className="relative overflow-hidden bg-white py-28 px-4 text-center">
+        <section className="relative overflow-hidden bg-white py-16 md:py-28 px-4 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-red-100/60 rounded-full blur-3xl pointer-events-none" />
 
@@ -38,7 +38,7 @@ export default async function HomePage() {
               100% Free · No Upload · No Credit Card Ever
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-extrabold text-gray-950 leading-[1.1] tracking-tight">
+            <h1 className="text-4xl md:text-7xl font-extrabold text-gray-950 leading-[1.1] tracking-tight">
               Free PDF Tools{" "}
               <br className="hidden md:block" />
               <span className="text-red-600">For Everyone</span>
@@ -49,16 +49,16 @@ export default async function HomePage() {
               Your files <strong className="text-gray-700">never leave your device</strong>.
             </p>
 
-            <div className="mt-10 flex flex-wrap gap-3 justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center px-4">
               <a
                 href="#tools"
-                className="px-8 py-3.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-200 hover:shadow-xl hover:shadow-red-200 hover:-translate-y-0.5 text-sm"
+                className="px-8 py-4 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-200 text-sm w-full sm:w-auto"
               >
                 Start for Free →
               </a>
               <Link
                 href="/pricing"
-                className="px-8 py-3.5 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all bg-white shadow-sm text-sm"
+                className="px-8 py-4 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all bg-white shadow-sm text-sm w-full sm:w-auto"
               >
                 View Pricing
               </Link>

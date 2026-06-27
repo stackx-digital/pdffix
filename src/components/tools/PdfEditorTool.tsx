@@ -762,7 +762,7 @@ export default function PdfEditorTool() {
     <div className="flex flex-col h-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
 
       {/* ── Toolbar row 1 ── */}
-      <div className="flex items-center gap-0.5 px-2 py-1 bg-white border-b border-gray-200 flex-wrap">
+      <div className="flex items-center gap-0.5 px-2 py-1 bg-white border-b border-gray-200 overflow-x-auto scrollbar-none flex-nowrap min-w-0">
         {/* Sidebar toggle */}
         <button onClick={() => setSidebarOpen(o => !o)} title="Thumbnails"
           className={cn("flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg min-w-[48px]",
@@ -876,16 +876,16 @@ export default function PdfEditorTool() {
         {/* Right */}
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-gray-400 hidden lg:block truncate max-w-40">{formatBytes(file.size)}</span>
-          <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500 px-2">Tukar</button>
+          <button onClick={() => { setFile(null); setPdfDoc(null); }} className="text-xs text-gray-400 hover:text-red-500 px-2 flex-shrink-0">Change</button>
           <button onClick={savePdf} disabled={saving || !pdfDoc}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">
-            <Download className="w-4 h-4" />{saving ? "Menyimpan..." : "Simpan PDF"}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex-shrink-0 whitespace-nowrap">
+            <Download className="w-4 h-4" />{saving ? "Saving..." : "Save PDF"}
           </button>
         </div>
       </div>
 
       {/* ── Toolbar row 2: formatting ── */}
-      <div className="flex items-center gap-3 px-3 py-1.5 bg-white border-b border-gray-200">
+      <div className="flex items-center gap-3 px-3 py-1.5 bg-white border-b border-gray-200 overflow-x-auto scrollbar-none flex-nowrap min-w-0">
         {/* Color swatch */}
         <div className="flex items-center gap-1.5">
           <label className="flex items-center gap-1.5 cursor-pointer group">

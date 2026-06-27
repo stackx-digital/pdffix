@@ -325,9 +325,9 @@ export default function ESignTool() {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col md:flex-row gap-4">
         {/* Left: Signature pad or instructions */}
-        <div className="w-72 flex-shrink-0 space-y-3">
+        <div className="w-full md:w-72 md:flex-shrink-0 space-y-3">
           {step === "draw" ? (
             <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
               {/* Mode tabs */}
