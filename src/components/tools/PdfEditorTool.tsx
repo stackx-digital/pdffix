@@ -789,7 +789,7 @@ export default function PdfEditorTool() {
 
         <div className="w-px h-8 bg-gray-200 mx-1" />
 
-        <TB id="move" icon={<Hand className="w-5 h-5" />} label="Susun" />
+        <TB id="move" icon={<Hand className="w-5 h-5" />} label="Move" />
 
         <div className="w-px h-8 bg-gray-200 mx-1" />
 

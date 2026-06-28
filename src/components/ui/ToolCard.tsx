@@ -41,7 +41,7 @@ export default function ToolCard({ tool, isPro = false }: ToolCardProps) {
     <Link
       href={locked ? "/pricing" : tool.href}
       className={cn(
-        "group relative flex flex-col gap-3 p-5 rounded-2xl border bg-white transition-all duration-200",
+        "group relative flex flex-col gap-2 p-3.5 md:p-5 rounded-2xl border bg-white transition-all duration-200",
         locked
           ? "border-gray-200 opacity-70 cursor-default"
           : "border-gray-200 hover:border-red-200 hover:shadow-lg hover:shadow-red-50 hover:-translate-y-0.5"

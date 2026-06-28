@@ -124,20 +124,20 @@ export default function Navbar({ user }: NavbarProps) {
         </div>
 
         {/* Mobile right — CTA + hamburger */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-1.5">
           {user ? (
-            <Link href="/dashboard" className="text-sm px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Dashboard</Link>
+            <Link href="/dashboard" className="text-xs px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Dashboard</Link>
           ) : (
-            <Link href="/auth/register" className="text-sm px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+            <Link href="/auth/register" className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
               Free
             </Link>
           )}
           <button
             onClick={() => setMobileOpen(v => !v)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
