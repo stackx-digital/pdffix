@@ -126,20 +126,24 @@ async function compositeFrontBack(fSrc: string, bSrc: string): Promise<string> {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, A4_W, A4_H);
 
-  const margin = 80;
-  const gap = 60;
-  const slotW = A4_W - margin * 2;
-  const slotH = (A4_H - margin * 2 - gap) / 2;
+  // Target IC size matching reference: ~54% of A4 width, IC aspect ratio
+  const IC_W = Math.round(A4_W * 0.54);   // 669px
+  const IC_H = Math.round(IC_W / IC_RATIO); // 422px
+  const IC_X = Math.round((A4_W - IC_W) / 2); // centered horizontally
+  const TOP_MARGIN = 300;
+  const GAP = 200;
+  const FRONT_Y = TOP_MARGIN;
+  const BACK_Y = TOP_MARGIN + IC_H + GAP;
 
-  function drawFit(img: HTMLImageElement, sx: number, sy: number, sw: number, sh: number) {
-    const scale = Math.min(sw / img.naturalWidth, sh / img.naturalHeight) * 0.55;
-    const dw = img.naturalWidth * scale;
-    const dh = img.naturalHeight * scale;
-    ctx.drawImage(img, sx + (sw - dw) / 2, sy + (sh - dh) / 2, dw, dh);
+  function drawFit(img: HTMLImageElement, dx: number, dy: number, dw: number, dh: number) {
+    const scale = Math.min(dw / img.naturalWidth, dh / img.naturalHeight);
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    ctx.drawImage(img, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
   }
 
-  drawFit(fImg, margin, margin, slotW, slotH);
-  drawFit(bImg, margin, margin + slotH + gap, slotW, slotH);
+  drawFit(fImg, IC_X, FRONT_Y, IC_W, IC_H);
+  drawFit(bImg, IC_X, BACK_Y, IC_W, IC_H);
 
   return c.toDataURL("image/jpeg", 0.94);
 }
