@@ -19,13 +19,18 @@ export default function RotatePdfTool() {
 
   async function loadFile(f: File) {
     if (f.type !== "application/pdf") return;
-    const bytes = await f.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const count = pdf.getPageCount();
-    setFile(f);
-    setPageCount(count);
-    setRotations(new Array(count).fill(0));
-    setResultUrl(null);
+    setError(null);
+    try {
+      const bytes = await f.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const count = pdf.getPageCount();
+      setFile(f);
+      setPageCount(count);
+      setRotations(new Array(count).fill(0));
+      setResultUrl(null);
+    } catch {
+      setError("Could not open this PDF. It may be password-protected. Try the Unlock PDF tool first.");
+    }
   }
 
   function rotate(index: number, dir: 90 | -90) {

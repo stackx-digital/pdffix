@@ -22,15 +22,20 @@ export default function CropPdfTool() {
 
   async function loadFile(f: File) {
     if (f.type !== "application/pdf") return;
-    const bytes = await f.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const pages = pdf.getPages();
-    const { width, height } = pages[0].getSize();
-    setFile(f);
-    setPageCount(pages.length);
-    setPageSize({ width: Math.round(width), height: Math.round(height) });
-    setMargins({ top: 0, right: 0, bottom: 0, left: 0 });
-    setResultUrl(null);
+    setError(null);
+    try {
+      const bytes = await f.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const pages = pdf.getPages();
+      const { width, height } = pages[0].getSize();
+      setFile(f);
+      setPageCount(pages.length);
+      setPageSize({ width: Math.round(width), height: Math.round(height) });
+      setMargins({ top: 0, right: 0, bottom: 0, left: 0 });
+      setResultUrl(null);
+    } catch {
+      setError("Could not open this PDF. It may be password-protected. Try the Unlock PDF tool first.");
+    }
   }
 
   function setMargin(key: keyof Margins, val: string) {

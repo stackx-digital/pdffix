@@ -23,13 +23,22 @@ export default function OrganizePdfTool() {
   const dragOver = useRef<number | null>(null);
 
   async function loadFile(f: File) {
-    if (f.type !== "application/pdf") return;
-    const bytes = await f.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const count = pdf.getPageCount();
-    setFile(f);
-    setPages(Array.from({ length: count }, (_, i) => ({ index: i, label: `Page ${i + 1}` })));
-    setResultUrl(null);
+    if (!f.name.toLowerCase().endsWith(".pdf") && f.type !== "application/pdf") {
+      setError("Please upload a valid PDF file.");
+      return;
+    }
+    setError(null);
+    try {
+      const bytes = await f.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const count = pdf.getPageCount();
+      if (count === 0) { setError("This PDF has no pages."); return; }
+      setFile(f);
+      setPages(Array.from({ length: count }, (_, i) => ({ index: i, label: `Page ${i + 1}` })));
+      setResultUrl(null);
+    } catch {
+      setError("Could not open this PDF. It may be password-protected or corrupted. Try unlocking it first using the Unlock PDF tool.");
+    }
   }
 
   function move(from: number, to: number) {
@@ -89,11 +98,14 @@ export default function OrganizePdfTool() {
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
       {!file ? (
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
-          <Upload className="w-10 h-10 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Click or drag PDF file here</span>
-          <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-        </label>
+        <>
+          {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-16 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
+            <Upload className="w-10 h-10 text-gray-400 mb-3" />
+            <span className="font-medium text-gray-700">Click or drag PDF file here</span>
+            <input type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+          </label>
+        </>
       ) : (
         <div>
           <div className="flex items-center justify-between mb-4">

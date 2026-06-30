@@ -18,13 +18,17 @@ export default function SplitPdfTool() {
 
   const loadFile = useCallback(async (f: File | null) => {
     if (!f || f.type !== "application/pdf") return;
-    setFile(f);
     setResults([]);
     setError("");
-    const bytes = await f.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    setPageCount(pdf.getPageCount());
-    setRanges(`1-${pdf.getPageCount()}`);
+    try {
+      const bytes = await f.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      setFile(f);
+      setPageCount(pdf.getPageCount());
+      setRanges(`1-${pdf.getPageCount()}`);
+    } catch {
+      setError("Could not open this PDF. It may be password-protected. Try the Unlock PDF tool first.");
+    }
   }, []);
 
   function parseRanges(input: string, max: number): number[][] {

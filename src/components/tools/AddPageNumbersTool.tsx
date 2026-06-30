@@ -23,11 +23,16 @@ export default function AddPageNumbersTool() {
 
   async function loadFile(f: File) {
     if (f.type !== "application/pdf") return;
-    const bytes = await f.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    setFile(f);
-    setPageCount(pdf.getPageCount());
-    setResultUrl(null);
+    setError(null);
+    try {
+      const bytes = await f.arrayBuffer();
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      setFile(f);
+      setPageCount(pdf.getPageCount());
+      setResultUrl(null);
+    } catch {
+      setError("Could not open this PDF. It may be password-protected. Try the Unlock PDF tool first.");
+    }
   }
 
   async function process() {
