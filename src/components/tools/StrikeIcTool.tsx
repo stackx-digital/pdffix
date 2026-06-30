@@ -325,146 +325,168 @@ export default function StrikeIcTool() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Strike IC</h1>
-      <p className="text-gray-500 mb-2">Tampal tujuan pada fotokopi IC untuk elak penyalahgunaan. Percuma &amp; selamat.</p>
-      <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-        🔒 Diproses <strong>100% dalam browser anda</strong> — fail tidak diupload ke mana-mana server.
+    <div className="max-w-xl mx-auto px-4 py-8">
+
+      {/* Header */}
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Strike IC</h1>
+        <p className="text-gray-500 text-sm mt-1">Tampal tujuan pada IC untuk elak penyalahgunaan</p>
       </div>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 
+      {/* STEP 1 — Upload */}
       {!file ? (
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         >
-          {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            {/* Upload gambar / PDF */}
-            <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
-              <Upload className="w-7 h-7 text-red-500" />
-              <span className="font-semibold text-gray-800 text-sm">Upload Gambar / PDF</span>
-              <span className="text-xs text-gray-400 text-center">JPG, PNG, WEBP atau PDF</span>
-              <input type="file" accept="image/*,.pdf,application/pdf" className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-            </label>
-            {/* Ambil gambar dari kamera */}
-            <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
-              <Camera className="w-7 h-7 text-red-500" />
-              <span className="font-semibold text-gray-800 text-sm">Ambil Gambar</span>
-              <span className="text-xs text-gray-400 text-center">Guna kamera telefon</span>
-              <input type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-            </label>
-          </div>
-          <p className="text-center text-xs text-gray-400">Drag &amp; drop fail ke sini</p>
+          {error && <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+
+          {/* Main upload zone */}
+          <label className="flex flex-col items-center justify-center gap-3 p-10 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors mb-3 bg-gray-50">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center">
+              <Upload className="w-7 h-7 text-red-600" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-gray-800">Upload gambar IC atau PDF</p>
+              <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP atau PDF</p>
+            </div>
+            <input type="file" accept="image/*,.pdf,application/pdf" className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+          </label>
+
+          {/* Camera button — prominent on mobile */}
+          <label className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors bg-white">
+            <Camera className="w-5 h-5 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Ambil gambar dari kamera</span>
+            <input type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+          </label>
+
+          {/* Privacy note */}
+          <p className="text-center text-xs text-gray-400 mt-4">🔒 Fail tidak diupload — diproses terus dalam browser</p>
         </div>
+
       ) : (
         <div className="space-y-4">
-          {/* Canvas */}
-          <div className="relative rounded-xl overflow-hidden border border-gray-200 shadow bg-gray-100">
+
+          {/* Canvas preview */}
+          <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm">
             <canvas
               ref={canvasRef}
-              className={`w-full block ${!result ? "cursor-grab active:cursor-grabbing" : ""}`}
+              className={`w-full block ${!result ? "cursor-grab active:cursor-grabbing touch-none" : ""}`}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             />
             {!result && (
-              <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-lg">
-                Click stamp to select · Drag to reposition
+              <div className="absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none">
+                <span className="bg-black/50 text-white text-[11px] px-3 py-1 rounded-full">
+                  Tekan &amp; seret stamp untuk ubah kedudukan
+                </span>
               </div>
             )}
             {result && (
-              <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-lg">
-                ✓ Stamp applied
+              <div className="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+                ✓ Stamp berjaya diletakkan
               </div>
             )}
           </div>
 
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
 
-          {!result && (
-            <>
-              {/* Stamp tabs */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {stamps.map((s, i) => (
-                  <div key={s.id} className="flex items-center">
-                    <button
-                      onClick={() => setActiveId(s.id)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                        s.id === activeId
-                          ? "bg-red-600 text-white border-red-600"
-                          : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      Stamp {i + 1}
-                    </button>
-                    {stamps.length > 1 && (
-                      <button
-                        onClick={() => deleteStamp(s.id)}
-                        className="ml-1 p-1 text-gray-400 hover:text-red-500 transition-colors"
-                        title="Remove this stamp"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={addStamp}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm border border-dashed border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add stamp
-                </button>
-              </div>
+          {/* RESULT: Download */}
+          {result ? (
+            <div className="space-y-2">
+              <button onClick={download}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors text-sm">
+                <Download className="w-4 h-4" />
+                Download {fileType === "pdf" ? "PDF" : "Gambar"}
+              </button>
+              <button onClick={reset}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-gray-50 transition-colors">
+                <RefreshCw className="w-4 h-4" /> Mula semula
+              </button>
+            </div>
 
-              {/* Active stamp controls */}
-              <div className="p-4 border border-gray-200 rounded-xl space-y-4">
+          ) : (
+            <>
+              {/* Purpose selector */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
+
+                {/* Stamp tabs (only show if >1) */}
+                {stamps.length > 1 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {stamps.map((s, i) => (
+                      <div key={s.id} className="flex items-center gap-0.5">
+                        <button onClick={() => setActiveId(s.id)}
+                          className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${s.id === activeId ? "bg-red-600 text-white border-red-600" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                          Stamp {i + 1}
+                        </button>
+                        <button onClick={() => deleteStamp(s.id)} className="p-1 text-gray-300 hover:text-red-500">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Purpose */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Purpose</label>
-                  <div className="space-y-2">
-                    <select
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                      value={activeStamp.useCustom ? "__custom__" : activeStamp.purpose}
-                      onChange={(e) => {
-                        if (e.target.value === "__custom__") updateActive({ useCustom: true });
-                        else updateActive({ useCustom: false, purpose: e.target.value });
-                      }}
-                    >
-                      {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
-                      <option value="__custom__">Custom...</option>
-                    </select>
-                    {activeStamp.useCustom && (
-                      <input type="text" placeholder="e.g. For Maybank account opening only"
-                        value={activeStamp.customPurpose}
-                        onChange={(e) => updateActive({ customPurpose: e.target.value })}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
-                    )}
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tujuan</label>
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400 bg-gray-50"
+                    value={activeStamp.useCustom ? "__custom__" : activeStamp.purpose}
+                    onChange={(e) => {
+                      if (e.target.value === "__custom__") updateActive({ useCustom: true });
+                      else updateActive({ useCustom: false, purpose: e.target.value });
+                    }}
+                  >
+                    {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
+                    <option value="__custom__">Lain-lain (taip sendiri)...</option>
+                  </select>
+                  {activeStamp.useCustom && (
+                    <input type="text" placeholder="Contoh: Untuk pembukaan akaun Maybank sahaja"
+                      value={activeStamp.customPurpose}
+                      onChange={(e) => updateActive({ customPurpose: e.target.value })}
+                      className="mt-2 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-gray-50" />
+                  )}
+                </div>
+
+                {/* Colour */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Warna</label>
+                  <div className="flex gap-2">
+                    {([
+                      { value: "red", label: "Merah", cls: "bg-red-600" },
+                      { value: "blue", label: "Biru", cls: "bg-blue-700" },
+                      { value: "black", label: "Hitam", cls: "bg-gray-900" },
+                    ] as const).map((c) => (
+                      <button key={c.value} onClick={() => updateActive({ color: c.value })}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border text-xs font-medium transition-all ${activeStamp.color === c.value ? "border-gray-900 bg-gray-100 shadow-sm" : "border-gray-200 hover:bg-gray-50"}`}>
+                        <span className={`w-3 h-3 rounded-full ${c.cls}`} />
+                        {c.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Colour + Angle */}
+                {/* Size + Angle in one row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Colour</label>
-                    <div className="flex gap-2">
-                      {(["red", "blue", "black"] as const).map((c) => (
-                        <button key={c} onClick={() => updateActive({ color: c })}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${activeStamp.color === c ? "border-gray-900 bg-gray-100" : "border-gray-200 hover:bg-gray-50"}`}>
-                          <span className={`w-2.5 h-2.5 rounded-full ${c === "red" ? "bg-red-600" : c === "blue" ? "bg-blue-700" : "bg-gray-900"}`} />
-                          {c.charAt(0).toUpperCase() + c.slice(1)}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Saiz: {Math.round(activeStamp.scale * 100)}%
+                    </label>
+                    <input type="range" min="30" max="200" value={Math.round(activeStamp.scale * 100)}
+                      onChange={(e) => updateActive({ scale: Number(e.target.value) / 100 })}
+                      className="w-full accent-red-600" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Angle: {activeStamp.angle}°
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Sudut: {activeStamp.angle}°
                     </label>
                     <input type="range" min="-60" max="60" value={activeStamp.angle}
                       onChange={(e) => updateActive({ angle: Number(e.target.value) })}
@@ -472,41 +494,23 @@ export default function StrikeIcTool() {
                   </div>
                 </div>
 
-                {/* Size */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Size: {Math.round(activeStamp.scale * 100)}%
-                  </label>
-                  <input type="range" min="30" max="200" value={Math.round(activeStamp.scale * 100)}
-                    onChange={(e) => updateActive({ scale: Number(e.target.value) / 100 })}
-                    className="w-full accent-red-600" />
-                </div>
+                {/* Add stamp */}
+                <button onClick={addStamp}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> Tambah stamp lagi
+                </button>
               </div>
 
+              {/* Apply CTA */}
               <button onClick={applyStamp} disabled={processing || limitReached}
-                className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors">
-                {processing ? "Applying..." : `Apply ${stamps.length} Stamp${stamps.length > 1 ? "s" : ""}`}
+                className="w-full py-3.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors text-sm">
+                {processing ? "Sedang diproses..." : "✓ Letak Stamp & Download"}
+              </button>
+
+              <button onClick={reset} className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                Tukar fail
               </button>
             </>
-          )}
-
-          {result && (
-            <div className="flex gap-3">
-              <button onClick={download}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                <Download className="w-4 h-4" /> Download {fileType === "pdf" ? "PDF" : "Image"}
-              </button>
-              <button onClick={reset}
-                className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-colors">
-                <RefreshCw className="w-4 h-4" /> Start over
-              </button>
-            </div>
-          )}
-
-          {!result && (
-            <button onClick={reset} className="w-full py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-              Change file
-            </button>
           )}
         </div>
       )}
