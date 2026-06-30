@@ -6,9 +6,10 @@ import StrikeIcTool from "@/components/tools/StrikeIcTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Strike IC Photocopy — Free Online Tool | PDFix",
-  description: "Add a diagonal cross and purpose label to your Malaysian IC photocopy to prevent misuse. 100% free, processed in your browser — your image is never uploaded.",
+  title: "Strike IC — Tampal Tujuan Guna Fotokopi IC | PDFix",
+  description: "Strike IC secara online percuma. Upload gambar IC (JPG/PNG) atau PDF, pilih tujuan, terus download. Selamat — fail anda tidak diupload ke mana-mana server.",
   alternates: { canonical: "https://pdfix.my/tools/strike-ic" },
+  keywords: ["strike ic", "tampal ic", "fotokopi ic", "tujuan ic", "ic photocopy malaysia", "strike ic online", "stamp ic"],
 };
 
 export default async function Page() {

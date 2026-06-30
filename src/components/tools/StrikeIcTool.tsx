@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, Download, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { Upload, Download, RefreshCw, Plus, Trash2, Camera } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
@@ -326,10 +326,10 @@ export default function StrikeIcTool() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Strike IC Photocopy</h1>
-      <p className="text-gray-500 mb-2">Add a purpose stamp to your IC photocopy to prevent misuse.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Strike IC</h1>
+      <p className="text-gray-500 mb-2">Tampal tujuan pada fotokopi IC untuk elak penyalahgunaan. Percuma &amp; selamat.</p>
       <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-        ⚠️ Processed <strong>100% in your browser</strong> — your file is never uploaded.
+        🔒 Diproses <strong>100% dalam browser anda</strong> — fail tidak diupload ke mana-mana server.
       </div>
 
       {status && !status.loggedIn && (
@@ -337,17 +337,31 @@ export default function StrikeIcTool() {
       )}
 
       {!file ? (
-        <label
-          className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-12 cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors"
+        <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         >
-          <Upload className="w-8 h-8 text-gray-400 mb-3" />
-          <span className="font-medium text-gray-700">Click or drag IC file here</span>
-          <span className="text-sm text-gray-400 mt-1">JPG, PNG, WEBP or PDF</span>
-          <input type="file" accept="image/*,.pdf,application/pdf" className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-        </label>
+          {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            {/* Upload gambar / PDF */}
+            <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
+              <Upload className="w-7 h-7 text-red-500" />
+              <span className="font-semibold text-gray-800 text-sm">Upload Gambar / PDF</span>
+              <span className="text-xs text-gray-400 text-center">JPG, PNG, WEBP atau PDF</span>
+              <input type="file" accept="image/*,.pdf,application/pdf" className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            </label>
+            {/* Ambil gambar dari kamera */}
+            <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors">
+              <Camera className="w-7 h-7 text-red-500" />
+              <span className="font-semibold text-gray-800 text-sm">Ambil Gambar</span>
+              <span className="text-xs text-gray-400 text-center">Guna kamera telefon</span>
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            </label>
+          </div>
+          <p className="text-center text-xs text-gray-400">Drag &amp; drop fail ke sini</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* Canvas */}
