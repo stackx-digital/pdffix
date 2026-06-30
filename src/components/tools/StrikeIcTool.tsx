@@ -425,7 +425,7 @@ export default function StrikeIcTool() {
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${frontSrc ? "bg-green-500 text-white" : "bg-gray-200 text-gray-600"}`}>
                       {frontSrc ? "✓" : "1"}
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">IC Front (Hadapan)</span>
+                    <span className="text-sm font-semibold text-gray-800">IC Front</span>
                   </div>
                   {frontSrc && (
                     <button onClick={() => setFrontSrc(null)} className="text-xs text-gray-400 hover:text-gray-600">Retake</button>
@@ -464,7 +464,7 @@ export default function StrikeIcTool() {
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${backSrc ? "bg-green-500 text-white" : "bg-blue-100 text-blue-600"}`}>
                       {backSrc ? "✓" : "2"}
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">IC Back (Belakang)</span>
+                    <span className="text-sm font-semibold text-gray-800">IC Back</span>
                   </div>
                   {backSrc && (
                     <button onClick={() => setBackSrc(null)} className="text-xs text-gray-400 hover:text-gray-600">Retake</button>
