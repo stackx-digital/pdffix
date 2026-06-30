@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Image to PDF — Free JPG PNG to PDF Converter | PDFix",
   description: "Convert JPG, PNG, or other images to a PDF file for free. Fast and secure, processed in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/image-to-pdf" },
 };
 export default async function Page() {
   const supabase = await createClient();

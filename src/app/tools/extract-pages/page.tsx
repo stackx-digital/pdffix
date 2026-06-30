@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Extract PDF Pages — Free Online Tool | PDFix",
   description: "Select and extract specific pages from your PDF for free. No server upload required.",
+  alternates: { canonical: "https://pdfix.my/tools/extract-pages" },
 };
 export default async function Page() {
   const supabase = await createClient();

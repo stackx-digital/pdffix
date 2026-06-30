@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Split PDF — Free Online Tool | PDFix",
   description: "Split a PDF into multiple separate files by page range.",
+  alternates: { canonical: "https://pdfix.my/tools/split-pdf" },
 };
 
 export default async function SplitPdfPage() {

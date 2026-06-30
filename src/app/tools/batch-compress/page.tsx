@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Batch Compress PDF — Free Online Tool | PDFix",
   description: "Compress multiple PDF files at once without losing quality. Free and secure, processed in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/batch-compress" },
 };
 export default async function Page() {
   const supabase = await createClient();

@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Merge PDF — Free Online Tool | PDFix",
   description: "Combine multiple PDF files into one in your browser. Secure, no server upload required.",
+  alternates: { canonical: "https://pdfix.my/tools/merge-pdf" },
 };
 
 export default async function MergePdfPage() {

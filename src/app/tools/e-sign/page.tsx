@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "E-Sign PDF — Free Digital Signature Tool | PDFix",
   description: "Add a digital signature to your PDF for free, directly in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/e-sign" },
 };
 
 export default async function ESignPage() {

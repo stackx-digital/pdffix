@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Watermark PDF — Free Online Tool | PDFix",
   description: "Add a text or image watermark to your PDF for free.",
+  alternates: { canonical: "https://pdfix.my/tools/watermark" },
 };
 
 export default async function WatermarkPage() {

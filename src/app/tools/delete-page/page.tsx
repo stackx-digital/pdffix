@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Delete PDF Pages — Free Online Tool | PDFix",
   description: "Remove specific pages from your PDF file for free.",
+  alternates: { canonical: "https://pdfix.my/tools/delete-page" },
 };
 
 export default async function DeletePagePage() {

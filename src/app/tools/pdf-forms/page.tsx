@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Fill PDF Forms Online — Free Tool | PDFix",
   description: "Fill in PDF forms directly in your browser without printing. Free, easy, and secure.",
+  alternates: { canonical: "https://pdfix.my/tools/pdf-forms" },
 };
 export default async function Page() {
   const supabase = await createClient();

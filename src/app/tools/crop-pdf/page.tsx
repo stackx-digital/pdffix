@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Crop PDF — Free Online PDF Cropping Tool | PDFix",
   description: "Crop or trim specific areas of your PDF pages for free, directly in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/crop-pdf" },
 };
 export default async function Page() {
   const supabase = await createClient();

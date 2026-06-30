@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Rotate PDF Pages — Free Online Tool | PDFix",
   description: "Rotate PDF pages 90° or 180° for free. No software needed — works entirely in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/rotate-pdf" },
 };
 export default async function Page() {
   const supabase = await createClient();

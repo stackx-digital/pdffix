@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Flatten PDF — Free Online Tool | PDFix",
   description: "Flatten PDF forms and annotations to make them non-editable. Free and secure.",
+  alternates: { canonical: "https://pdfix.my/tools/flatten-pdf" },
 };
 export default async function Page() {
   const supabase = await createClient();

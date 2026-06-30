@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "OCR PDF — Extract Text from Scanned PDF | PDFix",
   description: "Extract text from scanned PDFs using OCR, right in your browser. Free for everyone.",
+  alternates: { canonical: "https://pdfix.my/tools/ocr" },
 };
 
 export default async function OcrPage() {

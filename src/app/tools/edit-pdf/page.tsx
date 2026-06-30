@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Edit PDF — Free Online PDF Editor | PDFix",
   description: "Add text, draw, highlight, and insert images directly in your PDF file.",
+  alternates: { canonical: "https://pdfix.my/tools/edit-pdf" },
 };
 
 export default async function EditPdfPage() {

@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Compress PDF — Free Online Tool | PDFix",
   description: "Reduce PDF file size without losing quality, right in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/compress-pdf" },
 };
 
 export default async function CompressPdfPage() {

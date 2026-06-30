@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Organize PDF Pages — Free Online Tool | PDFix",
   description: "Reorder, rearrange, and drag PDF pages into any order you want. Free, right in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/organize-pdf" },
 };
 export default async function Page() {
   const supabase = await createClient();

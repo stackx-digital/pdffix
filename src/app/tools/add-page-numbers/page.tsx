@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "Add Page Numbers to PDF — Free Online Tool | PDFix",
   description: "Automatically add page numbers to your PDF for free. Fast, secure, and processed entirely in your browser.",
+  alternates: { canonical: "https://pdfix.my/tools/add-page-numbers" },
 };
 export default async function Page() {
   const supabase = await createClient();

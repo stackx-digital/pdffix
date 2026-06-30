@@ -8,6 +8,7 @@ import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
 export const metadata: Metadata = {
   title: "PDF to Image — Free Online Converter | PDFix",
   description: "Convert every PDF page to a high-quality JPG or PNG image.",
+  alternates: { canonical: "https://pdfix.my/tools/pdf-to-image" },
 };
 
 export default async function PdfToImagePage() {
