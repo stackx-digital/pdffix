@@ -26,9 +26,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Blog posts from Supabase (using service role — no cookies needed at build time)
   let blogPages: MetadataRoute.Sitemap = [];
   try {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing Supabase env vars");
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
     const { data: posts } = await supabase
       .from("blog_posts")
