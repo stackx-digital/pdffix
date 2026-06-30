@@ -372,9 +372,13 @@ export default function StrikeIcTool() {
     const img = imgRef.current;
     const canvas = canvasRef.current;
     if (canvas.dataset.src !== imgSrc) {
-      const maxW = Math.min(700, window.innerWidth - 64);
-      canvas.width = maxW;
-      canvas.height = Math.round(maxW * (img.naturalHeight / img.naturalWidth));
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = Math.min(700, window.innerWidth - 64);
+      const cssH = Math.round(cssW * (img.naturalHeight / img.naturalWidth));
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
       canvas.dataset.src = imgSrc;
     }
     const ctx = canvas.getContext("2d")!;
