@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, Download, RefreshCw, Plus, Trash2, Camera, ChevronRight, X } from "lucide-react";
+import { Upload, Download, RefreshCw, Plus, Trash2, Camera, ChevronRight, X, Crop } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
@@ -21,6 +21,232 @@ const DATE_STR = new Date().toLocaleDateString("en-MY", { day: "2-digit", month:
 // A4 canvas at 150dpi
 const A4_W = 1240;
 const A4_H = 1754;
+// IC card guide ratio (85.6 × 54 mm)
+const IC_RATIO = 85.6 / 54; // ≈ 1.585
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+async function loadImgEl(src: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+/**
+ * Auto-crop the IC card from a photo using Sobel edge detection.
+ * Finds the bounding box of strong edges, ignoring the outermost 3% border
+ * (camera vignetting / shadows).
+ */
+async function autoCropIC(src: string): Promise<string> {
+  const img = await loadImgEl(src);
+
+  // Process at reduced size for speed
+  const PROC_W = 600;
+  const scale = PROC_W / img.naturalWidth;
+  const PROC_H = Math.round(img.naturalHeight * scale);
+
+  const proc = document.createElement("canvas");
+  proc.width = PROC_W;
+  proc.height = PROC_H;
+  const pctx = proc.getContext("2d")!;
+  pctx.drawImage(img, 0, 0, PROC_W, PROC_H);
+
+  const { data } = pctx.getImageData(0, 0, PROC_W, PROC_H);
+
+  // Grayscale
+  const gray = new Uint8ClampedArray(PROC_W * PROC_H);
+  for (let i = 0; i < gray.length; i++) {
+    const j = i * 4;
+    gray[i] = (data[j] * 77 + data[j + 1] * 150 + data[j + 2] * 29) >> 8;
+  }
+
+  // Sobel magnitude
+  const EDGE_THRESHOLD = 25;
+  const borderX = Math.round(PROC_W * 0.03);
+  const borderY = Math.round(PROC_H * 0.03);
+
+  let minX = PROC_W - borderX, maxX = borderX;
+  let minY = PROC_H - borderY, maxY = borderY;
+
+  const g = (y: number, x: number) => gray[y * PROC_W + x];
+
+  for (let y = borderY + 1; y < PROC_H - borderY - 1; y++) {
+    for (let x = borderX + 1; x < PROC_W - borderX - 1; x++) {
+      const gx = -g(y - 1, x - 1) + g(y - 1, x + 1)
+               - 2 * g(y, x - 1) + 2 * g(y, x + 1)
+               - g(y + 1, x - 1) + g(y + 1, x + 1);
+      const gy = -g(y - 1, x - 1) - 2 * g(y - 1, x) - g(y - 1, x + 1)
+               + g(y + 1, x - 1) + 2 * g(y + 1, x) + g(y + 1, x + 1);
+      if (Math.sqrt(gx * gx + gy * gy) > EDGE_THRESHOLD) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  // Fallback: if detection fails, use full image minus border
+  if (minX >= maxX || minY >= maxY) {
+    minX = borderX; maxX = PROC_W - borderX;
+    minY = borderY; maxY = PROC_H - borderY;
+  }
+
+  // Small padding
+  const pad = Math.round(PROC_W * 0.008);
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(PROC_W, maxX + pad);
+  maxY = Math.min(PROC_H, maxY + pad);
+
+  // Map back to original image coordinates
+  const ox = Math.round(minX / scale);
+  const oy = Math.round(minY / scale);
+  const ow = Math.round((maxX - minX) / scale);
+  const oh = Math.round((maxY - minY) / scale);
+
+  const out = document.createElement("canvas");
+  out.width = ow;
+  out.height = oh;
+  out.getContext("2d")!.drawImage(img, ox, oy, ow, oh, 0, 0, ow, oh);
+  return out.toDataURL("image/jpeg", 0.94);
+}
+
+/** Composite front + back onto a single A4 white canvas */
+async function compositeFrontBack(fSrc: string, bSrc: string): Promise<string> {
+  const [fImg, bImg] = await Promise.all([loadImgEl(fSrc), loadImgEl(bSrc)]);
+  const c = document.createElement("canvas");
+  c.width = A4_W;
+  c.height = A4_H;
+  const ctx = c.getContext("2d")!;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, A4_W, A4_H);
+
+  const margin = 80;
+  const gap = 60;
+  const slotW = A4_W - margin * 2;
+  const slotH = (A4_H - margin * 2 - gap) / 2;
+
+  function drawFit(img: HTMLImageElement, sx: number, sy: number, sw: number, sh: number) {
+    const scale = Math.min(sw / img.naturalWidth, sh / img.naturalHeight);
+    const dw = img.naturalWidth * scale;
+    const dh = img.naturalHeight * scale;
+    ctx.drawImage(img, sx + (sw - dw) / 2, sy + (sh - dh) / 2, dw, dh);
+  }
+
+  drawFit(fImg, margin, margin, slotW, slotH);
+  drawFit(bImg, margin, margin + slotH + gap, slotW, slotH);
+
+  return c.toDataURL("image/jpeg", 0.94);
+}
+
+// ── Camera modal with IC guide overlay ──────────────────────────────────────
+function CameraModal({ onCapture, onClose }: { onCapture: (src: string) => void; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [ready, setReady] = useState(false);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } })
+      .then((stream) => {
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setReady(true);
+        }
+      })
+      .catch(() => setErr(true));
+
+    return () => streamRef.current?.getTracks().forEach((t) => t.stop());
+  }, []);
+
+  function capture() {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const vW = video.videoWidth;
+    const vH = video.videoHeight;
+
+    // Crop exactly to the guide frame region (78% width, IC ratio, centered)
+    const guideW = vW * 0.78;
+    const guideH = guideW / IC_RATIO;
+    const guideX = (vW - guideW) / 2;
+    const guideY = (vH - guideH) / 2;
+
+    const c = document.createElement("canvas");
+    c.width = Math.round(guideW);
+    c.height = Math.round(guideH);
+    c.getContext("2d")!.drawImage(video, guideX, guideY, guideW, guideH, 0, 0, c.width, c.height);
+
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    onCapture(c.toDataURL("image/jpeg", 0.94));
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <div className="relative flex-1 overflow-hidden">
+        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+
+          {/* IC guide frame */}
+          <div className="relative z-10" style={{ width: "78%", aspectRatio: `${IC_RATIO} / 1` }}>
+            <div className="absolute inset-0 rounded-2xl ring-2 ring-white/40" />
+            {/* Corner markers */}
+            <div className="absolute top-0 left-0 w-9 h-9 border-t-[3px] border-l-[3px] border-white rounded-tl-2xl" />
+            <div className="absolute top-0 right-0 w-9 h-9 border-t-[3px] border-r-[3px] border-white rounded-tr-2xl" />
+            <div className="absolute bottom-0 left-0 w-9 h-9 border-b-[3px] border-l-[3px] border-white rounded-bl-2xl" />
+            <div className="absolute bottom-0 right-0 w-9 h-9 border-b-[3px] border-r-[3px] border-white rounded-br-2xl" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-6 h-[1px] bg-white/40" />
+              <div className="absolute w-[1px] h-6 bg-white/40" />
+            </div>
+          </div>
+        </div>
+
+        <p className="absolute top-5 left-0 right-0 text-center text-white text-sm font-medium drop-shadow">
+          Align IC within the frame
+        </p>
+        <p className="absolute top-11 left-0 right-0 text-center text-white/60 text-xs drop-shadow">
+          IC will be auto-cropped to this area
+        </p>
+
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white">
+          <X className="w-5 h-5" />
+        </button>
+
+        {err && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80">
+            <p className="text-white text-sm">Camera not available</p>
+            <button onClick={onClose} className="px-4 py-2 bg-white text-black rounded-xl text-sm font-medium">Go back</button>
+          </div>
+        )}
+      </div>
+
+      {/* Shutter */}
+      <div className="bg-black flex items-center justify-between px-8 py-6 shrink-0">
+        <button onClick={onClose} className="text-white/70 text-sm w-16">Cancel</button>
+        <button
+          onClick={capture}
+          disabled={!ready}
+          className="rounded-full bg-white border-[5px] border-white/30 disabled:opacity-40 active:scale-95 transition-transform"
+          style={{ width: 72, height: 72 }}
+          aria-label="Capture"
+        />
+        <div className="w-16" />
+      </div>
+    </div>
+  );
+}
+
+// ── Stamp helpers ────────────────────────────────────────────────────────────
 
 interface StampConfig {
   id: number;
@@ -98,144 +324,7 @@ function makeStamp(x = 0.5, y = 0.25): StampConfig {
   return { id: _nextId++, x, y, scale: 1, angle: -30, purpose: PURPOSES[0], useCustom: false, customPurpose: "", color: "red" };
 }
 
-async function loadImgEl(src: string): Promise<HTMLImageElement> {
-  return new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => res(img);
-    img.onerror = rej;
-    img.src = src;
-  });
-}
-
-/** Composite front + back onto a single A4 white canvas */
-async function compositeFrontBack(fSrc: string, bSrc: string): Promise<string> {
-  const [fImg, bImg] = await Promise.all([loadImgEl(fSrc), loadImgEl(bSrc)]);
-  const c = document.createElement("canvas");
-  c.width = A4_W;
-  c.height = A4_H;
-  const ctx = c.getContext("2d")!;
-
-  // White background
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, A4_W, A4_H);
-
-  const margin = 80;
-  const gap = 60;
-  const slotW = A4_W - margin * 2;
-  const slotH = (A4_H - margin * 2 - gap) / 2;
-
-  function drawFit(img: HTMLImageElement, sx: number, sy: number, sw: number, sh: number) {
-    const scale = Math.min(sw / img.naturalWidth, sh / img.naturalHeight);
-    const dw = img.naturalWidth * scale;
-    const dh = img.naturalHeight * scale;
-    const dx = sx + (sw - dw) / 2;
-    const dy = sy + (sh - dh) / 2;
-    ctx.drawImage(img, dx, dy, dw, dh);
-  }
-
-  // Front IC — top half
-  drawFit(fImg, margin, margin, slotW, slotH);
-  // Back IC — bottom half
-  drawFit(bImg, margin, margin + slotH + gap, slotW, slotH);
-
-  return c.toDataURL("image/jpeg", 0.94);
-}
-
-// ── Camera modal with IC guide overlay ──────────────────────────────────────
-function CameraModal({ onCapture, onClose }: { onCapture: (src: string) => void; onClose: () => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [ready, setReady] = useState(false);
-  const [err, setErr] = useState(false);
-
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } })
-      .then((stream) => {
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => setReady(true);
-        }
-      })
-      .catch(() => setErr(true));
-
-    return () => streamRef.current?.getTracks().forEach((t) => t.stop());
-  }, []);
-
-  function capture() {
-    const video = videoRef.current;
-    if (!video) return;
-    const c = document.createElement("canvas");
-    c.width = video.videoWidth;
-    c.height = video.videoHeight;
-    c.getContext("2d")!.drawImage(video, 0, 0);
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    onCapture(c.toDataURL("image/jpeg", 0.93));
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="relative flex-1 overflow-hidden">
-        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
-
-        {/* Dark overlay with IC-shaped cutout hint */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          {/* Dim areas outside guide */}
-          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
-
-          {/* IC guide frame — 85.6×54mm ratio = 1.585:1 */}
-          <div className="relative z-10" style={{ width: "78%", aspectRatio: "1.585 / 1" }}>
-            {/* Clear window */}
-            <div className="absolute inset-0 rounded-2xl ring-2 ring-white/40 overflow-hidden">
-              <div className="absolute inset-0 bg-transparent" />
-            </div>
-            {/* Corner accents */}
-            <div className="absolute top-0 left-0 w-9 h-9 border-t-[3px] border-l-[3px] border-white rounded-tl-2xl" />
-            <div className="absolute top-0 right-0 w-9 h-9 border-t-[3px] border-r-[3px] border-white rounded-tr-2xl" />
-            <div className="absolute bottom-0 left-0 w-9 h-9 border-b-[3px] border-l-[3px] border-white rounded-bl-2xl" />
-            <div className="absolute bottom-0 right-0 w-9 h-9 border-b-[3px] border-r-[3px] border-white rounded-br-2xl" />
-            {/* Center crosshair */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-6 h-[1px] bg-white/40" />
-              <div className="absolute w-[1px] h-6 bg-white/40" />
-            </div>
-          </div>
-        </div>
-
-        {/* Top hint */}
-        <p className="absolute top-5 left-0 right-0 text-center text-white text-sm font-medium drop-shadow">
-          Align IC within the frame
-        </p>
-
-        {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white">
-          <X className="w-5 h-5" />
-        </button>
-
-        {err && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80">
-            <p className="text-white text-sm">Camera not available</p>
-            <button onClick={onClose} className="px-4 py-2 bg-white text-black rounded-xl text-sm font-medium">Go back</button>
-          </div>
-        )}
-      </div>
-
-      {/* Shutter bar */}
-      <div className="bg-black flex items-center justify-between px-8 py-6 shrink-0">
-        <button onClick={onClose} className="text-white/70 text-sm w-16">Cancel</button>
-        <button
-          onClick={capture}
-          disabled={!ready}
-          className="w-18 h-18 rounded-full bg-white border-[5px] border-white/30 disabled:opacity-40 active:scale-95 transition-transform"
-          style={{ width: 72, height: 72 }}
-          aria-label="Capture"
-        />
-        <div className="w-16" />
-      </div>
-    </div>
-  );
-}
+// ── Main component ───────────────────────────────────────────────────────────
 
 type FileType = "image" | "pdf";
 type Mode = "single" | "frontback";
@@ -247,9 +336,8 @@ export default function StrikeIcTool() {
   const [frontSrc, setFrontSrc] = useState<string | null>(null);
   const [backSrc, setBackSrc] = useState<string | null>(null);
   const [fbCompositing, setFbCompositing] = useState(false);
-
-  // Camera modal
   const [cameraFor, setCameraFor] = useState<"front" | "back" | "single" | null>(null);
+  const [cropping, setCropping] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>("image");
@@ -265,14 +353,13 @@ export default function StrikeIcTool() {
   const stampIdRef = useRef(1);
   const draggingId = useRef<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hiddenRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   function newStamp(x = 0.5, y = 0.25): StampConfig {
     return { ...makeStamp(x, y), id: stampIdRef.current++ };
   }
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hiddenRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
 
   const activeStamp = stamps.find(s => s.id === activeId) ?? stamps[0];
 
@@ -306,9 +393,11 @@ export default function StrikeIcTool() {
     setImgSrc(src);
   }, []);
 
+  // Upload a file: auto-crop image, render PDF first page
   const handleFile = useCallback(async (f: File) => {
     setError(null); setResult(null); setImgLoaded(false);
     setFile(f);
+
     if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
       setFileType("pdf");
       try {
@@ -327,24 +416,74 @@ export default function StrikeIcTool() {
     } else if (f.type.startsWith("image/")) {
       setFileType("image");
       setPdfBytes(null);
-      loadImage(URL.createObjectURL(f));
+      setCropping(true);
+      try {
+        const raw = URL.createObjectURL(f);
+        const cropped = await autoCropIC(raw);
+        URL.revokeObjectURL(raw);
+        loadImage(cropped);
+      } catch {
+        loadImage(URL.createObjectURL(f)); // fallback: no crop
+      } finally {
+        setCropping(false);
+      }
     } else {
       setError("Please upload JPG, PNG or PDF.");
     }
   }, [loadImage]);
 
-  function handleFrontFile(f: File) {
+  // Camera capture: already cropped to guide frame, no extra processing needed
+  function onCameraCapture(src: string) {
+    const target = cameraFor;
+    setCameraFor(null);
+
+    if (target === "single") {
+      setFileType("image");
+      setPdfBytes(null);
+      setResult(null);
+      setFile(new File([], "ic_camera.jpg", { type: "image/jpeg" }));
+      loadImage(src);
+    } else if (target === "front") {
+      setFrontSrc(src);
+    } else if (target === "back") {
+      setBackSrc(src);
+      if (frontSrc) buildComposite(frontSrc, src);
+    }
+  }
+
+  // For uploaded front/back images: auto-crop each before compositing
+  async function handleFrontFile(f: File) {
     if (!f.type.startsWith("image/")) { setError("Please upload an image file."); return; }
     setError(null);
-    setFrontSrc(URL.createObjectURL(f));
+    setCropping(true);
+    try {
+      const raw = URL.createObjectURL(f);
+      const cropped = await autoCropIC(raw);
+      URL.revokeObjectURL(raw);
+      setFrontSrc(cropped);
+    } catch {
+      setFrontSrc(URL.createObjectURL(f));
+    } finally {
+      setCropping(false);
+    }
   }
 
   async function handleBackFile(f: File) {
     if (!f.type.startsWith("image/")) { setError("Please upload an image file."); return; }
     setError(null);
-    const bSrc = URL.createObjectURL(f);
+    setCropping(true);
+    let bSrc: string;
+    try {
+      const raw = URL.createObjectURL(f);
+      bSrc = await autoCropIC(raw);
+      URL.revokeObjectURL(raw);
+    } catch {
+      bSrc = URL.createObjectURL(f);
+    } finally {
+      setCropping(false);
+    }
     setBackSrc(bSrc);
-    await buildComposite(frontSrc!, bSrc);
+    if (frontSrc) buildComposite(frontSrc, bSrc);
   }
 
   async function buildComposite(fSrc: string, bSrc: string) {
@@ -359,25 +498,6 @@ export default function StrikeIcTool() {
       setError("Could not combine images. Please try again.");
     } finally {
       setFbCompositing(false);
-    }
-  }
-
-  // Camera capture handler
-  function onCameraCapture(src: string) {
-    const target = cameraFor;
-    setCameraFor(null);
-    if (target === "single") {
-      // Convert dataURL to File-like object
-      setFileType("image");
-      setPdfBytes(null);
-      setFile(new File([], "ic_camera.jpg", { type: "image/jpeg" }));
-      setResult(null);
-      loadImage(src);
-    } else if (target === "front") {
-      setFrontSrc(src);
-    } else if (target === "back") {
-      setBackSrc(src);
-      if (frontSrc) buildComposite(frontSrc, src);
     }
   }
 
@@ -423,8 +543,7 @@ export default function StrikeIcTool() {
 
   function addStamp() {
     const lastY = stamps[stamps.length - 1]?.y ?? 0.25;
-    const newY = lastY > 0.5 ? 0.25 : 0.75;
-    const s = newStamp(0.5, newY);
+    const s = newStamp(0.5, lastY > 0.5 ? 0.25 : 0.75);
     setStamps(prev => [...prev, s]);
     setActiveId(s.id);
   }
@@ -501,14 +620,13 @@ export default function StrikeIcTool() {
   }
 
   const inEditor = !!file && (imgLoaded || fbCompositing);
+  const isBusy = cropping || fbCompositing;
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
 
-      {/* Camera modal */}
       {cameraFor && <CameraModal onCapture={onCameraCapture} onClose={() => setCameraFor(null)} />}
 
-      {/* Header */}
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Strike IC</h1>
         <p className="text-gray-500 text-sm mt-1">Add a purpose stamp on your IC copy to prevent misuse</p>
@@ -518,7 +636,14 @@ export default function StrikeIcTool() {
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
       )}
 
-      {/* STEP 1 — Upload / capture */}
+      {/* Loading overlay */}
+      {isBusy && (
+        <div className="mb-4 flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+          <Crop className="w-4 h-4 animate-pulse shrink-0" />
+          {cropping ? "Auto-cropping IC..." : "Combining onto A4 canvas..."}
+        </div>
+      )}
+
       {!inEditor ? (
         <div
           onDragOver={(e) => e.preventDefault()}
@@ -526,7 +651,6 @@ export default function StrikeIcTool() {
         >
           {error && <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
 
-          {/* Mode toggle */}
           <div className="flex gap-2 mb-4">
             {(["single", "frontback"] as Mode[]).map((m) => (
               <button key={m} onClick={() => { setMode(m); setError(null); setFrontSrc(null); setBackSrc(null); }}
@@ -544,7 +668,7 @@ export default function StrikeIcTool() {
                 </div>
                 <div className="text-center">
                   <p className="font-semibold text-gray-800">Upload IC image or PDF</p>
-                  <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP or PDF</p>
+                  <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP or PDF — IC will be auto-cropped</p>
                 </div>
                 <input type="file" accept="image/*,.pdf,application/pdf" className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
@@ -573,7 +697,7 @@ export default function StrikeIcTool() {
                 </div>
                 {frontSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={frontSrc} alt="IC Front" className="w-full rounded-xl object-contain max-h-36 bg-white" />
+                  <img src={frontSrc} alt="IC Front" className="w-full rounded-xl object-contain max-h-32 bg-white" />
                 ) : (
                   <div className="flex gap-2">
                     <label className="flex-1 flex flex-col items-center gap-1 py-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-white transition-colors text-center">
@@ -591,7 +715,6 @@ export default function StrikeIcTool() {
                 )}
               </div>
 
-              {/* Arrow */}
               <div className="flex justify-center text-gray-300">
                 <ChevronRight className="w-5 h-5 rotate-90" />
               </div>
@@ -611,7 +734,7 @@ export default function StrikeIcTool() {
                 </div>
                 {backSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={backSrc} alt="IC Back" className="w-full rounded-xl object-contain max-h-36 bg-white" />
+                  <img src={backSrc} alt="IC Back" className="w-full rounded-xl object-contain max-h-32 bg-white" />
                 ) : (
                   <div className="flex gap-2">
                     <label className="flex-1 flex flex-col items-center gap-1 py-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-white transition-colors text-center">
@@ -628,10 +751,6 @@ export default function StrikeIcTool() {
                   </div>
                 )}
               </div>
-
-              {fbCompositing && (
-                <div className="text-center py-3 text-sm text-gray-500">Combining onto A4 canvas...</div>
-              )}
             </div>
           )}
 
@@ -641,7 +760,6 @@ export default function StrikeIcTool() {
       ) : (
         <div className="space-y-4">
 
-          {/* Canvas preview */}
           <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-sm">
             <canvas
               ref={canvasRef}
