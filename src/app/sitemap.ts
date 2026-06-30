@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { TOOLS } from "@/types";
 
 const BASE = "https://pdfix.my";
@@ -23,10 +23,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }));
 
-  // Blog posts from Supabase
+  // Blog posts from Supabase (using service role — no cookies needed at build time)
   let blogPages: MetadataRoute.Sitemap = [];
   try {
-    const supabase = await createClient();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
     const { data: posts } = await supabase
       .from("blog_posts")
       .select("slug, updated_at, published_at")
