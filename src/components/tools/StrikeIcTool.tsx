@@ -132,7 +132,7 @@ async function compositeFrontBack(fSrc: string, bSrc: string): Promise<string> {
   const slotH = (A4_H - margin * 2 - gap) / 2;
 
   function drawFit(img: HTMLImageElement, sx: number, sy: number, sw: number, sh: number) {
-    const scale = Math.min(sw / img.naturalWidth, sh / img.naturalHeight);
+    const scale = Math.min(sw / img.naturalWidth, sh / img.naturalHeight) * 0.55;
     const dw = img.naturalWidth * scale;
     const dh = img.naturalHeight * scale;
     ctx.drawImage(img, sx + (sw - dw) / 2, sy + (sh - dh) / 2, dw, dh);
