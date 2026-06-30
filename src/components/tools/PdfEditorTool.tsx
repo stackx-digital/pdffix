@@ -1040,7 +1040,7 @@ export default function PdfEditorTool() {
                   </button>
                   <button onClick={() => setEditingText(null)}
                     className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
-                    Batal
+                    Cancel
                   </button>
                 </div>
               </div>
@@ -1102,14 +1102,14 @@ export default function PdfEditorTool() {
             </div>
             <div className="flex gap-2 px-5 pb-5">
               {signTab === "draw" && (
-                <button onClick={signClear} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Padam</button>
+                <button onClick={signClear} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Clear</button>
               )}
               <button
                 onClick={signPlace}
                 disabled={signTab === "upload" && !uploadedSignature}
                 className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-40"
               >
-                <Check className="w-4 h-4 inline mr-1" />Letakkan
+                <Check className="w-4 h-4 inline mr-1" />Place
               </button>
             </div>
           </div>
@@ -1121,7 +1121,7 @@ export default function PdfEditorTool() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Tambah Nota</h3>
+              <h3 className="font-semibold text-gray-900">Add Note</h3>
               <button onClick={() => setShowNoteModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5">
@@ -1129,8 +1129,8 @@ export default function PdfEditorTool() {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 resize-none" />
             </div>
             <div className="flex gap-2 px-5 pb-5">
-              <button onClick={() => setShowNoteModal(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-              <button onClick={placeNote} disabled={!noteText.trim()} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">Letak Nota</button>
+              <button onClick={() => setShowNoteModal(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button onClick={placeNote} disabled={!noteText.trim()} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">Place Note</button>
             </div>
           </div>
         </div>
@@ -1141,7 +1141,7 @@ export default function PdfEditorTool() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Tambah Pautan</h3>
+              <h3 className="font-semibold text-gray-900">Add Link</h3>
               <button onClick={() => setShowLinkModal(false)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-3">
@@ -1151,14 +1151,14 @@ export default function PdfEditorTool() {
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Teks pautan</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Link text</label>
                 <input type="text" value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Click here"
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
               </div>
             </div>
             <div className="flex gap-2 px-5 pb-5">
-              <button onClick={() => setShowLinkModal(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-              <button onClick={placeLink} disabled={!linkUrl.trim()} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">Letak Pautan</button>
+              <button onClick={() => setShowLinkModal(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button onClick={placeLink} disabled={!linkUrl.trim()} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">Place Link</button>
             </div>
           </div>
         </div>

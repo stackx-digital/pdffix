@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, Download, RefreshCw, Plus, Trash2, Camera, ChevronRight } from "lucide-react";
+import { Upload, Download, RefreshCw, Plus, Trash2, Camera, ChevronRight, X } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
 
@@ -17,6 +17,10 @@ const PURPOSES = [
 ];
 
 const DATE_STR = new Date().toLocaleDateString("en-MY", { day: "2-digit", month: "long", year: "numeric" });
+
+// A4 canvas at 150dpi
+const A4_W = 1240;
+const A4_H = 1754;
 
 interface StampConfig {
   id: number;
@@ -103,19 +107,134 @@ async function loadImgEl(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Composite front + back onto a single A4 white canvas */
 async function compositeFrontBack(fSrc: string, bSrc: string): Promise<string> {
   const [fImg, bImg] = await Promise.all([loadImgEl(fSrc), loadImgEl(bSrc)]);
-  const PAD = 40;
-  const W = Math.max(fImg.naturalWidth, bImg.naturalWidth) + PAD * 2;
-  const H = fImg.naturalHeight + bImg.naturalHeight + PAD * 3;
   const c = document.createElement("canvas");
-  c.width = W; c.height = H;
+  c.width = A4_W;
+  c.height = A4_H;
   const ctx = c.getContext("2d")!;
+
+  // White background
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, W, H);
-  ctx.drawImage(fImg, (W - fImg.naturalWidth) / 2, PAD);
-  ctx.drawImage(bImg, (W - bImg.naturalWidth) / 2, fImg.naturalHeight + PAD * 2);
-  return c.toDataURL("image/jpeg", 0.92);
+  ctx.fillRect(0, 0, A4_W, A4_H);
+
+  const margin = 80;
+  const gap = 60;
+  const slotW = A4_W - margin * 2;
+  const slotH = (A4_H - margin * 2 - gap) / 2;
+
+  function drawFit(img: HTMLImageElement, sx: number, sy: number, sw: number, sh: number) {
+    const scale = Math.min(sw / img.naturalWidth, sh / img.naturalHeight);
+    const dw = img.naturalWidth * scale;
+    const dh = img.naturalHeight * scale;
+    const dx = sx + (sw - dw) / 2;
+    const dy = sy + (sh - dh) / 2;
+    ctx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  // Front IC — top half
+  drawFit(fImg, margin, margin, slotW, slotH);
+  // Back IC — bottom half
+  drawFit(bImg, margin, margin + slotH + gap, slotW, slotH);
+
+  return c.toDataURL("image/jpeg", 0.94);
+}
+
+// ── Camera modal with IC guide overlay ──────────────────────────────────────
+function CameraModal({ onCapture, onClose }: { onCapture: (src: string) => void; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [ready, setReady] = useState(false);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } })
+      .then((stream) => {
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setReady(true);
+        }
+      })
+      .catch(() => setErr(true));
+
+    return () => streamRef.current?.getTracks().forEach((t) => t.stop());
+  }, []);
+
+  function capture() {
+    const video = videoRef.current;
+    if (!video) return;
+    const c = document.createElement("canvas");
+    c.width = video.videoWidth;
+    c.height = video.videoHeight;
+    c.getContext("2d")!.drawImage(video, 0, 0);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    onCapture(c.toDataURL("image/jpeg", 0.93));
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <div className="relative flex-1 overflow-hidden">
+        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+
+        {/* Dark overlay with IC-shaped cutout hint */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          {/* Dim areas outside guide */}
+          <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+
+          {/* IC guide frame — 85.6×54mm ratio = 1.585:1 */}
+          <div className="relative z-10" style={{ width: "78%", aspectRatio: "1.585 / 1" }}>
+            {/* Clear window */}
+            <div className="absolute inset-0 rounded-2xl ring-2 ring-white/40 overflow-hidden">
+              <div className="absolute inset-0 bg-transparent" />
+            </div>
+            {/* Corner accents */}
+            <div className="absolute top-0 left-0 w-9 h-9 border-t-[3px] border-l-[3px] border-white rounded-tl-2xl" />
+            <div className="absolute top-0 right-0 w-9 h-9 border-t-[3px] border-r-[3px] border-white rounded-tr-2xl" />
+            <div className="absolute bottom-0 left-0 w-9 h-9 border-b-[3px] border-l-[3px] border-white rounded-bl-2xl" />
+            <div className="absolute bottom-0 right-0 w-9 h-9 border-b-[3px] border-r-[3px] border-white rounded-br-2xl" />
+            {/* Center crosshair */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-6 h-[1px] bg-white/40" />
+              <div className="absolute w-[1px] h-6 bg-white/40" />
+            </div>
+          </div>
+        </div>
+
+        {/* Top hint */}
+        <p className="absolute top-5 left-0 right-0 text-center text-white text-sm font-medium drop-shadow">
+          Align IC within the frame
+        </p>
+
+        {/* Close */}
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white">
+          <X className="w-5 h-5" />
+        </button>
+
+        {err && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80">
+            <p className="text-white text-sm">Camera not available</p>
+            <button onClick={onClose} className="px-4 py-2 bg-white text-black rounded-xl text-sm font-medium">Go back</button>
+          </div>
+        )}
+      </div>
+
+      {/* Shutter bar */}
+      <div className="bg-black flex items-center justify-between px-8 py-6 shrink-0">
+        <button onClick={onClose} className="text-white/70 text-sm w-16">Cancel</button>
+        <button
+          onClick={capture}
+          disabled={!ready}
+          className="w-18 h-18 rounded-full bg-white border-[5px] border-white/30 disabled:opacity-40 active:scale-95 transition-transform"
+          style={{ width: 72, height: 72 }}
+          aria-label="Capture"
+        />
+        <div className="w-16" />
+      </div>
+    </div>
+  );
 }
 
 type FileType = "image" | "pdf";
@@ -125,10 +244,12 @@ export default function StrikeIcTool() {
   const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("strike-ic");
 
   const [mode, setMode] = useState<Mode>("single");
-  // frontback mode state
   const [frontSrc, setFrontSrc] = useState<string | null>(null);
   const [backSrc, setBackSrc] = useState<string | null>(null);
   const [fbCompositing, setFbCompositing] = useState(false);
+
+  // Camera modal
+  const [cameraFor, setCameraFor] = useState<"front" | "back" | "single" | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>("image");
@@ -212,7 +333,6 @@ export default function StrikeIcTool() {
     }
   }, [loadImage]);
 
-  // Front & back: capture individual sides
   function handleFrontFile(f: File) {
     if (!f.type.startsWith("image/")) { setError("Please upload an image file."); return; }
     setError(null);
@@ -224,19 +344,40 @@ export default function StrikeIcTool() {
     setError(null);
     const bSrc = URL.createObjectURL(f);
     setBackSrc(bSrc);
-    if (!frontSrc) return;
+    await buildComposite(frontSrc!, bSrc);
+  }
+
+  async function buildComposite(fSrc: string, bSrc: string) {
     setFbCompositing(true);
     try {
-      const composite = await compositeFrontBack(frontSrc, bSrc);
+      const composite = await compositeFrontBack(fSrc, bSrc);
       setFileType("image");
       setPdfBytes(null);
-      // Use a dummy File so download naming works
       setFile(new File([], "ic_front_back.jpg", { type: "image/jpeg" }));
       loadImage(composite);
     } catch {
       setError("Could not combine images. Please try again.");
     } finally {
       setFbCompositing(false);
+    }
+  }
+
+  // Camera capture handler
+  function onCameraCapture(src: string) {
+    const target = cameraFor;
+    setCameraFor(null);
+    if (target === "single") {
+      // Convert dataURL to File-like object
+      setFileType("image");
+      setPdfBytes(null);
+      setFile(new File([], "ic_camera.jpg", { type: "image/jpeg" }));
+      setResult(null);
+      loadImage(src);
+    } else if (target === "front") {
+      setFrontSrc(src);
+    } else if (target === "back") {
+      setBackSrc(src);
+      if (frontSrc) buildComposite(frontSrc, src);
     }
   }
 
@@ -359,11 +500,13 @@ export default function StrikeIcTool() {
     setStamps([s]); setActiveId(s.id);
   }
 
-  // Determine if we're in the editor (image loaded, or compositing done)
   const inEditor = !!file && (imgLoaded || fbCompositing);
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
+
+      {/* Camera modal */}
+      {cameraFor && <CameraModal onCapture={onCameraCapture} onClose={() => setCameraFor(null)} />}
 
       {/* Header */}
       <div className="text-center mb-6">
@@ -395,7 +538,6 @@ export default function StrikeIcTool() {
 
           {mode === "single" ? (
             <>
-              {/* Main upload zone */}
               <label className="flex flex-col items-center justify-center gap-3 p-10 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors mb-3 bg-gray-50">
                 <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center">
                   <Upload className="w-7 h-7 text-red-600" />
@@ -408,15 +550,13 @@ export default function StrikeIcTool() {
                   onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
               </label>
 
-              <label className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors bg-white">
+              <button onClick={() => setCameraFor("single")}
+                className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors bg-white">
                 <Camera className="w-5 h-5 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Take photo with camera</span>
-                <input type="file" accept="image/*" capture="environment" className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-              </label>
+              </button>
             </>
           ) : (
-            /* Front & Back IC flow */
             <div className="space-y-3">
               {/* Step 1: Front */}
               <div className={`rounded-2xl border-2 p-4 transition-colors ${frontSrc ? "border-green-400 bg-green-50" : "border-dashed border-gray-200 bg-gray-50"}`}>
@@ -425,7 +565,7 @@ export default function StrikeIcTool() {
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${frontSrc ? "bg-green-500 text-white" : "bg-gray-200 text-gray-600"}`}>
                       {frontSrc ? "✓" : "1"}
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">IC Front (Hadapan)</span>
+                    <span className="text-sm font-semibold text-gray-800">IC Front</span>
                   </div>
                   {frontSrc && (
                     <button onClick={() => setFrontSrc(null)} className="text-xs text-gray-400 hover:text-gray-600">Retake</button>
@@ -442,12 +582,11 @@ export default function StrikeIcTool() {
                       <input type="file" accept="image/*" className="hidden"
                         onChange={(e) => e.target.files?.[0] && handleFrontFile(e.target.files[0])} />
                     </label>
-                    <label className="flex-1 flex flex-col items-center gap-1 py-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-white transition-colors text-center">
+                    <button onClick={() => setCameraFor("front")}
+                      className="flex-1 flex flex-col items-center gap-1 py-4 border border-gray-200 rounded-xl hover:bg-white transition-colors">
                       <Camera className="w-5 h-5 text-gray-400" />
                       <span className="text-xs text-gray-500">Camera</span>
-                      <input type="file" accept="image/*" capture="environment" className="hidden"
-                        onChange={(e) => e.target.files?.[0] && handleFrontFile(e.target.files[0])} />
-                    </label>
+                    </button>
                   </div>
                 )}
               </div>
@@ -464,7 +603,7 @@ export default function StrikeIcTool() {
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${backSrc ? "bg-green-500 text-white" : "bg-blue-100 text-blue-600"}`}>
                       {backSrc ? "✓" : "2"}
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">IC Back (Belakang)</span>
+                    <span className="text-sm font-semibold text-gray-800">IC Back</span>
                   </div>
                   {backSrc && (
                     <button onClick={() => setBackSrc(null)} className="text-xs text-gray-400 hover:text-gray-600">Retake</button>
@@ -481,23 +620,21 @@ export default function StrikeIcTool() {
                       <input type="file" accept="image/*" className="hidden"
                         onChange={(e) => e.target.files?.[0] && handleBackFile(e.target.files[0])} />
                     </label>
-                    <label className="flex-1 flex flex-col items-center gap-1 py-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-white transition-colors text-center">
+                    <button onClick={() => setCameraFor("back")}
+                      className="flex-1 flex flex-col items-center gap-1 py-4 border border-gray-200 rounded-xl hover:bg-white transition-colors">
                       <Camera className="w-5 h-5 text-gray-400" />
                       <span className="text-xs text-gray-500">Camera</span>
-                      <input type="file" accept="image/*" capture="environment" className="hidden"
-                        onChange={(e) => e.target.files?.[0] && handleBackFile(e.target.files[0])} />
-                    </label>
+                    </button>
                   </div>
                 )}
               </div>
 
               {fbCompositing && (
-                <div className="text-center py-3 text-sm text-gray-500">Combining front & back...</div>
+                <div className="text-center py-3 text-sm text-gray-500">Combining onto A4 canvas...</div>
               )}
             </div>
           )}
 
-          {/* Privacy note */}
           <p className="text-center text-xs text-gray-400 mt-4">🔒 Your file is never uploaded — processed entirely in your browser</p>
         </div>
 
@@ -529,7 +666,6 @@ export default function StrikeIcTool() {
 
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
 
-          {/* RESULT: Download */}
           {result ? (
             <div className="space-y-2">
               <button onClick={download}
@@ -547,7 +683,6 @@ export default function StrikeIcTool() {
             <>
               <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
 
-                {/* Stamp tabs */}
                 {stamps.length > 1 && (
                   <div className="flex items-center gap-2 flex-wrap">
                     {stamps.map((s, i) => (
@@ -564,7 +699,6 @@ export default function StrikeIcTool() {
                   </div>
                 )}
 
-                {/* Purpose */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Purpose</label>
                   <select
@@ -586,7 +720,6 @@ export default function StrikeIcTool() {
                   )}
                 </div>
 
-                {/* Colour */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Colour</label>
                   <div className="flex gap-2">
@@ -604,7 +737,6 @@ export default function StrikeIcTool() {
                   </div>
                 </div>
 
-                {/* Size + Angle */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -624,14 +756,12 @@ export default function StrikeIcTool() {
                   </div>
                 </div>
 
-                {/* Add stamp */}
                 <button onClick={addStamp}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors">
                   <Plus className="w-3.5 h-3.5" /> Add another stamp
                 </button>
               </div>
 
-              {/* Apply CTA */}
               <button onClick={applyStamp} disabled={processing || limitReached}
                 className="w-full py-3.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors text-sm">
                 {processing ? "Processing..." : "✓ Apply Stamp & Download"}
