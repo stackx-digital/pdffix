@@ -265,7 +265,7 @@ function effectivePurpose(s: StampConfig) {
 }
 
 function hitStamp(cfg: StampConfig, W: number, H: number, px: number, py: number): boolean {
-  const baseFont = Math.round(Math.min(W, H) * 0.09 * cfg.scale);
+  const baseFont = Math.round(Math.min(W, H) * 0.05 * cfg.scale);
   const cx = W * cfg.x;
   const cy = H * cfg.y;
   const rad = cfg.angle * (Math.PI / 180);
@@ -280,7 +280,7 @@ function renderStamp(ctx: CanvasRenderingContext2D, W: number, H: number, cfg: S
     : cfg.color === "blue" ? `rgba(29,78,216,${a})`
     : `rgba(17,24,39,${a})`;
 
-  const baseFont = Math.round(Math.min(W, H) * 0.09 * cfg.scale);
+  const baseFont = Math.round(Math.min(W, H) * 0.05 * cfg.scale);
   const cx = W * cfg.x;
   const cy = H * cfg.y;
   const angle = cfg.angle * (Math.PI / 180);
@@ -321,7 +321,7 @@ function renderStamp(ctx: CanvasRenderingContext2D, W: number, H: number, cfg: S
 
 let _nextId = 1;
 function makeStamp(x = 0.5, y = 0.25): StampConfig {
-  return { id: _nextId++, x, y, scale: 1, angle: -30, purpose: PURPOSES[0], useCustom: false, customPurpose: "", color: "red" };
+  return { id: _nextId++, x, y, scale: 0.8, angle: -30, purpose: PURPOSES[0], useCustom: false, customPurpose: "", color: "red" };
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
