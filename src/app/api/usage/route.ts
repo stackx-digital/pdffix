@@ -35,18 +35,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ used: 0, limit: null, canProceed: true, loggedIn: true });
   }
 
-  const ip = getIp(req);
-  const month = currentMonth();
-  const svc = serviceClient();
-  const { data } = await svc.from("ip_usage").select("count").eq("ip", ip).eq("month", month).maybeSingle();
-  const used = data?.count ?? 0;
-
-  return NextResponse.json({
-    used,
-    limit: MONTHLY_LIMIT,
-    canProceed: used < MONTHLY_LIMIT,
-    loggedIn: false,
-  });
+  // No usage limit for guests either — fully free for everyone
+  return NextResponse.json({ used: 0, limit: null, canProceed: true, loggedIn: false });
 }
 
 // POST /api/usage — record one usage
@@ -64,22 +54,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Anonymous: increment IP counter
+  // No usage limit — just record usage for analytics (no blocking)
+  const body = await req.json().catch(() => ({}));
+  const rawTool = typeof body?.tool === "string" ? body.tool : "";
+  const tool = VALID_TOOLS.has(rawTool) ? rawTool : "unknown";
   const ip = getIp(req);
   const month = currentMonth();
   const svc = serviceClient();
-
-  const { data } = await svc.from("ip_usage").select("count").eq("ip", ip).eq("month", month).maybeSingle();
-  const current = data?.count ?? 0;
-
-  if (current >= MONTHLY_LIMIT) {
-    return NextResponse.json({ ok: false, limitReached: true }, { status: 429 });
-  }
-
   await svc.from("ip_usage").upsert(
-    { ip, month, count: current + 1 },
+    { ip, month, count: 1 },
     { onConflict: "ip,month" }
-  );
+  ).then(() => {}).catch(() => {});
 
-  return NextResponse.json({ ok: true, used: current + 1, remaining: MONTHLY_LIMIT - current - 1 });
+  return NextResponse.json({ ok: true, tool });
 }

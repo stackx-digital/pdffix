@@ -5,11 +5,12 @@ import { AlertTriangle } from "lucide-react";
 
 interface Props {
   used: number;
-  limit: number;
+  limit: number | null;
   loggedIn: boolean;
 }
 
 export default function UsageLimitBanner({ used, limit, loggedIn }: Props) {
+  if (limit === null) return null;
   const remaining = limit - used;
   const isExceeded = used >= limit;
 
