@@ -54,17 +54,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // No usage limit — just record usage for analytics (no blocking)
-  const body = await req.json().catch(() => ({}));
-  const rawTool = typeof body?.tool === "string" ? body.tool : "";
-  const tool = VALID_TOOLS.has(rawTool) ? rawTool : "unknown";
+  // No usage limit — record usage for analytics only (no blocking)
   const ip = getIp(req);
   const month = currentMonth();
   const svc = serviceClient();
+  const { data } = await svc.from("ip_usage").select("count").eq("ip", ip).eq("month", month).maybeSingle();
+  const current = (data?.count ?? 0) + 1;
   await svc.from("ip_usage").upsert(
-    { ip, month, count: 1 },
+    { ip, month, count: current },
     { onConflict: "ip,month" }
   ).then(() => {}).catch(() => {});
 
-  return NextResponse.json({ ok: true, tool });
+  return NextResponse.json({ ok: true });
 }
