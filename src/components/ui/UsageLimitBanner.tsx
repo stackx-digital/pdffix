@@ -20,7 +20,7 @@ export default function UsageLimitBanner({ used, limit, loggedIn }: Props) {
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-red-800 text-sm">You've used your 5 guest uses this month</p>
+            <p className="font-medium text-red-800 text-sm">You've used your {limit} free uses this month</p>
             <p className="text-sm text-red-600 mt-0.5">
               <Link href="/auth/register" className="underline font-medium">Create a free account</Link>{" "}
               for unlimited access, larger file sizes & activity history — no credit card required.
