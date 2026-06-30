@@ -330,7 +330,7 @@ export default function StrikeIcTool() {
       {/* Header */}
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Strike IC</h1>
-        <p className="text-gray-500 text-sm mt-1">Tampal tujuan pada IC untuk elak penyalahgunaan</p>
+        <p className="text-gray-500 text-sm mt-1">Add a purpose stamp on your IC copy to prevent misuse</p>
       </div>
 
       {status && !status.loggedIn && (
@@ -351,8 +351,8 @@ export default function StrikeIcTool() {
               <Upload className="w-7 h-7 text-red-600" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-800">Upload gambar IC atau PDF</p>
-              <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP atau PDF</p>
+              <p className="font-semibold text-gray-800">Upload IC image or PDF</p>
+              <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP or PDF</p>
             </div>
             <input type="file" accept="image/*,.pdf,application/pdf" className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
@@ -361,13 +361,13 @@ export default function StrikeIcTool() {
           {/* Camera button — prominent on mobile */}
           <label className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors bg-white">
             <Camera className="w-5 h-5 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Ambil gambar dari kamera</span>
+            <span className="text-sm font-medium text-gray-700">Take photo with camera</span>
             <input type="file" accept="image/*" capture="environment" className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
           </label>
 
           {/* Privacy note */}
-          <p className="text-center text-xs text-gray-400 mt-4">🔒 Fail tidak diupload — diproses terus dalam browser</p>
+          <p className="text-center text-xs text-gray-400 mt-4">🔒 Your file is never uploaded — processed entirely in your browser</p>
         </div>
 
       ) : (
@@ -385,13 +385,13 @@ export default function StrikeIcTool() {
             {!result && (
               <div className="absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none">
                 <span className="bg-black/50 text-white text-[11px] px-3 py-1 rounded-full">
-                  Tekan &amp; seret stamp untuk ubah kedudukan
+                  Press &amp; drag the stamp to reposition
                 </span>
               </div>
             )}
             {result && (
               <div className="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-                ✓ Stamp berjaya diletakkan
+                ✓ Stamp applied
               </div>
             )}
           </div>
@@ -404,11 +404,11 @@ export default function StrikeIcTool() {
               <button onClick={download}
                 className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors text-sm">
                 <Download className="w-4 h-4" />
-                Download {fileType === "pdf" ? "PDF" : "Gambar"}
+                Download {fileType === "pdf" ? "PDF" : "Image"}
               </button>
               <button onClick={reset}
                 className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm hover:bg-gray-50 transition-colors">
-                <RefreshCw className="w-4 h-4" /> Mula semula
+                <RefreshCw className="w-4 h-4" /> Start over
               </button>
             </div>
 
@@ -436,7 +436,7 @@ export default function StrikeIcTool() {
 
                 {/* Purpose */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tujuan</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Purpose</label>
                   <select
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400 bg-gray-50"
                     value={activeStamp.useCustom ? "__custom__" : activeStamp.purpose}
@@ -446,10 +446,10 @@ export default function StrikeIcTool() {
                     }}
                   >
                     {PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
-                    <option value="__custom__">Lain-lain (taip sendiri)...</option>
+                    <option value="__custom__">Other (type your own)...</option>
                   </select>
                   {activeStamp.useCustom && (
-                    <input type="text" placeholder="Contoh: Untuk pembukaan akaun Maybank sahaja"
+                    <input type="text" placeholder="e.g. For Maybank account opening only"
                       value={activeStamp.customPurpose}
                       onChange={(e) => updateActive({ customPurpose: e.target.value })}
                       className="mt-2 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-gray-50" />
@@ -458,12 +458,12 @@ export default function StrikeIcTool() {
 
                 {/* Colour */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Warna</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Colour</label>
                   <div className="flex gap-2">
                     {([
-                      { value: "red", label: "Merah", cls: "bg-red-600" },
-                      { value: "blue", label: "Biru", cls: "bg-blue-700" },
-                      { value: "black", label: "Hitam", cls: "bg-gray-900" },
+                      { value: "red", label: "Red", cls: "bg-red-600" },
+                      { value: "blue", label: "Blue", cls: "bg-blue-700" },
+                      { value: "black", label: "Black", cls: "bg-gray-900" },
                     ] as const).map((c) => (
                       <button key={c.value} onClick={() => updateActive({ color: c.value })}
                         className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border text-xs font-medium transition-all ${activeStamp.color === c.value ? "border-gray-900 bg-gray-100 shadow-sm" : "border-gray-200 hover:bg-gray-50"}`}>
@@ -478,7 +478,7 @@ export default function StrikeIcTool() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      Saiz: {Math.round(activeStamp.scale * 100)}%
+                      Size: {Math.round(activeStamp.scale * 100)}%
                     </label>
                     <input type="range" min="30" max="200" value={Math.round(activeStamp.scale * 100)}
                       onChange={(e) => updateActive({ scale: Number(e.target.value) / 100 })}
@@ -486,7 +486,7 @@ export default function StrikeIcTool() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      Sudut: {activeStamp.angle}°
+                      Angle: {activeStamp.angle}°
                     </label>
                     <input type="range" min="-60" max="60" value={activeStamp.angle}
                       onChange={(e) => updateActive({ angle: Number(e.target.value) })}
@@ -497,18 +497,18 @@ export default function StrikeIcTool() {
                 {/* Add stamp */}
                 <button onClick={addStamp}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-red-400 hover:text-red-600 transition-colors">
-                  <Plus className="w-3.5 h-3.5" /> Tambah stamp lagi
+                  <Plus className="w-3.5 h-3.5" /> Add another stamp
                 </button>
               </div>
 
               {/* Apply CTA */}
               <button onClick={applyStamp} disabled={processing || limitReached}
                 className="w-full py-3.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors text-sm">
-                {processing ? "Sedang diproses..." : "✓ Letak Stamp & Download"}
+                {processing ? "Processing..." : "✓ Apply Stamp & Download"}
               </button>
 
               <button onClick={reset} className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                Tukar fail
+                Change file
               </button>
             </>
           )}
