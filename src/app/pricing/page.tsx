@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Check, X } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Pricing — Free & Pro Plans | PDFix",
+  description: "PDFix is free to use. All tools — Merge PDF, Compress, Edit, Strike IC and more — available without signup. Upgrade to Pro for unlimited usage.",
+  alternates: { canonical: "https://pdfix.my/pricing" },
+  keywords: ["pdfix pricing", "free pdf tools", "pdf tool malaysia", "merge pdf free", "compress pdf free"],
+};
 
 const FREE_FEATURES = [
   { label: "Edit PDF (text, draw, highlight, signature)", included: true },
