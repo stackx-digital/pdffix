@@ -4,6 +4,7 @@ import WatermarkTool from "@/components/tools/WatermarkTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
+import ToolSeoContent from "@/components/tools/ToolSeoContent";
 
 export const metadata: Metadata = {
   title: "Watermark PDF — Free Online Tool | PDFix",
@@ -26,6 +27,7 @@ export default async function WatermarkPage() {
           </p>
         </div>
         <ToolErrorBoundary toolName="Watermark PDF"><WatermarkTool /></ToolErrorBoundary>
+        <ToolSeoContent steps={["Upload your PDF file.", "Type the watermark text and customise the font size, opacity, and angle.", "Preview the result on the canvas.", "Click 'Apply Watermark' and download."]} faqs={[{q:"Can I use an image as a watermark?", a:"Currently text watermarks are supported. Image watermarks may be added in a future update."},{q:"Can I control the transparency of the watermark?", a:"Yes, adjust the opacity slider to make the watermark more or less visible."},{q:"Will the watermark appear on every page?", a:"Yes, the watermark is applied uniformly across all pages."},{q:"Can the watermark be removed after adding?", a:"Once the PDF is downloaded with the watermark, it cannot be easily removed. Keep the original file as a backup."}]} />
       </main>
       <Footer />
     </div>

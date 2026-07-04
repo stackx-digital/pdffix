@@ -4,6 +4,7 @@ import PdfToImageTool from "@/components/tools/PdfToImageTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
+import ToolSeoContent from "@/components/tools/ToolSeoContent";
 
 export const metadata: Metadata = {
   title: "PDF to Image — Free Online Converter | PDFix",
@@ -26,6 +27,7 @@ export default async function PdfToImagePage() {
           </p>
         </div>
         <ToolErrorBoundary toolName="PDF to Image"><PdfToImageTool /></ToolErrorBoundary>
+        <ToolSeoContent steps={["Upload your PDF file.", "Select the output format: JPG or PNG.", "Choose the image quality or resolution.", "Click 'Convert' and download the images as a ZIP file."]} faqs={[{q:"Is one image produced per PDF page?", a:"Yes, each page of the PDF becomes a separate image file."},{q:"What resolution are the exported images?", a:"Images are rendered at 2× scale for sharpness, giving approximately 144 DPI output."},{q:"Which format should I choose — JPG or PNG?", a:"JPG is smaller and suitable for photos. PNG is lossless and better for text-heavy or line-art pages."},{q:"Can I convert only specific pages?", a:"Currently all pages are converted. Use the Extract Pages tool first to select specific pages."}]} />
       </main>
       <Footer />
     </div>

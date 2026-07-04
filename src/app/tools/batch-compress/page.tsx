@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BatchCompressTool from "@/components/tools/BatchCompressTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
+import ToolSeoContent from "@/components/tools/ToolSeoContent";
 
 export const metadata: Metadata = {
   title: "Batch Compress PDF — Free Online Tool | PDFix",

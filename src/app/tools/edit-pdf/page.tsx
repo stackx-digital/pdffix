@@ -4,6 +4,7 @@ import PdfEditorTool from "@/components/tools/PdfEditorTool";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
+import ToolSeoContent from "@/components/tools/ToolSeoContent";
 
 export const metadata: Metadata = {
   title: "Edit PDF — Free Online PDF Editor | PDFix",

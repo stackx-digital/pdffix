@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PdfFormsTool from "@/components/tools/PdfFormsTool";
 import ToolErrorBoundary from "@/components/tools/ToolErrorBoundary";
+import ToolSeoContent from "@/components/tools/ToolSeoContent";
 
 export const metadata: Metadata = {
   title: "Fill PDF Forms Online — Free Tool | PDFix",
