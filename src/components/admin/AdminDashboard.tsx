@@ -570,22 +570,43 @@ interface RankingRow {
 }
 
 function SeoRankings() {
+  const API_KEY = process.env.NEXT_PUBLIC_PDFIX_API_KEY || "pfx_f2f7289a0aa22aadc6071b9b314c85209da91b11cfea87ad1b3f41c46d289561";
   const [summary, setSummary] = useState<RankingRow[]>([]);
   const [history, setHistory] = useState<RankingRow[]>([]);
   const [selectedKw, setSelectedKw] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/v1/seo/rankings?summary=true").then(r => r.json()).then(d => {
-      setSummary(d.rankings ?? []);
-      setLoading(false);
-    });
+    fetch("/api/v1/seo/rankings?summary=true", {
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      }
+    })
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(d => {
+        setSummary(d.rankings ?? []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load SEO rankings:", err);
+        setLoading(false);
+      });
   }, []);
 
   async function loadHistory(keyword: string) {
     if (selectedKw === keyword) { setSelectedKw(null); setHistory([]); return; }
     setSelectedKw(keyword);
-    const r = await fetch(`/api/v1/seo/rankings?keyword=${encodeURIComponent(keyword)}&limit=30`);
+    const r = await fetch(`/api/v1/seo/rankings?keyword=${encodeURIComponent(keyword)}&limit=30`, {
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
     setHistory(d.rankings ?? []);
   }
