@@ -63,15 +63,6 @@ export default async function HomePage() {
                 View Pricing
               </Link>
             </div>
-
-            <div className="mt-10 flex items-center justify-center gap-2 text-sm text-gray-400">
-              <div className="flex -space-x-2">
-                {["bg-red-400", "bg-orange-400", "bg-amber-400", "bg-rose-400"].map((c, i) => (
-                  <div key={i} className={`w-7 h-7 rounded-full ${c} border-2 border-white`} />
-                ))}
-              </div>
-              <span>Trusted by thousands of users worldwide</span>
-            </div>
           </div>
         </section>
 
