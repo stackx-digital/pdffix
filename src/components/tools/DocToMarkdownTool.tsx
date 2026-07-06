@@ -4,6 +4,9 @@ import { useState, useCallback } from "react";
 import { Upload, Download, Copy, Check, FileText } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 type FileType = "docx" | "pdf" | null;
 
@@ -47,11 +50,8 @@ export default function DocToMarkdownTool() {
         const td = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
         md = td.turndown(result.value);
       } else {
-        const pdfjs = await import("pdfjs-dist");
-        // Disable worker — runs in main thread, works on all browsers including iOS Safari
-        pdfjs.GlobalWorkerOptions.workerSrc = "";
         const bytes = await file.arrayBuffer();
-        const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes) }).promise;
         const parts: string[] = [];
 
         // single pass: collect items per page, track sizes for heading detection
