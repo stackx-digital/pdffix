@@ -48,7 +48,7 @@ export default function DocToMarkdownTool() {
         md = td.turndown(result.value);
       } else {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         const bytes = await file.arrayBuffer();
         const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
         const parts: string[] = [];
