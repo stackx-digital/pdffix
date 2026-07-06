@@ -4,11 +4,126 @@ import { useState, useCallback } from "react";
 import { Upload, Download, Copy, Check, FileText } from "lucide-react";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
-import * as pdfjsLib from "pdfjs-dist";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 type FileType = "docx" | "pdf" | null;
+
+// Pure browser PDF text extractor — no worker, no pdfjs, works on all iOS/Android
+async function extractPdfText(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const raw = new Uint8Array(buf);
+
+  // Decode PDF as latin-1 (preserves byte values)
+  const latin = new TextDecoder("latin1").decode(raw);
+
+  // Decompress FlateDecode streams using DecompressionStream (built into all modern browsers)
+  async function inflate(bytes: Uint8Array): Promise<string> {
+    try {
+      const ds = new DecompressionStream("deflate-raw");
+      const writer = ds.writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+      const chunks: Uint8Array[] = [];
+      const reader = ds.readable.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      const out = new Uint8Array(total);
+      let offset = 0;
+      for (let i = 0; i < chunks.length; i++) { out.set(chunks[i], offset); offset += chunks[i].length; }
+      return new TextDecoder("latin1").decode(out);
+    } catch {
+      return "";
+    }
+  }
+
+  // Extract text tokens from a PDF content stream
+  function parseStream(stream: string): string {
+    const lines: string[] = [];
+    // Match (text) Tj  or  [(text)] TJ  or  (text) '
+    const re = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*(?:Tj|'|")|(\[(?:[^[\]]*(?:\(([^)]*)\)[^[\]]*)*)\])\s*TJ/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(stream)) !== null) {
+      if (m[1] !== undefined) {
+        // Single string
+        lines.push(decodePdfString(m[1]));
+      } else if (m[2]) {
+        // Array — extract all (string) parts
+        const arrRe = /\(([^)\\]*(?:\\.[^)\\]*)*)\)/g;
+        let am: RegExpExecArray | null;
+        const parts: string[] = [];
+        while ((am = arrRe.exec(m[2])) !== null) parts.push(decodePdfString(am[1]));
+        if (parts.length) lines.push(parts.join(""));
+      }
+    }
+    return lines.join(" ").replace(/\s+/g, " ").trim();
+  }
+
+  function decodePdfString(s: string): string {
+    return s
+      .replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t")
+      .replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\")
+      .replace(/\\(\d{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+  }
+
+  // Find all streams and try to extract text
+  const parts: string[] = [];
+  // Match compressed streams
+  const streamRe = /<<[^>]*\/Filter\s*\/FlateDecode[^>]*>>[\r\n]+stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  const promises: Promise<void>[] = [];
+
+  let sm: RegExpExecArray | null;
+  while ((sm = streamRe.exec(latin)) !== null) {
+    const startIdx = sm.index + sm[0].indexOf("stream") + 6;
+    // skip past \r\n after "stream"
+    const nlIdx = latin.indexOf("\n", startIdx) + 1;
+    const endIdx = latin.indexOf("\nendstream", nlIdx);
+    if (endIdx < 0) continue;
+    const compressedStr = latin.slice(nlIdx, endIdx);
+    const compressedBytes = new Uint8Array(compressedStr.length);
+    for (let i = 0; i < compressedStr.length; i++) compressedBytes[i] = compressedStr.charCodeAt(i) & 0xff;
+    promises.push(
+      inflate(compressedBytes).then(decompressed => {
+        if (decompressed && (decompressed.includes(" Tj") || decompressed.includes(" TJ") || decompressed.includes("BT"))) {
+          const text = parseStream(decompressed);
+          if (text) parts.push(text);
+        }
+      })
+    );
+  }
+
+  // Also try uncompressed streams
+  const uncompRe = /<<(?![^>]*\/Filter)[^>]*>>[\r\n]+stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let um: RegExpExecArray | null;
+  while ((um = uncompRe.exec(latin)) !== null) {
+    const streamContent = um[1];
+    if (streamContent && (streamContent.includes(" Tj") || streamContent.includes(" TJ"))) {
+      const text = parseStream(streamContent);
+      if (text) parts.push(text);
+    }
+  }
+
+  await Promise.all(promises);
+
+  if (parts.length === 0) {
+    throw new Error("No extractable text found. This may be a scanned PDF — use the OCR tool instead.");
+  }
+
+  // Convert to markdown — detect headings by line length (short lines = likely headings)
+  const allLines = parts.join("\n\n").split(/\n+/).filter(l => l.trim());
+  const md = allLines.map(line => {
+    const t = line.trim();
+    if (!t) return "";
+    if (t.length < 60 && t === t.toUpperCase() && t.length > 3) return `## ${t}`;
+    if (/^[•\-]\s/.test(t)) return t.replace(/^[•]\s*/, "- ");
+    if (/^\d+\.\s/.test(t)) return t;
+    return t;
+  }).filter(Boolean).join("\n\n");
+
+  return md;
+}
 
 export default function DocToMarkdownTool() {
   const { status, limitReached, checkLimit, recordUsage } = useUsageLimit("doc-to-markdown");
@@ -50,77 +165,7 @@ export default function DocToMarkdownTool() {
         const td = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
         md = td.turndown(result.value);
       } else {
-        const bytes = await file.arrayBuffer();
-        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes) }).promise;
-        const parts: string[] = [];
-
-        // single pass: collect items per page, track sizes for heading detection
-        type PageData = { items: { str: string; height: number; y: number }[] };
-        const pages: PageData[] = [];
-        const allSizes: number[] = [];
-
-        for (let p = 1; p <= doc.numPages; p++) {
-          const page = await doc.getPage(p);
-          const content = await page.getTextContent();
-          const items: PageData["items"] = [];
-          for (let k = 0; k < content.items.length; k++) {
-            const raw = content.items[k] as any;
-            if (!raw || typeof raw.str !== "string" || !raw.str) continue;
-            const h = typeof raw.height === "number" ? raw.height : 0;
-            const y = Array.isArray(raw.transform) ? Math.round(raw.transform[5]) : 0;
-            items.push({ str: raw.str, height: h, y });
-            if (h > 0) allSizes.push(h);
-          }
-          pages.push({ items });
-        }
-
-        const sorted = allSizes.slice().sort((a, b) => a - b);
-        const medianSize = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 12;
-        const h1Threshold = medianSize * 1.8;
-        const h2Threshold = medianSize * 1.3;
-
-        for (let p = 0; p < pages.length; p++) {
-          const { items } = pages[p];
-          const lines: { text: string; height: number }[] = [];
-          let prevY: number | null = null;
-          let lineText = "";
-          let lineHeight = 0;
-
-          for (let k = 0; k < items.length; k++) {
-            const { str, height, y } = items[k];
-            if (prevY !== null && Math.abs(y - prevY) > (lineHeight || medianSize) * 0.5) {
-              if (lineText.trim()) lines.push({ text: lineText.trim(), height: lineHeight });
-              lineText = "";
-              lineHeight = 0;
-            }
-            lineText += (lineText && !lineText.endsWith(" ") ? " " : "") + str;
-            if (height > lineHeight) lineHeight = height;
-            prevY = y;
-          }
-          if (lineText.trim()) lines.push({ text: lineText.trim(), height: lineHeight });
-
-          if (lines.length === 0) continue;
-
-          const pageLines: string[] = [];
-          for (let k = 0; k < lines.length; k++) {
-            const { text, height } = lines[k];
-            if (height >= h1Threshold && text.length < 120) {
-              pageLines.push(`# ${text}`);
-            } else if (height >= h2Threshold && text.length < 120) {
-              pageLines.push(`## ${text}`);
-            } else if (/^[•\-\*]\s/.test(text) || /^\d+\.\s/.test(text)) {
-              pageLines.push(text.replace(/^[•]\s*/, "- "));
-            } else {
-              pageLines.push(text);
-            }
-          }
-          parts.push(pageLines.join("\n\n"));
-        }
-
-        if (parts.length === 0) {
-          throw new Error("This PDF contains no extractable text (it may be a scanned/image PDF). Use the OCR tool instead.");
-        }
-        md = parts.join("\n\n---\n\n");
+        md = await extractPdfText(file);
       }
       await recordUsage(file?.name, file?.size);
       setMarkdown(md);
