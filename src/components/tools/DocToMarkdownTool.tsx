@@ -52,18 +52,72 @@ export default function DocToMarkdownTool() {
         const bytes = await file.arrayBuffer();
         const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
         const parts: string[] = [];
-        for (let i = 1; i <= doc.numPages; i++) {
-          const page = await doc.getPage(i);
+
+        // single pass: collect items per page, track sizes for heading detection
+        type PageData = { items: { str: string; height: number; y: number }[] };
+        const pages: PageData[] = [];
+        const allSizes: number[] = [];
+
+        for (let p = 1; p <= doc.numPages; p++) {
+          const page = await doc.getPage(p);
           const content = await page.getTextContent();
-          const text = content.items
-            .map((item: any) => ("str" in item ? item.str : ""))
-            .join(" ")
-            .replace(/\s+/g, " ")
-            .trim();
-          if (text) parts.push(`## Page ${i}\n\n${text}`);
+          const items: PageData["items"] = [];
+          for (let k = 0; k < content.items.length; k++) {
+            const raw = content.items[k] as any;
+            if (!raw || typeof raw.str !== "string" || !raw.str) continue;
+            const h = typeof raw.height === "number" ? raw.height : 0;
+            const y = Array.isArray(raw.transform) ? Math.round(raw.transform[5]) : 0;
+            items.push({ str: raw.str, height: h, y });
+            if (h > 0) allSizes.push(h);
+          }
+          pages.push({ items });
         }
+
+        const sorted = allSizes.slice().sort((a, b) => a - b);
+        const medianSize = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 12;
+        const h1Threshold = medianSize * 1.8;
+        const h2Threshold = medianSize * 1.3;
+
+        for (let p = 0; p < pages.length; p++) {
+          const { items } = pages[p];
+          const lines: { text: string; height: number }[] = [];
+          let prevY: number | null = null;
+          let lineText = "";
+          let lineHeight = 0;
+
+          for (let k = 0; k < items.length; k++) {
+            const { str, height, y } = items[k];
+            if (prevY !== null && Math.abs(y - prevY) > (lineHeight || medianSize) * 0.5) {
+              if (lineText.trim()) lines.push({ text: lineText.trim(), height: lineHeight });
+              lineText = "";
+              lineHeight = 0;
+            }
+            lineText += (lineText && !lineText.endsWith(" ") ? " " : "") + str;
+            if (height > lineHeight) lineHeight = height;
+            prevY = y;
+          }
+          if (lineText.trim()) lines.push({ text: lineText.trim(), height: lineHeight });
+
+          if (lines.length === 0) continue;
+
+          const pageLines: string[] = [];
+          for (let k = 0; k < lines.length; k++) {
+            const { text, height } = lines[k];
+            if (height >= h1Threshold && text.length < 120) {
+              pageLines.push(`# ${text}`);
+            } else if (height >= h2Threshold && text.length < 120) {
+              pageLines.push(`## ${text}`);
+            } else if (/^[•\-\*]\s/.test(text) || /^\d+\.\s/.test(text)) {
+              pageLines.push(text.replace(/^[•]\s*/, "- "));
+            } else {
+              pageLines.push(text);
+            }
+          }
+          parts.push(pageLines.join("\n\n"));
+        }
+
         if (parts.length === 0) {
-          throw new Error("This PDF contains no extractable text (it may be a scanned/image PDF).");
+          throw new Error("This PDF contains no extractable text (it may be a scanned/image PDF). Use the OCR tool instead.");
         }
         md = parts.join("\n\n---\n\n");
       }
@@ -94,8 +148,16 @@ export default function DocToMarkdownTool() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">DOC / PDF to Markdown</h1>
-      <p className="text-gray-500 mb-8">Convert Word files (.docx) or PDF to Markdown format (.md).</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">PDF / DOC to Markdown</h1>
+      <p className="text-gray-500 mb-2">Convert PDF or Word files to clean Markdown (.md) — ideal for feeding into AI tools like ChatGPT, Claude, or Gemini.</p>
+      <div className="flex items-center gap-2 mb-8">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded-full px-3 py-1">
+          ⚡ Up to 70% fewer tokens vs raw PDF
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-3 py-1">
+          🤖 AI-ready format
+        </span>
+      </div>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
@@ -145,6 +207,23 @@ export default function DocToMarkdownTool() {
 
           {markdown && (
             <div>
+              <div className="flex items-center gap-3 mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">File size</p>
+                  <p className="text-sm font-bold text-gray-800">{(file!.size / 1024).toFixed(0)} KB</p>
+                </div>
+                <div className="text-green-400 text-lg font-bold">→</div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">MD size</p>
+                  <p className="text-sm font-bold text-green-700">{(new Blob([markdown]).size / 1024).toFixed(0)} KB</p>
+                </div>
+                <div className="ml-auto text-center">
+                  <p className="text-xs text-gray-500">Est. tokens saved</p>
+                  <p className="text-sm font-bold text-green-700">
+                    ~{Math.max(0, Math.round((file!.size - new Blob([markdown]).size) / 4 / 1000))}k tokens
+                  </p>
+                </div>
+              </div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-gray-700">Markdown Output</p>
                 <div className="flex gap-2">
