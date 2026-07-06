@@ -53,68 +53,64 @@ export default function DocToMarkdownTool() {
         const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
         const parts: string[] = [];
 
-        // collect all font sizes across doc to determine heading thresholds
+        // single pass: collect items per page, track sizes for heading detection
+        type PageData = { items: { str: string; height: number; y: number }[] };
+        const pages: PageData[] = [];
         const allSizes: number[] = [];
-        const pageContents: any[][] = [];
-        for (let i = 1; i <= doc.numPages; i++) {
-          const page = await doc.getPage(i);
+
+        for (let p = 1; p <= doc.numPages; p++) {
+          const page = await doc.getPage(p);
           const content = await page.getTextContent();
-          pageContents.push(content.items);
-          for (const item of content.items) {
-            if ("str" in item && (item as any).str.trim() && (item as any).height > 0) {
-              allSizes.push((item as any).height);
-            }
+          const items: PageData["items"] = [];
+          for (let k = 0; k < content.items.length; k++) {
+            const raw = content.items[k] as any;
+            if (!raw || typeof raw.str !== "string" || !raw.str) continue;
+            const h = typeof raw.height === "number" ? raw.height : 0;
+            const y = Array.isArray(raw.transform) ? Math.round(raw.transform[5]) : 0;
+            items.push({ str: raw.str, height: h, y });
+            if (h > 0) allSizes.push(h);
           }
+          pages.push({ items });
         }
 
-        const medianSize = allSizes.length
-          ? [...allSizes].sort((a, b) => a - b)[Math.floor(allSizes.length / 2)]
-          : 12;
+        const sorted = allSizes.slice().sort((a, b) => a - b);
+        const medianSize = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 12;
         const h1Threshold = medianSize * 1.8;
         const h2Threshold = medianSize * 1.3;
 
-        for (let i = 0; i < pageContents.length; i++) {
-          const items = pageContents[i];
-          const lines: string[] = [];
+        for (let p = 0; p < pages.length; p++) {
+          const { items } = pages[p];
+          const lines: { text: string; height: number }[] = [];
           let prevY: number | null = null;
-          let lineBuffer = "";
+          let lineText = "";
+          let lineHeight = 0;
 
-          for (const raw of items) {
-            const item = raw as any;
-            if (!("str" in item) || !item.str) continue;
-            const text = item.str;
-            const y = Math.round(item.transform?.[5] ?? 0);
-            const size = item.height ?? medianSize;
-
-            // new line when Y position changes significantly
-            if (prevY !== null && Math.abs(y - prevY) > size * 0.5) {
-              if (lineBuffer.trim()) lines.push(lineBuffer.trim());
-              lineBuffer = "";
+          for (let k = 0; k < items.length; k++) {
+            const { str, height, y } = items[k];
+            if (prevY !== null && Math.abs(y - prevY) > (lineHeight || medianSize) * 0.5) {
+              if (lineText.trim()) lines.push({ text: lineText.trim(), height: lineHeight });
+              lineText = "";
+              lineHeight = 0;
             }
-            lineBuffer += (lineBuffer && !lineBuffer.endsWith(" ") ? " " : "") + text;
+            lineText += (lineText && !lineText.endsWith(" ") ? " " : "") + str;
+            if (height > lineHeight) lineHeight = height;
             prevY = y;
           }
-          if (lineBuffer.trim()) lines.push(lineBuffer.trim());
+          if (lineText.trim()) lines.push({ text: lineText.trim(), height: lineHeight });
 
           if (lines.length === 0) continue;
 
-          // build markdown for this page
           const pageLines: string[] = [];
-          for (const line of lines) {
-            // try to get font size for this line by matching first item
-            const matchItem = pageContents[i].find(
-              (r: any) => "str" in r && r.str && line.startsWith(r.str.trim())
-            ) as any;
-            const size = matchItem?.height ?? medianSize;
-
-            if (size >= h1Threshold && line.length < 120) {
-              pageLines.push(`# ${line}`);
-            } else if (size >= h2Threshold && line.length < 120) {
-              pageLines.push(`## ${line}`);
-            } else if (/^[•\-\*]\s/.test(line) || /^\d+\.\s/.test(line)) {
-              pageLines.push(line.replace(/^[•]\s*/, "- "));
+          for (let k = 0; k < lines.length; k++) {
+            const { text, height } = lines[k];
+            if (height >= h1Threshold && text.length < 120) {
+              pageLines.push(`# ${text}`);
+            } else if (height >= h2Threshold && text.length < 120) {
+              pageLines.push(`## ${text}`);
+            } else if (/^[•\-\*]\s/.test(text) || /^\d+\.\s/.test(text)) {
+              pageLines.push(text.replace(/^[•]\s*/, "- "));
             } else {
-              pageLines.push(line);
+              pageLines.push(text);
             }
           }
           parts.push(pageLines.join("\n\n"));
