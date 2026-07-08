@@ -9,18 +9,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
-    { url: BASE, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${BASE}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: BASE, lastModified: now, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE}/pricing`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE}/privacy-policy`, changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE}/terms`, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${BASE}/auth/login`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}/auth/register`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}/privacy-policy`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}/terms`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
   ];
 
-  // Tool pages
+  // Tool pages — derived from TOOLS registry so new tools are auto-included
   const toolPages: MetadataRoute.Sitemap = TOOLS.map((tool) => ({
     url: `${BASE}${tool.href}`,
-    changeFrequency: "weekly",
-    priority: 0.9,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
   }));
 
   // Blog posts from Supabase (using service role — no cookies needed at build time)
@@ -41,8 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       blogPages = posts.map((post) => ({
         url: `${BASE}/blog/${post.slug}`,
         lastModified: post.updated_at ?? post.published_at ?? now,
-        changeFrequency: "monthly" as const,
-        priority: 0.7,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
       }));
     }
   } catch {}
