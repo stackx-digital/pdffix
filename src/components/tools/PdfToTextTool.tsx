@@ -31,7 +31,7 @@ export default function PdfToTextTool() {
     setError(null);
     try {
       const pdfjs = await import("pdfjs-dist");
-      pdfjs.GlobalWorkerOptions.workerSrc = "";
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
       const bytes = await file.arrayBuffer();
       const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
