@@ -759,7 +759,7 @@ export default function PdfEditorTool() {
 
   // ── EDITOR ──
   return (
-    <div className="flex flex-col h-full bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+    <div className="flex flex-col bg-gray-100 rounded-xl overflow-hidden border border-gray-200" style={{ height: "calc(100vh - 140px)", minHeight: 500 }}>
 
       {/* ── Toolbar row 1 ── */}
       <div className="flex items-center gap-0.5 px-2 py-1 bg-white border-b border-gray-200 overflow-x-auto scrollbar-none flex-nowrap min-w-0">
