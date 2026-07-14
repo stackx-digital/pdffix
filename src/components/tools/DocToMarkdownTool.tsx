@@ -8,10 +8,9 @@ import * as pdfjsLib from "pdfjs-dist";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-function isIosSafari(): boolean {
+function isMobileBrowser(): boolean {
   if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  return /iP(hone|ad|od)/.test(ua) && /WebKit/.test(ua) && !/CriOS|FxiOS|OPiOS/.test(ua);
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
 type FileType = "docx" | "pdf" | null;
@@ -56,8 +55,8 @@ export default function DocToMarkdownTool() {
         const td = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
         md = td.turndown(result.value);
       } else {
-        if (isIosSafari()) {
-          throw new Error("PDF conversion is not supported on Safari iOS. Please use Chrome on desktop or Android for PDF files. DOCX files work on all devices.");
+        if (isMobileBrowser()) {
+          throw new Error("PDF conversion is not supported on mobile browsers. Please use Chrome on desktop for PDF files. DOCX files work on all devices.");
         }
         const bytes = await file.arrayBuffer();
         const doc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes) }).promise;
@@ -152,9 +151,9 @@ export default function DocToMarkdownTool() {
         </span>
       </div>
 
-      {isIosSafari() && (
+      {isMobileBrowser() && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <strong>Safari iOS not supported for PDF.</strong> Please use Chrome (desktop/Android) for PDF files. DOCX files work on all devices.
+          <strong>PDF not supported on mobile.</strong> Please use Chrome on desktop for PDF files. DOCX files work on all devices.
         </div>
       )}
 
