@@ -95,6 +95,7 @@ export default function PdfEditorTool() {
   const fabricRef = useRef<any>(null);
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const pageStates = useRef<Record<number, string>>({});
+  const prevPage = useRef<number>(1);
 
   const activeToolRef = useRef<ToolType>("select");
   const colorRef = useRef("#000000");
@@ -125,6 +126,7 @@ export default function PdfEditorTool() {
     setCurrentPage(1);
     setTotalPages(0);
     pageStates.current = {};
+    prevPage.current = 1;
     undoStack.current = [];
     redoStack.current = [];
     setCanUndo(false);
@@ -201,11 +203,13 @@ export default function PdfEditorTool() {
 
         if (fabricRef.current) {
           try {
-            pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+            // Save to the PREVIOUS page key, not currentPage (which is already the new page)
+            pageStates.current[prevPage.current] = JSON.stringify(fabricRef.current.toJSON());
             fabricRef.current.dispose();
           } catch {}
           fabricRef.current = null;
         }
+        prevPage.current = currentPage;
 
         fabricContainer.innerHTML = "";
         const newCanvas = document.createElement("canvas");
