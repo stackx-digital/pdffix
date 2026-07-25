@@ -56,75 +56,87 @@ export default async function PricingPage() {
 
       <main className="flex-1 max-w-5xl mx-auto px-4 py-16 w-full">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h1>
-          <p className="text-gray-500 mt-2">15+ free PDF tools. Upgrade for advanced features.</p>
+          <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-3">Pricing</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Simple, Transparent Pricing</h1>
+          <p className="text-gray-500 mt-2 text-lg">22 free PDF tools. Upgrade for advanced features.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-3xl mx-auto">
           {/* Free */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Free</h2>
-            <p className="text-sm text-gray-500 mt-1">For everyone</p>
-            <div className="mt-4 mb-6">
-              <span className="text-4xl font-bold text-gray-900">RM0</span>
-              <span className="text-gray-500">/month</span>
+          <div className="bg-white border border-gray-200 rounded-2xl p-7 flex flex-col">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Free</h2>
+              <p className="text-sm text-gray-500 mt-1">Untuk semua orang</p>
             </div>
-            <ul className="space-y-2.5 mb-8">
+            <div className="mt-5 mb-6">
+              <span className="text-5xl font-extrabold text-gray-900">RM0</span>
+              <span className="text-gray-400 text-sm ml-1">/bulan</span>
+            </div>
+            <ul className="space-y-2.5 mb-8 flex-1">
               {FREE_FEATURES.map((f) => (
-                <li key={f.label} className={`flex items-start gap-2 text-sm ${f.included ? "text-gray-700" : "text-gray-400"}`}>
+                <li key={f.label} className={`flex items-start gap-2.5 text-sm ${f.included ? "text-gray-700" : "text-gray-350 line-through decoration-gray-300"}`}>
                   {f.included
                     ? <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                     : <X className="w-4 h-4 text-gray-300 mt-0.5 shrink-0" />
                   }
-                  {f.label}
+                  <span className={f.included ? "" : "text-gray-400"}>{f.label}</span>
                 </li>
               ))}
             </ul>
             <Link
               href={user ? "/dashboard" : "/auth/register"}
-              className="block text-center py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="block text-center py-3 border-2 border-gray-200 rounded-xl text-sm font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
             >
-              {user ? "Dashboard" : "Sign Up Free"}
+              {user ? "Pergi ke Dashboard" : "Daftar Percuma"}
             </Link>
           </div>
 
           {/* Pro */}
-          <div className="bg-red-600 text-white rounded-xl p-6 relative">
-            <span className="absolute top-4 right-4 text-xs bg-white text-red-600 px-2 py-0.5 rounded-full font-medium">
-              Popular
-            </span>
-            <h2 className="text-lg font-semibold">Pro</h2>
-            <p className="text-sm text-red-200 mt-1">For professionals & businesses</p>
-            <div className="mt-4 mb-6">
-              <span className="text-4xl font-bold">RM19</span>
-              <span className="text-red-200">/month</span>
+          <div className="bg-gradient-to-br from-red-600 to-red-700 text-white rounded-2xl p-7 relative flex flex-col shadow-xl shadow-red-200">
+            <div className="absolute -top-3 right-6">
+              <span className="bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                ⭐ POPULAR
+              </span>
             </div>
-            <ul className="space-y-2.5 mb-8">
-              {PRO_FEATURES.map((f) => (
-                <li key={f.label} className="flex items-start gap-2 text-sm text-red-50">
-                  <Check className="w-4 h-4 text-white mt-0.5 shrink-0" />
+            <div>
+              <h2 className="text-xl font-bold">Pro</h2>
+              <p className="text-sm text-red-200 mt-1">Untuk profesional & perniagaan</p>
+            </div>
+            <div className="mt-5 mb-6">
+              <span className="text-5xl font-extrabold">RM19</span>
+              <span className="text-red-200 text-sm ml-1">/bulan</span>
+              <p className="text-red-300 text-xs mt-1">Bayaran bulanan · Batal bila-bila masa</p>
+            </div>
+            <p className="text-red-100 text-sm mb-4 pb-4 border-b border-red-500/50">
+              Semua yang ada dalam Free, ditambah:
+            </p>
+            <ul className="space-y-2.5 mb-8 flex-1">
+              {PRO_FEATURES.slice(1).map((f) => (
+                <li key={f.label} className="flex items-start gap-2.5 text-sm text-white">
+                  <Check className="w-4 h-4 text-red-200 mt-0.5 shrink-0" />
                   {f.label}
                 </li>
               ))}
             </ul>
             <Link
               href={user ? "/api/subscribe/toyyibpay" : "/auth/register?next=/pricing"}
-              className="block text-center py-2.5 bg-white text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50"
+              className="block text-center py-3 bg-white text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 transition-colors shadow-lg"
             >
-              Subscribe Now
+              {user ? "Naik Taraf Sekarang →" : "Cuba Pro Sekarang →"}
             </Link>
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-sm text-gray-600">
-            💡 All processing is done <strong>100% in your browser</strong> — your files are never sent to any server.
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-center">
+            <p className="text-sm text-blue-700">
+              🔒 Semua fail diproses <strong>100% dalam browser anda</strong> — tiada fail dihantar ke mana-mana server.
+            </p>
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-4">
+            Pembayaran selamat melalui ToyyibPay · Batal bila-bila masa · Tiada kontrak
           </p>
         </div>
-
-        <p className="text-center text-sm text-gray-400 mt-6">
-          Secure payment via ToyyibPay · Cancel anytime · No contracts
-        </p>
       </main>
 
       <Footer />
