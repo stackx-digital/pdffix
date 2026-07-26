@@ -18,7 +18,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-3">
               <img src="/logo.svg" alt="PDFix" className="w-7 h-7" />
-              <span className="font-bold text-red-600">PDFix</span>
+              <span className="font-bold"><span className="text-gray-800">PDF</span><span className="text-red-600">ix</span></span>
             </Link>
             <p className="text-xs text-gray-500 leading-relaxed">
               Free, secure, and private PDF tools. Your files never leave your device.

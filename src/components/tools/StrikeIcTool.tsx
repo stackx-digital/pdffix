@@ -410,7 +410,7 @@ export default function StrikeIcTool() {
       setFileType("pdf");
       try {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
         const bytes = new Uint8Array(await f.arrayBuffer());
         setPdfBytes(bytes);
         const doc = await pdfjs.getDocument({ data: bytes.slice() }).promise;
@@ -573,7 +573,7 @@ export default function StrikeIcTool() {
     try {
       if (fileType === "pdf" && pdfBytes) {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
         const { PDFDocument } = await import("pdf-lib");
         const pdfjsDoc = await pdfjs.getDocument({ data: pdfBytes.slice() }).promise;
         const outPdf = await PDFDocument.create();

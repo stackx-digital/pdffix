@@ -3,13 +3,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import ToolCard from "@/components/ui/ToolCard";
+import ToolsGrid from "@/components/ui/ToolsGrid";
 import Faq from "@/components/ui/Faq";
 import ComparisonTable from "@/components/ui/ComparisonTable";
 import HowItWorks from "@/components/ui/HowItWorks";
 import StatsBar from "@/components/ui/StatsBar";
 import Testimonials from "@/components/ui/Testimonials";
-import { TOOLS } from "@/types";
 
 export const metadata: Metadata = {
   title: "PDFix — Free PDF Editor, Compress, Merge & Convert PDF Online",
@@ -94,17 +93,15 @@ export default async function HomePage() {
             <div>
               <p className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-2">PDF Tools</p>
               <h2 className="text-3xl font-bold text-gray-900">Everything You Need</h2>
-              <p className="text-gray-500 mt-1">20+ free tools. No installation required.</p>
+              <p className="text-gray-500 mt-1">22 free tools. No installation. No upload.</p>
             </div>
-            <Link href="/auth/register" className="shrink-0 text-sm px-5 py-2.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all shadow-md shadow-red-100">
-              Sign Up Free
-            </Link>
+            {!user && (
+              <Link href="/auth/register" className="shrink-0 text-sm px-5 py-2.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all shadow-md shadow-red-100">
+                Sign Up Free
+              </Link>
+            )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {TOOLS.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} isPro={true} />
-            ))}
-          </div>
+          <ToolsGrid />
         </section>
 
         <Testimonials />
