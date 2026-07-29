@@ -71,9 +71,7 @@ export default function OcrImageTool() {
     try {
       setOcrStatus(`Loading OCR engine (${LANGUAGES.find((l) => l.value === lang)?.label})…`);
 
-      const worker = await createWorker(lang, 1, {
-        workerBlobURL: false,
-      } as any);
+      const worker = await createWorker(lang, 1, {});
 
       const out: ImageResult[] = [];
 
