@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createWorker } from "tesseract.js";
-import { Image as ImageIcon, Copy, Check, Download, Upload, X, ScanText } from "lucide-react";
+import { Image as ImageIcon, Copy, Check, Download, X, ScanText, AlertCircle } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import UsageLimitBanner from "@/components/ui/UsageLimitBanner";
@@ -34,21 +34,28 @@ export default function OcrImageTool() {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<ImageResult[]>([]);
   const [copied, setCopied] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function addFiles(incoming: FileList | null) {
     if (!incoming) return;
     const valid = Array.from(incoming).filter((f) => f.type.startsWith("image/"));
+    if (valid.length === 0) {
+      setError("Sila pilih fail gambar (JPG, PNG, WebP).");
+      return;
+    }
     setFiles((prev) => {
       const names = new Set(prev.map((f) => f.name));
       return [...prev, ...valid.filter((f) => !names.has(f.name))];
     });
     setResults([]);
+    setError(null);
   }
 
   function removeFile(i: number) {
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
     setResults([]);
+    setError(null);
   }
 
   async function runOcr() {
@@ -59,22 +66,27 @@ export default function OcrImageTool() {
     setProcessing(true);
     setResults([]);
     setProgress(0);
+    setError(null);
 
     try {
       setOcrStatus(`Loading OCR engine (${LANGUAGES.find((l) => l.value === lang)?.label})…`);
-      const worker = await createWorker(lang, 1, {});
+
+      const worker = await createWorker(lang, 1, {
+        workerBlobURL: false,
+      } as any);
 
       const out: ImageResult[] = [];
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setOcrStatus(`Processing ${file.name} (${i + 1}/${files.length})…`);
-        const url = URL.createObjectURL(file);
-        const { data } = await worker.recognize(url);
-        URL.revokeObjectURL(url);
+
+        const previewUrl = URL.createObjectURL(file);
+        const { data } = await worker.recognize(previewUrl);
 
         out.push({
           name: file.name,
-          preview: URL.createObjectURL(file),
+          preview: previewUrl,
           text: data.text.trim(),
           confidence: Math.round(data.confidence),
         });
@@ -85,8 +97,10 @@ export default function OcrImageTool() {
       await recordUsage(files[0]?.name, files[0]?.size);
       setResults(out);
       setOcrStatus("");
-    } catch {
-      setOcrStatus("Error during OCR. Please try again.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`OCR gagal: ${msg}. Cuba semula atau guna gambar yang lebih jelas.`);
+      setOcrStatus("");
     }
 
     setProcessing(false);
@@ -119,17 +133,23 @@ export default function OcrImageTool() {
     URL.revokeObjectURL(url);
   }
 
-  const allText = results.map((r) => r.text).join("\n\n");
-
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">OCR Image</h1>
       <p className="text-gray-500 mb-8">
-        Extract text from images — resit, IC, dokumen, screenshot. Supports JPG, PNG, WebP. Runs in your browser, nothing uploaded.
+        Extract text dari gambar — resit, IC, dokumen, screenshot. Sokong JPG, PNG, WebP. Runs dalam browser, tiada upload.
       </p>
 
       {status && !status.loggedIn && (
         <UsageLimitBanner used={status.used} limit={status.limit!} loggedIn={status.loggedIn} />
+      )}
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-5 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
 
       {/* Drop zone */}
@@ -141,7 +161,7 @@ export default function OcrImageTool() {
         <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center mb-3">
           <ImageIcon className="w-6 h-6 text-red-500" />
         </div>
-        <span className="font-medium text-gray-700">Click or drag images here</span>
+        <span className="font-medium text-gray-700">Click atau drag gambar ke sini</span>
         <span className="text-sm text-gray-400 mt-1">JPG, PNG, WebP, BMP, TIFF — boleh pilih banyak sekaligus</span>
         <input ref={inputRef} type="file" accept={ACCEPT} multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
       </label>
@@ -166,12 +186,14 @@ export default function OcrImageTool() {
                 )}
               </div>
             ))}
-            <button
-              onClick={() => inputRef.current?.click()}
-              className="w-full py-2 text-sm text-red-600 border border-dashed border-red-200 rounded-xl hover:bg-red-50"
-            >
-              + Tambah gambar lagi
-            </button>
+            {!processing && (
+              <button
+                onClick={() => inputRef.current?.click()}
+                className="w-full py-2 text-sm text-red-600 border border-dashed border-red-200 rounded-xl hover:bg-red-50"
+              >
+                + Tambah gambar lagi
+              </button>
+            )}
           </div>
 
           {/* Language selector */}
@@ -182,6 +204,7 @@ export default function OcrImageTool() {
                 <button
                   key={l.value}
                   onClick={() => setLang(l.value)}
+                  disabled={processing}
                   className={`py-2 px-3 text-sm rounded-lg border transition-colors ${
                     lang === l.value ? "bg-red-600 text-white border-red-600" : "border-gray-200 hover:bg-gray-50"
                   }`}
@@ -202,7 +225,7 @@ export default function OcrImageTool() {
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-red-500 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
               </div>
-              <p className="text-xs text-gray-400">Sedang proses… sila tunggu.</p>
+              <p className="text-xs text-gray-400">Sedang proses… sila tunggu. OCR mungkin ambil masa 10–30 saat.</p>
             </div>
           )}
 
@@ -232,12 +255,13 @@ export default function OcrImageTool() {
 
               {results.map((r, i) => (
                 <div key={r.name} className="border border-gray-200 rounded-xl overflow-hidden">
-                  {/* Image preview + meta */}
                   <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100">
                     <img src={r.preview} alt="" className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{r.name}</p>
-                      <p className="text-xs text-gray-400">Confidence: {r.confidence}%</p>
+                      <p className={`text-xs ${r.confidence > 70 ? "text-green-600" : r.confidence > 40 ? "text-amber-600" : "text-red-500"}`}>
+                        Confidence: {r.confidence}%{r.confidence < 50 ? " — cuba gambar lebih jelas" : ""}
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -256,7 +280,6 @@ export default function OcrImageTool() {
                     </div>
                   </div>
 
-                  {/* Extracted text */}
                   {r.text ? (
                     <textarea
                       readOnly
@@ -265,13 +288,15 @@ export default function OcrImageTool() {
                       className="w-full px-4 py-3 text-sm font-mono bg-white resize-y focus:outline-none"
                     />
                   ) : (
-                    <p className="px-4 py-6 text-sm text-gray-400 text-center">Tiada text yang dapat dikesan dalam gambar ini.</p>
+                    <p className="px-4 py-6 text-sm text-gray-400 text-center">
+                      Tiada text yang dapat dikesan. Cuba gambar resolusi lebih tinggi.
+                    </p>
                   )}
                 </div>
               ))}
 
               <button
-                onClick={() => { setResults([]); setProgress(0); }}
+                onClick={() => { setResults([]); setProgress(0); setError(null); }}
                 className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl"
               >
                 Cuba lagi / gambar baru
@@ -282,11 +307,13 @@ export default function OcrImageTool() {
       )}
 
       <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-        <p className="text-sm text-blue-700 font-medium mb-1">ℹ️ Maklumat OCR</p>
-        <p className="text-xs text-blue-600">
-          OCR menggunakan Tesseract.js — berjalan 100% dalam browser anda tanpa upload ke mana-mana server.
-          Ketepatan bergantung pada kualiti gambar. Untuk hasil terbaik, guna gambar yang terang dan teks yang jelas.
-        </p>
+        <p className="text-sm text-blue-700 font-medium mb-1">ℹ️ Tips untuk hasil terbaik</p>
+        <ul className="text-xs text-blue-600 space-y-1 list-disc list-inside">
+          <li>Guna gambar resolusi tinggi (sekurang-kurangnya 150 DPI)</li>
+          <li>Pastikan teks jelas, terang, dan tidak kabur</li>
+          <li>Pilih bahasa yang betul — English untuk resit bank</li>
+          <li>OCR berjalan dalam browser — mungkin ambil masa 10–30 saat</li>
+        </ul>
       </div>
     </div>
   );
