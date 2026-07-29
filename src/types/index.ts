@@ -79,6 +79,15 @@ export const TOOLS: Tool[] = [
     category: "edit",
   },
   {
+    id: "ocr-image",
+    name: "OCR Image",
+    description: "Extract text from JPG/PNG images — resit, IC, screenshot, dokumen.",
+    icon: "Image",
+    href: "/tools/ocr-image",
+    proOnly: false,
+    category: "convert",
+  },
+  {
     id: "delete-page",
     name: "Delete PDF Pages",
     description: "Remove specific pages from your PDF file.",
