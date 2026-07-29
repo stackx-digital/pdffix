@@ -13,7 +13,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://unpkg.com https://cdn.jsdelivr.net https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://*.bing.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://unpkg.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://api.resend.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://*.bing.com",
       "worker-src 'self' blob: https://cdn.jsdelivr.net",
       "frame-src 'none'",
       "object-src 'none'",

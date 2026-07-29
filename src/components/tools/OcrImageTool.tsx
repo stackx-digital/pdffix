@@ -71,7 +71,11 @@ export default function OcrImageTool() {
     try {
       setOcrStatus(`Loading OCR engine (${LANGUAGES.find((l) => l.value === lang)?.label})…`);
 
-      const worker = await createWorker(lang, 1, {});
+      const worker = await createWorker(lang, 1, {
+        workerPath: "/tesseract/worker.min.js",
+        corePath: "/tesseract/tesseract-core-simd-lstm.wasm",
+        langPath: "https://tessdata.projectnaptha.com/4.0.0",
+      } as any);
 
       const out: ImageResult[] = [];
 
