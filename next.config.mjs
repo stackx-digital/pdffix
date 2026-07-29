@@ -24,6 +24,13 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      { source: "/developer", destination: "/developers", permanent: true },
+      { source: "/api-docs", destination: "/developers", permanent: true },
+      { source: "/docs", destination: "/developers", permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
