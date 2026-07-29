@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
     // Deduplicate: keep only the most recent entry per keyword
     const seen = new Set<string>();
-    const latest = (data ?? []).filter((r) => {
+    const latest = (data ?? []).filter((r: any) => {
       if (seen.has(r.keyword)) return false;
       seen.add(r.keyword);
       return true;
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     checked_at: e.checked_at ?? new Date().toISOString().slice(0, 10),
   }));
 
-  const missing = rows.filter((r) => !r.keyword || !r.url);
+  const missing = rows.filter((r: any) => !r.keyword || !r.url);
   if (missing.length) {
     return NextResponse.json({ error: "Each entry requires keyword and url" }, { status: 422 });
   }
