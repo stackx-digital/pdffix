@@ -97,6 +97,7 @@ export default function Navbar({ user }: NavbarProps) {
             )}
           </div>
           <Link href="/pricing" className="px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Pricing</Link>
+          <Link href="/developers" className="px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">API</Link>
           <Link href="/blog" className="px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Blog</Link>
         </nav>
 
@@ -165,6 +166,7 @@ export default function Navbar({ user }: NavbarProps) {
           {/* Nav links */}
           <div className="px-4 pt-3 pb-1 flex gap-2">
             <Link href="/pricing" className="flex-1 text-center py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg font-medium">Pricing</Link>
+            <Link href="/developers" className="flex-1 text-center py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg font-medium">API</Link>
             <Link href="/blog" className="flex-1 text-center py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg font-medium">Blog</Link>
           </div>
 

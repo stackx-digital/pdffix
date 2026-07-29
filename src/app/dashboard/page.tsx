@@ -6,7 +6,7 @@ import Footer from "@/components/layout/Footer";
 import ToolCard from "@/components/ui/ToolCard";
 import { TOOLS } from "@/types";
 import { formatBytes } from "@/lib/utils";
-import { Clock, FileText, Star } from "lucide-react";
+import { Clock, FileText, Star, Key } from "lucide-react";
 
 interface UsageRow {
   id: string;
@@ -90,6 +90,23 @@ export default async function DashboardPage() {
               <Star className="w-4 h-4" /> Upgrade to Pro
             </Link>
           )}
+        </div>
+
+        {/* API Keys shortcut */}
+        <div className="mb-8">
+          <Link
+            href="/dashboard/api-keys"
+            className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-red-200 hover:shadow-sm transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+              <Key className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">API Keys</p>
+              <p className="text-xs text-gray-500">Generate keys to call the PDFix REST API from your own apps.</p>
+            </div>
+            <span className="ml-auto text-xs text-red-600 font-semibold group-hover:underline">Manage →</span>
+          </Link>
         </div>
 
         {/* Recent Activity */}
