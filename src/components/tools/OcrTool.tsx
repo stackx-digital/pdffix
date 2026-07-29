@@ -63,12 +63,10 @@ export default function OcrTool() {
 
       setOcrStatus(`Loading OCR engine (${LANGUAGES.find((l) => l.value === lang)?.label})...`);
       const worker = await createWorker(lang, 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            // per-page progress handled below
-          }
-        },
-      });
+        workerPath: "/tesseract/worker.min.js",
+        corePath: "/tesseract/tesseract-core-simd-lstm.wasm",
+        langPath: "https://tessdata.projectnaptha.com/4.0.0",
+      } as any);
 
       for (let i = 1; i <= totalPages; i++) {
         setOcrStatus(`Processing page ${i} / ${totalPages}...`);
