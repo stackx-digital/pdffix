@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     key_prefix: prefix,
     monthly_calls: 0,
     calls_reset_at: today,
-  });
+  } as any);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

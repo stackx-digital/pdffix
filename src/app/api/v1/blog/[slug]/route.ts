@@ -49,7 +49,7 @@ export async function PUT(req: Request, { params }: Props) {
 
   const { data, error } = await adminClient
     .from("blog_posts")
-    .update(updates)
+    .update(updates as any)
     .eq("slug", slug)
     .select()
     .single();
@@ -78,7 +78,7 @@ export async function PATCH(req: Request, { params }: Props) {
 
   const { data, error } = await adminClient
     .from("blog_posts")
-    .update(updates)
+    .update(updates as any)
     .eq("slug", slug)
     .select()
     .single();
