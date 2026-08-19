@@ -268,7 +268,7 @@ export default function PdfEditorTool() {
         setEditingText(null);
 
         if (fabricRef.current) {
-          try { pageStates.current[prevPage.current] = JSON.stringify(fabricRef.current.toJSON()); fabricRef.current.dispose(); } catch {}
+          try { pageStates.current[prevPage.current] = JSON.stringify({ fabricJson: fabricRef.current.toJSON(), scale }); fabricRef.current.dispose(); } catch {}
           fabricRef.current = null;
         }
         prevPage.current = currentPage;
@@ -285,7 +285,9 @@ export default function PdfEditorTool() {
         });
         fabricRef.current = fc;
         if (pageStates.current[currentPage]) {
-          await new Promise<void>(res => { fc.loadFromJSON(JSON.parse(pageStates.current[currentPage]), () => { fc.renderAll(); res(); }); });
+          const stored = JSON.parse(pageStates.current[currentPage]);
+          const fabricJson = stored.fabricJson ?? stored;
+          await new Promise<void>(res => { fc.loadFromJSON(fabricJson, () => { fc.renderAll(); res(); }); });
         }
         applyTool(fc, activeToolRef.current, colorRef.current, fontSizeRef.current);
 
@@ -612,23 +614,26 @@ export default function PdfEditorTool() {
   function changePage(newPage: number) {
     const p = Math.max(1, Math.min(totalPages, newPage));
     if (p === currentPage) return;
-    if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+    if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify({ fabricJson: fabricRef.current.toJSON(), scale });
     setCurrentPage(p);
   }
 
   async function savePdf() {
     if (!fileBytes.current || !pdfDoc) return;
     const allowed = await checkLimit(); if (!allowed) return;
-    if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify(fabricRef.current.toJSON());
+    if (fabricRef.current) pageStates.current[currentPage] = JSON.stringify({ fabricJson: fabricRef.current.toJSON(), scale });
     setSaving(true);
     try {
       const pdfLibDoc = await PDFDocument.load(fileBytes.current);
       const { fabric } = await import("fabric");
       for (const [pgStr, stateJson] of Object.entries(pageStates.current)) {
-        const pgNum = Number(pgStr); const state = JSON.parse(stateJson);
+        const pgNum = Number(pgStr);
+        const stored = JSON.parse(stateJson);
+        const state = stored.fabricJson ?? stored;
+        const savedScale = stored.scale ?? scale;
         if (!state.objects?.length) continue;
         const pdfPage = await pdfDoc.getPage(pgNum);
-        const vp = pdfPage.getViewport({ scale });
+        const vp = pdfPage.getViewport({ scale: savedScale });
         const el = document.createElement("canvas"); el.width = vp.width; el.height = vp.height;
         const tempFc = new fabric.StaticCanvas(el, { width: vp.width, height: vp.height });
         await new Promise<void>(res => { tempFc.loadFromJSON(state, () => { tempFc.renderAll(); res(); }); });
