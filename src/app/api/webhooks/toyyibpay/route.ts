@@ -8,6 +8,36 @@ function adminClient() {
   );
 }
 
+const TOYYIBPAY_BASE = process.env.TOYYIBPAY_BASE_URL ?? "https://toyyibpay.com";
+const SECRET_KEY = process.env.TOYYIBPAY_SECRET_KEY ?? "";
+
+// The webhook body (status, billcode, refno, amount, ...) is posted by the
+// caller's browser/server with no signature, and the bill code itself is not
+// secret (it is visible in the redirect URL the user's browser is sent to).
+// So a POST straight to this endpoint with status=1 and a bill code the
+// attacker already knows (their own, never paid) would otherwise be enough
+// to self-upgrade to "pro". To prevent that we re-fetch the bill's real
+// payment status from ToyyibPay's server-side API and only trust that.
+export async function isBillActuallyPaid(billCode: string): Promise<boolean> {
+  if (!billCode || !SECRET_KEY) return false;
+  try {
+    const res = await fetch(`${TOYYIBPAY_BASE}/index.php/api/getBillTransactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ billCode, billpaymentStatus: "1" }).toString(),
+    });
+    const text = await res.text();
+    let json: any;
+    try { json = JSON.parse(text); } catch { return false; }
+    if (!Array.isArray(json) || json.length === 0) return false;
+    // Any returned transaction with billpaymentStatus "1" means it was paid.
+    return json.some((tx: any) => tx?.billpaymentStatus === "1" || tx?.billStatus === "1");
+  } catch (e) {
+    console.error("ToyyibPay getBillTransactions error:", e);
+    return false;
+  }
+}
+
 // ToyyibPay sends POST callback after payment
 // Params: refno, status, reason, billcode, order_id (=user_id), amount
 export async function POST(req: NextRequest) {
@@ -19,7 +49,7 @@ export async function POST(req: NextRequest) {
     const refno = body.get("refno")?.toString();
 
     // status: "1" = success, "2" = pending, "3" = failed
-    if (status !== "1" || !userId) {
+    if (status !== "1" || !userId || !billCode) {
       return NextResponse.json({ ok: false, reason: "not_success" });
     }
 
@@ -35,6 +65,14 @@ export async function POST(req: NextRequest) {
     if (!profile || profile.toyyibpay_bill_code !== billCode) {
       console.error("ToyyibPay webhook: bill code mismatch", { userId, billCode, stored: profile?.toyyibpay_bill_code });
       return NextResponse.json({ ok: false, reason: "mismatch" });
+    }
+
+    // Never trust the client-posted `status` field alone — confirm with
+    // ToyyibPay's own API that this bill was genuinely paid before granting Pro.
+    const reallyPaid = await isBillActuallyPaid(billCode);
+    if (!reallyPaid) {
+      console.error("ToyyibPay webhook: status claimed success but API verification failed", { userId, billCode, refno });
+      return NextResponse.json({ ok: false, reason: "unverified" });
     }
 
     // Set Pro for 31 days

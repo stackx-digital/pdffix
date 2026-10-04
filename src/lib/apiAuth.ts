@@ -75,13 +75,57 @@ export async function resolveApiKey(raw: string): Promise<ApiKeyContext | null> 
     plan = "pro";
   }
 
-  if (plan === "free" && currentCalls >= FREE_QUOTA) return null;
+  // Atomically check-and-increment the quota counter to avoid a TOCTOU race
+  // where concurrent requests both read the same `currentCalls` and both
+  // pass the `< FREE_QUOTA` check before either write lands. We use a
+  // compare-and-swap on `monthly_calls` (WHERE monthly_calls = <value we
+  // read>): Postgres serializes concurrent UPDATEs to the same row, so only
+  // one concurrent request can win a given CAS step. The loser re-reads and
+  // retries against the fresh value, re-checking the quota each time.
+  let calls = currentCalls;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (plan === "free" && calls >= FREE_QUOTA) return null;
 
-  await (db().from("api_keys") as any)
-    .update({ monthly_calls: currentCalls + 1, last_used_at: new Date().toISOString() })
-    .eq("id", key.id);
+    const { data: updated } = await (db().from("api_keys") as any)
+      .update({ monthly_calls: calls + 1, last_used_at: new Date().toISOString() })
+      .eq("id", key.id)
+      .eq("monthly_calls", calls)
+      .select("monthly_calls")
+      .maybeSingle();
 
-  return { keyId: key.id, userId: key.user_id ?? null, plan };
+    if (updated) {
+      return { keyId: key.id, userId: key.user_id ?? null, plan };
+    }
+
+    // Someone else won the race on this row — re-read the current value and retry.
+    const { data: fresh } = await (db().from("api_keys") as any)
+      .select("monthly_calls")
+      .eq("id", key.id)
+      .maybeSingle();
+    calls = (fresh as any)?.monthly_calls ?? calls;
+  }
+
+  // Exhausted retries under heavy contention — fail closed rather than
+  // risk an unlogged over-quota call.
+  return null;
+}
+
+/**
+ * Refund one call from the quota counter. Used when a request was counted
+ * against quota (via resolveApiKey) but the handler then failed with a
+ * server error, so the user shouldn't be charged for it.
+ */
+async function refundApiCall(keyId: string) {
+  const { data: key } = await (db().from("api_keys") as any)
+    .select("monthly_calls")
+    .eq("id", keyId)
+    .maybeSingle();
+  const calls = (key as any)?.monthly_calls ?? 0;
+  if (calls > 0) {
+    await (db().from("api_keys") as any)
+      .update({ monthly_calls: calls - 1 })
+      .eq("id", keyId);
+  }
 }
 
 async function logApiCall(keyId: string, endpoint: string, status: number) {
@@ -110,9 +154,16 @@ export function withApiAuth(endpoint: string, handler: Handler) {
 
     try {
       const res = await handler(req, ctx);
+      // A server-side failure shouldn't burn the caller's quota: the call
+      // was already counted by resolveApiKey's atomic increment, so refund
+      // it here on any 5xx response.
+      if (res.status >= 500) {
+        refundApiCall(ctx.keyId).catch(() => {});
+      }
       logApiCall(ctx.keyId, endpoint, res.status).catch(() => {});
       return res;
     } catch (err: unknown) {
+      refundApiCall(ctx.keyId).catch(() => {});
       logApiCall(ctx.keyId, endpoint, 500).catch(() => {});
       const msg = err instanceof Error ? err.message : "Internal error";
       return NextResponse.json({ error: msg }, { status: 500 });

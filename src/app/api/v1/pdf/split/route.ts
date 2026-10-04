@@ -4,15 +4,21 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument } from "pdf-lib";
+import { checkFileSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/split", async (req) => {
   const form = await req.formData();
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
+
   const buf = await file.arrayBuffer();
   const src = await PDFDocument.load(buf, { ignoreEncryption: true });
   const total = src.getPageCount();
+  const pageErr = checkPageCount(total);
+  if (pageErr) return pageErr;
 
   const from = Math.max(1, parseInt((form.get("from") as string) ?? "1", 10)) - 1;
   const to = Math.min(total - 1, parseInt((form.get("to") as string) ?? String(total), 10) - 1);
