@@ -3,11 +3,17 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument } from "pdf-lib";
+import { checkFilesSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/image-to-pdf", async (req) => {
   const form = await req.formData();
   const images = form.getAll("images") as File[];
   if (images.length === 0) return NextResponse.json({ error: "No images provided (field: images[])" }, { status: 400 });
+
+  const sizeErr = checkFilesSize(images);
+  if (sizeErr) return sizeErr;
+  const pageErr = checkPageCount(images.length);
+  if (pageErr) return pageErr;
 
   const doc = await PDFDocument.create();
 

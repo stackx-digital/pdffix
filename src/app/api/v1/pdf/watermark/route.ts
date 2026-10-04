@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
+import { checkFileSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 function hexToRgb(hex: string) {
   const h = hex.replace("#", "");
@@ -18,6 +19,9 @@ export const POST = withApiAuth("pdf/watermark", async (req) => {
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
+
   const text = (form.get("text") as string) || "CONFIDENTIAL";
   const colorHex = (form.get("color") as string) || "#ff0000";
   const opacity = parseFloat((form.get("opacity") as string) || "0.15");
@@ -25,6 +29,8 @@ export const POST = withApiAuth("pdf/watermark", async (req) => {
 
   const buf = await file.arrayBuffer();
   const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+  const pageErr = checkPageCount(doc.getPageCount());
+  if (pageErr) return pageErr;
   const font = await doc.embedFont(StandardFonts.HelveticaBold);
   const c = hexToRgb(colorHex);
 

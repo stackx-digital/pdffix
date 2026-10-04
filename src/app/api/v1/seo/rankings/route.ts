@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
+import { verifyAdminApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
 
 function unauth() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -9,7 +9,7 @@ function unauth() {
 // Returns ranking history, or latest per keyword if no keyword param
 export async function GET(req: Request) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   const url = new URL(req.url);
   const keyword = url.searchParams.get("keyword");
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
 // POST /api/v1/seo/rankings — submit one or batch of rankings
 export async function POST(req: Request) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   let body: any;
   try { body = await req.json(); } catch {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
+import { verifyAdminApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
 
 interface Props { params: Promise<{ slug: string }> }
 
@@ -10,7 +10,7 @@ function unauth() {
 // GET /api/v1/blog/:slug
 export async function GET(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   const { slug } = await params;
   const { data, error } = await adminClient
@@ -28,7 +28,7 @@ export async function GET(req: Request, { params }: Props) {
 // PUT /api/v1/blog/:slug — full update
 export async function PUT(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   const { slug } = await params;
   let body: any;
@@ -63,7 +63,7 @@ export async function PUT(req: Request, { params }: Props) {
 // PATCH /api/v1/blog/:slug — partial update (e.g. toggle published)
 export async function PATCH(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   const { slug } = await params;
   let body: any;
@@ -92,7 +92,7 @@ export async function PATCH(req: Request, { params }: Props) {
 // DELETE /api/v1/blog/:slug
 export async function DELETE(req: Request, { params }: Props) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   const { slug } = await params;
   const { error } = await adminClient

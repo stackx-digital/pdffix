@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
+import { verifyAdminApiKey, extractBearerToken, adminClient } from "@/lib/apiAuth";
 
 function unauth() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -8,7 +8,7 @@ function unauth() {
 // GET /api/v1/blog — list all posts
 export async function GET(req: Request) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   const url = new URL(req.url);
   const published = url.searchParams.get("published");
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 // POST /api/v1/blog — create or upsert post
 export async function POST(req: Request) {
   const token = extractBearerToken(req);
-  if (!token || !(await verifyApiKey(token))) return unauth();
+  if (!token || !(await verifyAdminApiKey(token))) return unauth();
 
   let body: any;
   try {

@@ -2,11 +2,15 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument } from "pdf-lib";
+import { checkFileSize } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/flatten", async (req) => {
   const form = await req.formData();
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
 
   const buf = await file.arrayBuffer();
   const doc = await PDFDocument.load(buf, { ignoreEncryption: true });

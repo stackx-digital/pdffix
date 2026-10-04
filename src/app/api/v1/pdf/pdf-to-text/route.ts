@@ -3,11 +3,15 @@
 // Returns: JSON { pages: [{ page: 1, text: "..." }, ...], full_text: "..." }
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
+import { checkFileSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/pdf-to-text", async (req) => {
   const form = await req.formData();
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
 
   const buf = await file.arrayBuffer();
 
@@ -15,6 +19,8 @@ export const POST = withApiAuth("pdf/pdf-to-text", async (req) => {
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs" as string);
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf), disableFontFace: true });
   const pdfDoc = await loadingTask.promise;
+  const pageErr = checkPageCount(pdfDoc.numPages);
+  if (pageErr) return pageErr;
 
   const pages: { page: number; text: string }[] = [];
   for (let i = 1; i <= pdfDoc.numPages; i++) {

@@ -4,11 +4,15 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { checkFileSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/add-page-numbers", async (req) => {
   const form = await req.formData();
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
 
   const position = (form.get("position") as string) || "bottom-center";
   const start = parseInt((form.get("start") as string) || "1", 10);
@@ -17,6 +21,8 @@ export const POST = withApiAuth("pdf/add-page-numbers", async (req) => {
 
   const buf = await file.arrayBuffer();
   const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+  const pageErr = checkPageCount(doc.getPageCount());
+  if (pageErr) return pageErr;
   const font = await doc.embedFont(StandardFonts.Helvetica);
 
   doc.getPages().forEach((page, i) => {

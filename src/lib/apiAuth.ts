@@ -171,9 +171,57 @@ export function withApiAuth(endpoint: string, handler: Handler) {
   };
 }
 
+/**
+ * @deprecated Only checks that a key is active — it does NOT check scope.
+ * Do not use this to gate admin/CMS endpoints (blog, SEO rankings): any
+ * signed-up user can self-issue a plain `pfx_` key via
+ * /api/user/api-keys, and that key would pass this check even though it
+ * was never meant to manage site content. Use `verifyAdminApiKey` for
+ * those routes instead.
+ */
 export async function verifyApiKey(raw: string): Promise<boolean> {
   if (!raw?.startsWith("pfx_")) return false;
   const hash = hashKey(raw);
   const { data } = await db().from("api_keys").select("id").eq("key_hash", hash).eq("is_active", true).maybeSingle();
   return !!(data as any)?.id;
+}
+
+/**
+ * Verifies that a raw API key is active AND admin-scoped.
+ *
+ * The `api_keys` table is shared between two very different kinds of keys:
+ *  - Self-service keys created by any logged-in user via
+ *    POST /api/user/api-keys (src/app/api/user/api-keys/route.ts). These
+ *    always have `user_id` set to that (non-admin) user and are meant only
+ *    to call the public PDF-tools REST API.
+ *  - Service/admin keys created via POST /api/v1/keys
+ *    (src/app/api/v1/keys/route.ts), which already requires the caller to
+ *    be `profiles.is_admin`. Those rows are inserted with no `user_id`.
+ *
+ * Content/CMS-style endpoints (blog CRUD, SEO rankings ingestion) must only
+ * accept the second kind — otherwise any regular user could self-issue a
+ * key and use it to edit the public blog or inject fake ranking data. A
+ * key is treated as admin-scoped when it has no owning user (a service
+ * key), or when its owning user's profile has `is_admin = true`.
+ */
+export async function verifyAdminApiKey(raw: string): Promise<boolean> {
+  if (!raw?.startsWith("pfx_")) return false;
+  const hash = hashKey(raw);
+  const { data: key } = await db()
+    .from("api_keys")
+    .select("id, user_id, is_active")
+    .eq("key_hash", hash)
+    .eq("is_active", true)
+    .maybeSingle() as { data: any };
+
+  if (!key?.id) return false;
+  if (!key.user_id) return true; // service key, not tied to a self-service user
+
+  const { data: profile } = await db()
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", key.user_id)
+    .maybeSingle();
+
+  return !!(profile as any)?.is_admin;
 }

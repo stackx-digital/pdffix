@@ -3,12 +3,15 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument, degrees } from "pdf-lib";
-import { parsePages } from "@/lib/pdf-api/helpers";
+import { parsePages, checkFileSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/rotate", async (req) => {
   const form = await req.formData();
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
 
   const deg = parseInt((form.get("degrees") as string) ?? "90", 10);
   if (![90, 180, 270, -90].includes(deg))
@@ -17,6 +20,8 @@ export const POST = withApiAuth("pdf/rotate", async (req) => {
   const buf = await file.arrayBuffer();
   const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
   const total = doc.getPageCount();
+  const pageErr = checkPageCount(total);
+  if (pageErr) return pageErr;
 
   const target = parsePages(form.get("pages") as string | null, total) ?? Array.from({ length: total }, (_, i) => i);
 

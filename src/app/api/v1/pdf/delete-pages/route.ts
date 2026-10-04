@@ -3,16 +3,21 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import { PDFDocument } from "pdf-lib";
-import { parsePages } from "@/lib/pdf-api/helpers";
+import { parsePages, checkFileSize, checkPageCount } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/delete-pages", async (req) => {
   const form = await req.formData();
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
+  const sizeErr = checkFileSize(file);
+  if (sizeErr) return sizeErr;
+
   const buf = await file.arrayBuffer();
   const src = await PDFDocument.load(buf, { ignoreEncryption: true });
   const total = src.getPageCount();
+  const pageErr = checkPageCount(total);
+  if (pageErr) return pageErr;
 
   const toDelete = new Set(parsePages(form.get("pages") as string | null, total) ?? []);
   if (toDelete.size === 0) return NextResponse.json({ error: "No valid pages specified" }, { status: 400 });
