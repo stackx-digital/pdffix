@@ -95,7 +95,12 @@ export default async function BlogPostPage({ params }: Props) {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // Blog fields (title/description/author) are stored, admin-authored
+        // content, but JSON.stringify does not escape "<". Without this,
+        // a value containing "</script><script>..." would break out of the
+        // JSON-LD block and execute as HTML/script in every visitor's page.
+        // Escape "<" to its unicode form so the tag can never be closed early.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 py-12 w-full">

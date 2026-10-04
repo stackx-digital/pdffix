@@ -19,9 +19,11 @@ const SECRET_KEY = process.env.TOYYIBPAY_SECRET_KEY ?? "";
 // to self-upgrade to "pro". To prevent that we re-fetch the bill's real
 // payment status from ToyyibPay's server-side API and only trust that.
 export async function isBillActuallyPaid(billCode: string): Promise<boolean> {
-  if (!billCode || !SECRET_KEY) return false;
+  const secretKey = process.env.TOYYIBPAY_SECRET_KEY ?? SECRET_KEY;
+  const base = process.env.TOYYIBPAY_BASE_URL ?? TOYYIBPAY_BASE;
+  if (!billCode || !secretKey) return false;
   try {
-    const res = await fetch(`${TOYYIBPAY_BASE}/index.php/api/getBillTransactions`, {
+    const res = await fetch(`${base}/index.php/api/getBillTransactions`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ billCode, billpaymentStatus: "1" }).toString(),

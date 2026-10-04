@@ -5,11 +5,15 @@
 import { NextResponse } from "next/server";
 import { withApiAuth } from "@/lib/apiAuth";
 import Tesseract from "tesseract.js";
+import { checkFileSize } from "@/lib/pdf-api/helpers";
 
 export const POST = withApiAuth("pdf/ocr-image", async (req) => {
   const form = await req.formData();
   const image = form.get("image") as File | null;
   if (!image) return NextResponse.json({ error: "No image provided (field: image)" }, { status: 400 });
+
+  const sizeErr = checkFileSize(image, 15 * 1024 * 1024); // images: 15MB cap, OCR is CPU-heavy
+  if (sizeErr) return sizeErr;
 
   const lang = (form.get("lang") as string) || "eng";
   const validLangs = ["eng", "msa", "chi_sim", "ara"];

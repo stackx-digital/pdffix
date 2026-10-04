@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
+import { NextResponse } from "next/server";
 
 export async function loadPdf(buffer: ArrayBuffer): Promise<PDFDocument> {
   return PDFDocument.load(buffer, { ignoreEncryption: true });
@@ -17,7 +18,7 @@ export const MAX_TOTAL_PAGES = 2000; // cap on pages processed in one request
 // Checks a single uploaded File's size *before* its bytes are read into
 // memory (File.size is metadata, so this is cheap). Returns an error
 // Response to return immediately, or null if the file is within limits.
-export function checkFileSize(file: File, maxBytes = MAX_FILE_SIZE_BYTES): Response | null {
+export function checkFileSize(file: File, maxBytes = MAX_FILE_SIZE_BYTES): NextResponse | null {
   if (typeof file.size === "number" && file.size > maxBytes) {
     return jsonError(
       `File too large: ${file.size} bytes exceeds the ${maxBytes} byte limit.`,
@@ -29,7 +30,7 @@ export function checkFileSize(file: File, maxBytes = MAX_FILE_SIZE_BYTES): Respo
 
 // Checks several uploaded files (e.g. merge's files[], image-to-pdf's
 // images[]) against both a per-file size cap and a combined total cap.
-export function checkFilesSize(files: File[], maxBytes = MAX_FILE_SIZE_BYTES): Response | null {
+export function checkFilesSize(files: File[], maxBytes = MAX_FILE_SIZE_BYTES): NextResponse | null {
   let total = 0;
   for (const f of files) {
     const err = checkFileSize(f, maxBytes);
@@ -48,7 +49,7 @@ export function checkFilesSize(files: File[], maxBytes = MAX_FILE_SIZE_BYTES): R
 // Guards against a PDF declaring (or a request targeting) an unreasonable
 // number of pages, which would otherwise drive an unbounded loop over
 // pages/copyPages/text-extraction/etc.
-export function checkPageCount(total: number, maxPages = MAX_TOTAL_PAGES): Response | null {
+export function checkPageCount(total: number, maxPages = MAX_TOTAL_PAGES): NextResponse | null {
   if (total > maxPages) {
     return jsonError(
       `PDF has too many pages (${total}); limit is ${maxPages}.`,
@@ -67,8 +68,8 @@ export function pdfResponse(bytes: Uint8Array, filename = "output.pdf"): Respons
   });
 }
 
-export function jsonError(msg: string, status = 400): Response {
-  return Response.json({ error: msg }, { status });
+export function jsonError(msg: string, status = 400): NextResponse {
+  return NextResponse.json({ error: msg }, { status });
 }
 
 // Parse comma-separated or JSON array of 1-indexed page numbers → 0-indexed
